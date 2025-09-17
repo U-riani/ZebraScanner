@@ -40,7 +40,7 @@
             SelectionMode="Single"
             SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">  
             <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:TestModel">
+                <DataTemplate x:DataType="models:ScannedProduct">
                     <Frame BorderColor="LightGray"
                        CornerRadius="5"
                        Padding="0"

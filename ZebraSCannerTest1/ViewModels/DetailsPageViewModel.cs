@@ -20,17 +20,17 @@ public partial class DetailsViewModel : BaseViewModel
     private int productId;
 
     [ObservableProperty]
-    private TestModel product;
+    private ScannedProduct product;
 
     public DetailsViewModel(AppDbContext db)
     {
         _db = db;
     }
 
-    public void Load()
-    {
-        Product = _db.Products.FirstOrDefault(p => p.Id == ProductId);
-    }
+    //public void Load()
+    //{
+    //    Product = _db.Products.FirstOrDefault(p => p.Id == ProductId);
+    //}
 
     private void SaveCommand(object sender, EventArgs e)
     {
@@ -38,20 +38,54 @@ public partial class DetailsViewModel : BaseViewModel
         // For example, update the database with changes made to the Product
     }
 
+    //public void SaveUpdatedDetails()
+    //{
+    //    if (Product != null)
+    //    {
+    //        var existing = _db.Products.FirstOrDefault(p => p.Id == Product.Id);
+    //        if (existing != null)
+    //        {
+    //            existing.Name = Product.Name;
+    //            existing.Quantity = Product.Quantity;
+    //            _db.SaveChanges();
+
+    //            // Notify MainViewModel
+    //            WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(Product));
+    //        }
+    //    }
+    //}
+
+    public void Load()
+    {
+        Product = _db.ScannedProducts
+            .Where(p => p.Id == ProductId)
+            .Select(p => new ScannedProduct
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Quantity = p.Quantity
+            })
+            .FirstOrDefault();
+    }
     public void SaveUpdatedDetails()
     {
-        if (Product != null)
-        {
-            var existing = _db.Products.FirstOrDefault(p => p.Id == Product.Id);
-            if (existing != null)
-            {
-                existing.Name = Product.Name;
-                existing.Quantity = Product.Quantity;
-                _db.SaveChanges();
+        if (Product == null)
+            return;
 
-                // Notify MainViewModel
-                WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(Product));
-            }
+        var existing = _db.ScannedProducts.FirstOrDefault(p => p.Id == Product.Id);
+        if (existing != null)
+        {
+            existing.Name = Product.Name;
+            existing.Quantity = Product.Quantity;
+            _db.SaveChanges();
+
+            // Notify MainViewModel about the update
+            WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(new ScannedProduct
+            {
+                Id = existing.Id,
+                Name = existing.Name,
+                Quantity = existing.Quantity
+            }));
         }
     }
 }

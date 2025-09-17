@@ -40,7 +40,7 @@ public partial class DetailsPage : ContentPage
     {
         if (BindingContext is DetailsViewModel vm && vm.Product != null)
         {
-            var existing = _db.Products.FirstOrDefault(p => p.Id == vm.Product.Id);
+            var existing = _db.ScannedProducts.FirstOrDefault(p => p.Id == vm.Product.Id);
             if (existing != null)
             {
                 existing.Name = vm.Product.Name;

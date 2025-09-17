@@ -9,9 +9,9 @@ namespace ZebraSCannerTest1.Messages;
 
 public class ProductUpdatedMessage
 {
-    public TestModel Product { get; }
+    public ScannedProduct Product { get; }
 
-    public ProductUpdatedMessage(TestModel product)
+    public ProductUpdatedMessage(ScannedProduct product)
     {
         Product = product;
     }
