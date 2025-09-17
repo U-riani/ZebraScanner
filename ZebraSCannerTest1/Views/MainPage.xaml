@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.ViewModels"
+             xmlns:models="clr-namespace:ZebraSCannerTest1.Models"
+             x:Class="ZebraSCannerTest1.MainPage"
+             x:DataType="viewmodel:MainViewModel">
+
+
+    <Grid RowDefinitions="50,50,*" 
+          ColumnDefinitions="1,*"
+          Padding="10">
+
+        <Entry x:Name="barcodeEntry" 
+               Grid.Row="0" 
+               Grid.Column="0"
+               FontSize="20"
+               Text="{Binding CurrentBarcode, Mode=TwoWay}"
+               />
+        
+        <Label Grid.Row="0"
+           Grid.Column="1"
+           FontSize="20"
+           Text="{Binding ShowCurrentBarcode}"
+           BackgroundColor="BlueViolet"
+           VerticalOptions="Center"
+           HorizontalOptions="Center" />
+
+        <Button Text="Scan"
+                Grid.Row="1"
+                Grid.ColumnSpan="2"
+                Clicked="OnStartScannerClicked"
+                FontSize="20" />
+
+        <CollectionView 
+            x:Name="scannedBarcodesCollectionView"
+            Grid.Row="2"
+            Grid.ColumnSpan="2"
+            ItemsSource="{Binding Products}"
+            SelectionMode="Single"
+            SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">  
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:TestModel">
+                    <Frame BorderColor="LightGray"
+                       CornerRadius="5"
+                       Padding="0"
+                       Margin="5"
+                       InputTransparent="True">
+                        <Grid Padding="10">
+                            <Label Text="{Binding Id}"
+                                FontSize="16" 
+                                VerticalOptions="Center"
+                                HorizontalOptions="Start"/>        
+                            <Label Text="{Binding Name}" 
+                               FontSize="16" 
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center" />
+                            <Label Text="{Binding Quantity}" FontSize="16" 
+                                VerticalOptions="Center"
+                                HorizontalOptions="End"/>
+                        </Grid>
+                    </Frame>
+
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+
+    </Grid>
+
+</ContentPage>
