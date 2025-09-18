@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Collections;
 using System.Collections.ObjectModel;
@@ -23,6 +22,8 @@ namespace ZebraSCannerTest1.ViewModels
         private string _showCurrentBarcode;
         private ScannedProduct _selectedProduct;
         private bool _isNavigating = false;
+        private bool _isShowingAlert = false;
+
 
         public IAsyncRelayCommand<ScannedProduct> ItemTappedCommand { get; }
         // Add this in your ViewModel
@@ -93,23 +94,29 @@ namespace ZebraSCannerTest1.ViewModels
 
         public ICommand AddProductCommand { get; }
         public ICommand GoToDetailsCommand { get; }
+        public ICommand GoToLogsCommand { get; }
 
         public MainViewModel(AppDbContext db)
         {
             _db = db;
             LoadProducts();
 
-            AddProductCommand = new RelayCommand<string>(AddProduct);
+            AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
             GoToDetailsCommand = new AsyncRelayCommand<ScannedProduct>(OnItemTappedAsync);
+            GoToLogsCommand = new AsyncRelayCommand(OnGoToLogsAsync);
+
 
             WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(this, (r, m) =>
             {
-                var existing = Products.FirstOrDefault(p => p.Id == m.Product.Id);
+                var existing = Products.FirstOrDefault(p => p.Barcode == m.Product.Barcode);
                 if (existing != null)
                 {
                     // Update existing product in the ObservableCollection
-                    existing.Name = m.Product.Name;
+                    existing.Barcode = m.Product.Barcode;
                     existing.Quantity = m.Product.Quantity;
+                    existing.UpdatedAt = m.Product.UpdatedAt;
+                    // Move updated product to top
+                    Products.Move(Products.IndexOf(existing), 0);
                 }
                 else
                 {
@@ -141,13 +148,21 @@ namespace ZebraSCannerTest1.ViewModels
         public void LoadProducts()
         {
             Products.Clear();
-            foreach (var scanned in  _db.ScannedProducts.OrderByDescending(p => p.Id))
+            var scannedProducts = _db.ScannedProducts
+                .OrderByDescending(p => p.UpdatedAt)
+                .ToList();
+            foreach (var scanned in scannedProducts)
             {
+                var initial = _db.InitialProducts.FirstOrDefault(p => p.Barcode == scanned.Barcode);
+
                 Products.Add(new ScannedProduct
                 {
                     Id = scanned.Id,
-                    Name = scanned.Name,
-                    Quantity = scanned.Quantity
+                    Barcode = scanned.Barcode,
+                    Quantity = scanned.Quantity,
+                    InitialQuantity = initial?.Quantity ?? 0,
+                    CreatedAt = scanned.CreatedAt,
+                    UpdatedAt = scanned.UpdatedAt
                 });
             }
         }
@@ -189,32 +204,59 @@ namespace ZebraSCannerTest1.ViewModels
         //}
 
 
-        public void AddProduct(string scannedName)
+        public async Task AddProductAsync(string scannedBarcode)
         {
+            if (_isShowingAlert)
+                return;
+
             // Check if the scanned barcode exists in InitialProducts
-            var initial = _db.InitialProducts.FirstOrDefault(p => p.Name == scannedName);
+            var initial = _db.InitialProducts.FirstOrDefault(p => p.Barcode == scannedBarcode);
             if (initial == null)
             {
-                // Product doesn't exist in initial data — ignore or show alert
-                // You can display a message to the user here
-                MainThread.BeginInvokeOnMainThread(() =>
+                _isShowingAlert = true;
+                // Await the alert to pause execution until user presses OK
+                await MainThread.InvokeOnMainThreadAsync(async () =>
                 {
-                    Application.Current.MainPage.DisplayAlert("Error", $"Product '{scannedName}' does not exist.", "OK");
+                    await Application.Current.MainPage.DisplayAlert(
+                        "Error",
+                        $"Product '{scannedBarcode}' does not exist.",
+                        "OK"
+                    );
                 });
-                return;
+
+                _isShowingAlert = false;
+                return; // stop further scanning
             }
 
             // Check if product already exists in ScannedProducts
-            var scanned = _db.ScannedProducts.FirstOrDefault(p => p.Name == scannedName);
+            var scanned = _db.ScannedProducts.FirstOrDefault(p => p.Barcode == scannedBarcode);
             if (scanned != null)
             {
                 // Increment quantity if already scanned
                 scanned.Quantity += 1;
+                scanned.UpdatedAt = DateTime.Now;
+
                 _db.SaveChanges();
 
-                var existingInCollection = Products.FirstOrDefault(p => p.Id == scanned.Id);
+                // Save a log for this scan
+                _db.ScanLogs.Add(new ScanLog
+                {
+                    Barcode = scanned.Barcode,
+                    Quantity = scanned.Quantity,
+                    InitialQuantity = scanned.InitialQuantity,
+                    ScannedProductId = scanned.Id,
+                    Timestamp = DateTime.Now
+                });
+                _db.SaveChanges();
+
+                // Update ObservableCollection
+                var existingInCollection = Products.FirstOrDefault(p => p.Barcode == scanned.Barcode);
                 if (existingInCollection != null)
+                {
                     existingInCollection.Quantity = scanned.Quantity;
+                    Products.Move(Products.IndexOf(existingInCollection), 0);
+
+                }
 
                 return;
             }
@@ -222,23 +264,38 @@ namespace ZebraSCannerTest1.ViewModels
             // Add new scanned product
             var newScanned = new ScannedProduct
             {
-                Name = initial.Name,
-                Quantity = 1 // start with 1 for first scan
+                Barcode = initial.Barcode,
+                Quantity = 1, // start with 1 for first scan
+                InitialQuantity = initial.Quantity
             };
 
             _db.ScannedProducts.Add(newScanned);
             _db.SaveChanges();
 
+            // ✅ Save log for first scan
+            _db.ScanLogs.Add(new ScanLog
+            {
+                Barcode = newScanned.Barcode,
+                Quantity = newScanned.Quantity,
+                InitialQuantity = newScanned.InitialQuantity, // take initial quantity from ScannedProduct
+                ScannedProductId = newScanned.Id,
+                Timestamp = DateTime.Now
+            });
+            _db.SaveChanges();
+
+
+
             Products.Insert(0, new ScannedProduct
             {
                 Id = newScanned.Id,
-                Name = newScanned.Name,
-                Quantity = newScanned.Quantity
+                Barcode = newScanned.Barcode,
+                Quantity = newScanned.Quantity,
+                InitialQuantity = newScanned.InitialQuantity
             });
         }
 
 
-        private async void GoToDetailsAsync(ScannedProduct product)
+        private async Task GoToDetailsAsync(ScannedProduct product)
         {
             if (product == null)
                 return;
@@ -267,6 +324,10 @@ namespace ZebraSCannerTest1.ViewModels
 
             // Navigate to DetailsPage using Shell routing
             await Shell.Current.GoToAsync($"{nameof(Views.DetailsPage)}?ProductId={product.Id}");
+        }
+        private async Task OnGoToLogsAsync()
+        {
+            await Shell.Current.GoToAsync(nameof(LogsPage));
         }
 
         // Boilerplate for property change notifications

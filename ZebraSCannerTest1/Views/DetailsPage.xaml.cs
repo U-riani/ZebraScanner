@@ -40,11 +40,12 @@ public partial class DetailsPage : ContentPage
     {
         if (BindingContext is DetailsViewModel vm && vm.Product != null)
         {
-            var existing = _db.ScannedProducts.FirstOrDefault(p => p.Id == vm.Product.Id);
+            var existing = _db.ScannedProducts.FirstOrDefault(p => p.Barcode == vm.Product.Barcode);
             if (existing != null)
             {
-                existing.Name = vm.Product.Name;
+                existing.Barcode = vm.Product.Barcode;
                 existing.Quantity = vm.Product.Quantity;
+                existing.UpdatedAt = DateTime.Now;
                 _db.SaveChanges();
             }
         }

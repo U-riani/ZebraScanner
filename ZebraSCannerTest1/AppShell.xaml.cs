@@ -10,6 +10,8 @@ namespace ZebraSCannerTest1
 
             //Routing.RegisterRoute(nameof(MainPage), typeof(MainPage));
             Routing.RegisterRoute(nameof(DetailsPage), typeof(DetailsPage));
+            Routing.RegisterRoute(nameof(LogsPage), typeof(LogsPage));
+
         }
     }
 }

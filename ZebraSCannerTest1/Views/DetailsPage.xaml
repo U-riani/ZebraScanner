@@ -7,11 +7,12 @@
              Title="Details">
     <VerticalStackLayout Padding="20">
         <Label Text="BARCODE"/>
-        <Label Text="{Binding Product.Name}" FontSize="20" Margin="0,0,0,30"/>
+        <Label Text="{Binding Product.Barcode}" FontSize="20" Margin="0,0,0,30"/>
 
         <Label Text="QUANTITY"/>
-        <Entry Text="{Binding Product.Quantity}" Placeholder="Quantity" FontSize="20" Margin="0,0,0,30"/>
+        <Entry Text="{Binding Product.Quantity}" Placeholder="Quantity" FontSize="20" Margin="0,0,0,8"/>
 
+        <Label Text="{Binding SaveStatus}" TextColor="Green" FontAttributes="Bold" Margin="0,0,0,15"/>
         <Button Text="Save" Command="{Binding SaveUpdatedDetailsCommand}"/>
     </VerticalStackLayout>
 </ContentPage>

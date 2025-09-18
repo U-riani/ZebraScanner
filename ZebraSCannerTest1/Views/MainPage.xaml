@@ -5,6 +5,10 @@
              xmlns:models="clr-namespace:ZebraSCannerTest1.Models"
              x:Class="ZebraSCannerTest1.MainPage"
              x:DataType="viewmodel:MainViewModel">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Logs"
+                 Command="{Binding GoToLogsCommand}" />
+    </ContentPage.ToolbarItems>
 
 
     <Grid RowDefinitions="50,50,*" 
@@ -46,18 +50,29 @@
                        Padding="0"
                        Margin="5"
                        InputTransparent="True">
-                        <Grid Padding="10">
-                            <Label Text="{Binding Id}"
-                                FontSize="16" 
-                                VerticalOptions="Center"
-                                HorizontalOptions="Start"/>        
-                            <Label Text="{Binding Name}" 
+                        <Grid ColumnDefinitions="*,Auto,15,Auto"
+                            Padding="10"
+                            BackgroundColor="{Binding QuantityBackgroundColor}">
+                            <Label
+                               Grid.Column="0"
+                               Text="{Binding Barcode}" 
                                FontSize="16" 
                                VerticalOptions="Center"
-                               HorizontalOptions="Center" />
-                            <Label Text="{Binding Quantity}" FontSize="16" 
+                               HorizontalOptions="Start" />
+                            <Label Grid.Column="1"
+                                Text="{Binding Quantity}" 
+                                FontSize="16" 
                                 VerticalOptions="Center"
-                                HorizontalOptions="End"/>
+                                HorizontalOptions="Center"/>
+                            <Label 
+                                Grid.Column="2" Text="/" 
+                                Padding="3,0,3,0"
+                                FontSize="25"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center"/>
+                            <Label Grid.Column="3" Text="{Binding InitialQuantity}"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center"/>
                         </Grid>
                     </Frame>
 

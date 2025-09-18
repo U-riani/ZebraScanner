@@ -1,0 +1,21 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ZebraSCannerTest1.Views.LogsPage">
+
+    <CollectionView x:Name="logsCollectionView" ItemsSource="{Binding Logs}">
+        <CollectionView.ItemTemplate>
+            <DataTemplate>
+                <StackLayout Padding="10" BackgroundColor="Green" Margin="0,0,0,10">
+                    <Grid RowDefinitions="20,30" ColumnDefinitions="Auto,15,Auto,*">
+
+                        <Label Grid.Row="0" Grid.ColumnSpan="4" VerticalOptions="Center" Text="{Binding Barcode}" />
+                        <Label Grid.Row="1" Grid.Column="0" VerticalOptions="Center" Text="{Binding Quantity}" />
+                        <Label Grid.Row="1" Grid.Column="1" VerticalOptions="Center" HorizontalOptions="Center" Padding="3,0,3,0" FontSize="20" Text="/" />
+                        <Label Grid.Row="1" Grid.Column="2" VerticalOptions="Center" Text="{Binding InitialQuantity}" />
+                        <Label Grid.Row="1" Grid.Column="3" VerticalOptions="Center" HorizontalOptions="End" Text="{Binding Timestamp}" />
+                    </Grid>
+                </StackLayout>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+    </CollectionView>
+</ContentPage>

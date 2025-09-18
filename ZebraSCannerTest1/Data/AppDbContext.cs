@@ -8,6 +8,8 @@ namespace ZebraSCannerTest1.Data
     {
         public DbSet<InitialProduct> InitialProducts { get; set; }
         public DbSet<ScannedProduct> ScannedProducts { get; set; }
+        public DbSet<ScanLog> ScanLogs { get; set; }   
+
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

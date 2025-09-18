@@ -20,7 +20,7 @@ public partial class MainPage : ContentPage
             if (!string.IsNullOrWhiteSpace(scannedData))
             {
                 _viewModel.ShowCurrentBarcode = scannedData;
-                _viewModel.AddProduct(scannedData);
+                _viewModel.AddProductAsync(scannedData);
                 _viewModel.CurrentBarcode = string.Empty; // clear Entry
 
                 MainThread.BeginInvokeOnMainThread(() =>
@@ -53,13 +53,13 @@ public partial class MainPage : ContentPage
         MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
     }
 
-    private void BarcodeEntry_TextChanged(object sender, TextChangedEventArgs e)
+    private async void BarcodeEntry_TextChanged(object sender, TextChangedEventArgs e)
     {
         var scannedData = e.NewTextValue; // use the Entry's new value
         if (!string.IsNullOrWhiteSpace(scannedData))
         {
             _viewModel.ShowCurrentBarcode = scannedData;
-            _viewModel.AddProduct(scannedData);
+            await _viewModel.AddProductAsync(scannedData);
 
             barcodeEntry.Text = string.Empty; // reset Entry
 
@@ -77,13 +77,13 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void OnStartScannerClicked(object sender, EventArgs e)
+    private async void OnStartScannerClicked(object sender, EventArgs e)
     {
         // For now, simulate adding a scanned barcode
         string scannedData = _viewModel.CurrentBarcode;
         if (!string.IsNullOrWhiteSpace(scannedData))
         {
-            _viewModel.AddProduct(scannedData);
+            await _viewModel.AddProductAsync(scannedData);
             _viewModel.CurrentBarcode = string.Empty; // clears Entry
 
         }

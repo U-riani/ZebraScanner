@@ -22,9 +22,21 @@ public partial class DetailsViewModel : BaseViewModel
     [ObservableProperty]
     private ScannedProduct product;
 
+    private string _saveStatus;
+    public string SaveStatus
+    {
+        get => _saveStatus;
+        set => SetProperty(ref _saveStatus, value);
+    }
+
+    //public IAsyncRelayCommand ScanAgainCommand { get; }
+
+
     public DetailsViewModel(AppDbContext db)
     {
         _db = db;
+        SaveUpdatedDetailsCommand = new RelayCommand(SaveUpdatedDetails);
+
     }
 
     //public void Load()
@@ -62,12 +74,15 @@ public partial class DetailsViewModel : BaseViewModel
             .Select(p => new ScannedProduct
             {
                 Id = p.Id,
-                Name = p.Name,
-                Quantity = p.Quantity
+                Barcode = p.Barcode,
+                Quantity = p.Quantity,
+                InitialQuantity = p.InitialQuantity,
             })
             .FirstOrDefault();
     }
-    public void SaveUpdatedDetails()
+
+
+    public async void SaveUpdatedDetails()
     {
         if (Product == null)
             return;
@@ -75,17 +90,46 @@ public partial class DetailsViewModel : BaseViewModel
         var existing = _db.ScannedProducts.FirstOrDefault(p => p.Id == Product.Id);
         if (existing != null)
         {
-            existing.Name = Product.Name;
+            bool quantityChanged = existing.Quantity != Product.Quantity;
+
+            existing.Barcode = Product.Barcode;
             existing.Quantity = Product.Quantity;
+            existing.UpdatedAt = DateTime.Now;
             _db.SaveChanges();
+
+            if (quantityChanged)
+            {
+                // Create a new ScanLog object and save it
+                var newLog = new ScanLog
+                {
+                    Barcode = existing.Barcode,
+                    Quantity = existing.Quantity,
+                    InitialQuantity = existing.InitialQuantity,
+                    ScannedProductId = existing.Id,
+                    Timestamp = DateTime.Now
+                };
+                _db.ScanLogs.Add(newLog);
+                _db.SaveChanges();
+
+                // Notify LogsViewModel immediately
+                WeakReferenceMessenger.Default.Send(new NewScanLogMessage(newLog));
+            }
 
             // Notify MainViewModel about the update
             WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(new ScannedProduct
             {
                 Id = existing.Id,
-                Name = existing.Name,
+                Barcode = existing.Barcode,
                 Quantity = existing.Quantity
             }));
+
+            SaveStatus = "✔ Saved!";
+            await Task.Delay(500);
+
+            // Navigate back to MainPage
+            await Shell.Current.GoToAsync("..", true);
+
+            SaveStatus = string.Empty;
         }
     }
 }

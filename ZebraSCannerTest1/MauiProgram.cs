@@ -43,9 +43,13 @@ namespace ZebraSCannerTest1
                 if (!db.InitialProducts.Any())
                 {
                     db.InitialProducts.AddRange(
-                        new InitialProduct { Id = 1, Name = "1234567890", Quantity = 10 },
-                        new InitialProduct { Id = 2, Name = "15060715", Quantity = 5 },
-                        new InitialProduct { Id = 3, Name = "10123456789012345672", Quantity = 8 }
+                        new InitialProduct { Id = 1, Barcode = "1234567890", Quantity = 10 },
+                        new InitialProduct { Id = 2, Barcode = "15060715", Quantity = 5 },
+                        new InitialProduct { Id = 3, Barcode = "10123456789012345672", Quantity = 8 },
+                        new InitialProduct { Id = 4, Barcode = "0101234567891231", Quantity = 3 },
+                        new InitialProduct { Id = 5, Barcode = "1012345678912345678", Quantity = 11 }
+
+
                     );
                     db.SaveChanges();
                 }
@@ -54,15 +58,23 @@ namespace ZebraSCannerTest1
                 return db;
             });
 
-            builder.Services.AddSingleton<MainViewModel>();
+            //builder.Services.AddSingleton<MainViewModel>();
 
+            //builder.Services.AddTransient<DetailsViewModel>();
+
+            //builder.Services.AddSingleton<MainPage>();
+            //builder.Services.AddTransient<DetailsPage>();
+            //builder.Services.AddSingleton<LogsViewModel>();
+
+            // ViewModels
+            builder.Services.AddTransient<MainViewModel>();
             builder.Services.AddTransient<DetailsViewModel>();
+            builder.Services.AddTransient<LogsViewModel>();
 
-            builder.Services.AddSingleton<MainPage>();
+            // Pages
+            builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<DetailsPage>();
-
-
-
+            builder.Services.AddTransient<LogsPage>();
 
 #if DEBUG
             builder.Logging.AddDebug();
