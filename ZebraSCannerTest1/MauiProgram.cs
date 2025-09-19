@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Models;
+using ZebraSCannerTest1.Services;
 using ZebraSCannerTest1.ViewModels;
 using ZebraSCannerTest1.Views;
 
@@ -40,19 +41,19 @@ namespace ZebraSCannerTest1
                 //db.Database.Migrate();
 
                 // seeding initial data if table is empty
-                if (!db.InitialProducts.Any())
-                {
-                    db.InitialProducts.AddRange(
-                        new InitialProduct { Id = 1, Barcode = "1234567890", Quantity = 10 },
-                        new InitialProduct { Id = 2, Barcode = "15060715", Quantity = 5 },
-                        new InitialProduct { Id = 3, Barcode = "10123456789012345672", Quantity = 8 },
-                        new InitialProduct { Id = 4, Barcode = "0101234567891231", Quantity = 3 },
-                        new InitialProduct { Id = 5, Barcode = "1012345678912345678", Quantity = 11 }
+                //if (!db.InitialProducts.Any())
+                //{
+                //    db.InitialProducts.AddRange(
+                //        new InitialProduct { Id = 1, Barcode = "1234567890", Quantity = 10 },
+                //        new InitialProduct { Id = 2, Barcode = "15060715", Quantity = 5 },
+                //        new InitialProduct { Id = 3, Barcode = "10123456789012345672", Quantity = 8 },
+                //        new InitialProduct { Id = 4, Barcode = "0101234567891231", Quantity = 3 },
+                //        new InitialProduct { Id = 5, Barcode = "1012345678912345678", Quantity = 11 }
 
 
-                    );
-                    db.SaveChanges();
-                }
+                //    );
+                //    db.SaveChanges();
+                //}
 
 
                 return db;
@@ -75,6 +76,9 @@ namespace ZebraSCannerTest1
             builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<DetailsPage>();
             builder.Services.AddTransient<LogsPage>();
+            builder.Services.AddScoped<ExcelImportService>();
+
+
 
 #if DEBUG
             builder.Logging.AddDebug();

@@ -9,6 +9,11 @@ using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Messages;
 using ZebraSCannerTest1.Models;
 using ZebraSCannerTest1.Views;
+using ZebraSCannerTest1.Services;
+using Microsoft.Maui.Storage;
+using ZebraSCannerTest1.Helpers;
+
+
 
 
 namespace ZebraSCannerTest1.ViewModels
@@ -18,12 +23,16 @@ namespace ZebraSCannerTest1.ViewModels
     public class MainViewModel : INotifyPropertyChanged
     {
         private readonly AppDbContext _db;
+        private readonly ExcelImportService _importService;
         private string _currentBarcode;
         private string _showCurrentBarcode;
         private ScannedProduct _selectedProduct;
         private bool _isNavigating = false;
         private bool _isShowingAlert = false;
+        private bool _isManualEntryVisible = true;
 
+
+        public IAsyncRelayCommand ImportExcelCommand { get; }
 
         public IAsyncRelayCommand<ScannedProduct> ItemTappedCommand { get; }
         // Add this in your ViewModel
@@ -52,6 +61,21 @@ namespace ZebraSCannerTest1.ViewModels
             }
         }
 
+        public bool IsManualEntryVisible
+        {
+            get => _isManualEntryVisible;
+            set
+            {
+                if (_isManualEntryVisible != value)
+                {
+                    _isManualEntryVisible = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public ICommand ToggleManualEntryCommand { get; }
+
         private async Task NavigateToDetailsAsync(ScannedProduct product)
         {
             if (product == null)
@@ -78,6 +102,7 @@ namespace ZebraSCannerTest1.ViewModels
             }
         }
 
+
         public string ShowCurrentBarcode
         {
             get => _showCurrentBarcode;
@@ -96,15 +121,24 @@ namespace ZebraSCannerTest1.ViewModels
         public ICommand GoToDetailsCommand { get; }
         public ICommand GoToLogsCommand { get; }
 
-        public MainViewModel(AppDbContext db)
+        public MainViewModel(AppDbContext db, ExcelImportService importService)
         {
             _db = db;
+
+            _importService = importService;
+
             LoadProducts();
 
             AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
             GoToDetailsCommand = new AsyncRelayCommand<ScannedProduct>(OnItemTappedAsync);
             GoToLogsCommand = new AsyncRelayCommand(OnGoToLogsAsync);
+            ImportExcelCommand = new AsyncRelayCommand(OnImportExcelAsync);
 
+
+            ToggleManualEntryCommand = new RelayCommand(() =>
+            {
+                IsManualEntryVisible = !IsManualEntryVisible;
+            });
 
             WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(this, (r, m) =>
             {
@@ -127,6 +161,8 @@ namespace ZebraSCannerTest1.ViewModels
 
         }
 
+
+
         //public void LoadProducts()
         //{
         //    Products.Clear();
@@ -143,6 +179,30 @@ namespace ZebraSCannerTest1.ViewModels
         //    _db.SaveChanges();
         //    Products.Insert(0, newProduct);
         //}
+        private async Task OnImportExcelAsync()
+        {
+            try
+            {
+                var result = await FilePicker.PickAsync(new PickOptions
+                {
+                    PickerTitle = "Select Excel File",
+                    FileTypes = FileTypes.Excel
+                });
+
+                if (result != null)
+                {
+                    await _importService.ImportExcelAsync(result.FullPath);
+
+                    LoadProducts();
+
+                    await Application.Current.MainPage.DisplayAlert("Success", "Database imported successfully!", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", ex.Message, "OK");
+            }
+        }
 
 
         public void LoadProducts()

@@ -6,16 +6,36 @@
              x:Class="ZebraSCannerTest1.MainPage"
              x:DataType="viewmodel:MainViewModel">
     <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Import DB"
+            Command="{Binding ImportExcelCommand}" />
         <ToolbarItem Text="Logs"
                  Command="{Binding GoToLogsCommand}" />
     </ContentPage.ToolbarItems>
 
-
-    <Grid RowDefinitions="50,50,*" 
+    <AbsoluteLayout>
+        <Grid RowDefinitions="50,50,*" 
           ColumnDefinitions="1,*"
-          Padding="10">
+          Padding="10"
+          AbsoluteLayout.LayoutBounds="0,0,1,1"
+          AbsoluteLayout.LayoutFlags="All">
 
-        <Entry x:Name="barcodeEntry" 
+            <!-- Manual Entry Area -->
+            <StackLayout Grid.Row="0" Grid.ColumnSpan="2" Spacing="5"
+                     IsVisible="{Binding IsManualEntryVisible}">
+                
+                <Entry x:Name="manualBarcodeEntry"
+                   FontSize="20"
+                   Placeholder="Enter Barcode"
+                   Text="ffff" />
+
+                <Button Text="Scan Barcode"
+                    FontSize="20"
+                    IsVisible="{Binding IsManualEntryVisible}"
+                   />
+
+            </StackLayout>
+
+            <Entry x:Name="barcodeEntry" 
                Grid.Row="0" 
                Grid.Column="0"
                FontSize="20"
@@ -30,11 +50,7 @@
            VerticalOptions="Center"
            HorizontalOptions="Center" />
 
-        <Button Text="Scan"
-                Grid.Row="1"
-                Grid.ColumnSpan="2"
-                Clicked="OnStartScannerClicked"
-                FontSize="20" />
+        
 
         <CollectionView 
             x:Name="scannedBarcodesCollectionView"
@@ -82,5 +98,16 @@
 
 
     </Grid>
-
+        <!-- Floating Plus Button -->
+        <ImageButton  
+            Source="pencil.png"
+            WidthRequest="50"
+            HeightRequest="50"
+            VerticalOptions="Center"
+            HorizontalOptions="Center"
+            Padding="0,0,0,0"
+            Command="{Binding ToggleManualEntryCommand}"
+            AbsoluteLayout.LayoutBounds="0.9,0.04,0,0"
+            AbsoluteLayout.LayoutFlags="PositionProportional" />
+    </AbsoluteLayout>
 </ContentPage>
