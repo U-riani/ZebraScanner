@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -12,18 +11,16 @@ using ZebraSCannerTest1.Views;
 using ZebraSCannerTest1.Services;
 using Microsoft.Maui.Storage;
 using ZebraSCannerTest1.Helpers;
-
-
-
+using Microsoft.EntityFrameworkCore;
 
 namespace ZebraSCannerTest1.ViewModels
 {
-
-
     public class MainViewModel : INotifyPropertyChanged
     {
         private readonly AppDbContext _db;
         private readonly ExcelImportService _importService;
+        private Dictionary<string, InitialProduct> _initialCache = new();
+
         private string _currentBarcode;
         private string _showCurrentBarcode;
         private ScannedProduct _selectedProduct;
@@ -31,11 +28,8 @@ namespace ZebraSCannerTest1.ViewModels
         private bool _isShowingAlert = false;
         private bool _isManualEntryVisible = true;
 
-
         public IAsyncRelayCommand ImportExcelCommand { get; }
-
         public IAsyncRelayCommand<ScannedProduct> ItemTappedCommand { get; }
-        // Add this in your ViewModel
         public ObservableCollection<ScannedProduct> ScanHistory { get; set; } = new();
 
         public ScannedProduct SelectedProduct
@@ -50,10 +44,7 @@ namespace ZebraSCannerTest1.ViewModels
 
                     if (_selectedProduct != null && !_isNavigating)
                     {
-                        // Fire-and-forget async navigation
                         _ = NavigateToDetailsAsync(_selectedProduct);
-
-                        // Clear selection so same item can be tapped again later
                         _selectedProduct = null;
                         OnPropertyChanged(nameof(SelectedProduct));
                     }
@@ -78,41 +69,31 @@ namespace ZebraSCannerTest1.ViewModels
 
         private async Task NavigateToDetailsAsync(ScannedProduct product)
         {
-            if (product == null)
-                return;
+            if (product == null) return;
 
-            _isNavigating = true; // block further taps
+            _isNavigating = true;
             try
             {
                 await Shell.Current.GoToAsync($"{nameof(Views.DetailsPage)}?ProductId={product.Id}");
             }
             finally
             {
-                _isNavigating = false; // re-enable taps
-                SelectedProduct = null; // clear selection
-            }
-        }
-        public string CurrentBarcode
-        {
-            get => _currentBarcode;
-            set
-            {
-                _currentBarcode = value;
-                OnPropertyChanged(nameof(CurrentBarcode));
+                _isNavigating = false;
+                SelectedProduct = null;
             }
         }
 
+        public string CurrentBarcode
+        {
+            get => _currentBarcode;
+            set { _currentBarcode = value; OnPropertyChanged(nameof(CurrentBarcode)); }
+        }
 
         public string ShowCurrentBarcode
         {
             get => _showCurrentBarcode;
-            set
-            {
-                _showCurrentBarcode = value;
-                OnPropertyChanged(nameof(ShowCurrentBarcode));
-            }
+            set { _showCurrentBarcode = value; OnPropertyChanged(nameof(ShowCurrentBarcode)); }
         }
-
 
         public ObservableCollection<ScannedProduct> Products { get; set; }
             = new ObservableCollection<ScannedProduct>();
@@ -124,16 +105,15 @@ namespace ZebraSCannerTest1.ViewModels
         public MainViewModel(AppDbContext db, ExcelImportService importService)
         {
             _db = db;
-
             _importService = importService;
 
             LoadProducts();
+            BuildInitialCache();
 
             AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
             GoToDetailsCommand = new AsyncRelayCommand<ScannedProduct>(OnItemTappedAsync);
             GoToLogsCommand = new AsyncRelayCommand(OnGoToLogsAsync);
             ImportExcelCommand = new AsyncRelayCommand(OnImportExcelAsync);
-
 
             ToggleManualEntryCommand = new RelayCommand(() =>
             {
@@ -145,40 +125,27 @@ namespace ZebraSCannerTest1.ViewModels
                 var existing = Products.FirstOrDefault(p => p.Barcode == m.Product.Barcode);
                 if (existing != null)
                 {
-                    // Update existing product in the ObservableCollection
                     existing.Barcode = m.Product.Barcode;
                     existing.Quantity = m.Product.Quantity;
                     existing.UpdatedAt = m.Product.UpdatedAt;
-                    // Move updated product to top
                     Products.Move(Products.IndexOf(existing), 0);
                 }
                 else
                 {
-                    // Add new product if not exists
                     Products.Insert(0, m.Product);
                 }
             });
-
         }
 
+        // 🔥 Cache builder
+        private void BuildInitialCache()
+        {
+            _initialCache = _db.InitialProducts
+                .AsNoTracking()
+                .ToDictionary(p => p.Barcode, p => p);
+            Console.WriteLine($"[DOTNET] Cache built with {_initialCache.Count} items");
+        }
 
-
-        //public void LoadProducts()
-        //{
-        //    Products.Clear();
-        //    foreach (var product in _db.Products.OrderByDescending(p => p.Id))
-        //    {
-        //        Products.Add(product);
-        //    }
-        //}
-
-        //public void AddProduct(string name)
-        //{
-        //   var newProduct = new TestModel { Name = name };
-        //    _db.Products.Add(newProduct);
-        //    _db.SaveChanges();
-        //    Products.Insert(0, newProduct);
-        //}
         private async Task OnImportExcelAsync()
         {
             try
@@ -189,31 +156,52 @@ namespace ZebraSCannerTest1.ViewModels
                     FileTypes = FileTypes.Excel
                 });
 
-                if (result != null)
+                if (result == null)
+                    return;
+
+                string filePath = result.FullPath;
+                Console.WriteLine($"[DOTNET] File picked: {filePath}");
+
+                await _importService.ImportExcelAsync(filePath);
+
+                // 🔄 Refresh cache + UI
+                BuildInitialCache();
+                LoadProducts();
+
+                await MainThread.InvokeOnMainThreadAsync(async () =>
                 {
-                    await _importService.ImportExcelAsync(result.FullPath);
-
-                    LoadProducts();
-
-                    await Application.Current.MainPage.DisplayAlert("Success", "Database imported successfully!", "OK");
-                }
+                    await Application.Current.MainPage.DisplayAlert(
+                        "Success",
+                        "Database imported successfully!",
+                        "OK"
+                    );
+                });
             }
             catch (Exception ex)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", ex.Message, "OK");
+                Console.WriteLine($"[DOTNET] Import ERROR: {ex}");
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    await Application.Current.MainPage.DisplayAlert(
+                        "Error",
+                        ex.Message,
+                        "OK"
+                    );
+                });
             }
         }
-
 
         public void LoadProducts()
         {
             Products.Clear();
             var scannedProducts = _db.ScannedProducts
                 .OrderByDescending(p => p.UpdatedAt)
+                .AsNoTracking()
                 .ToList();
+
             foreach (var scanned in scannedProducts)
             {
-                var initial = _db.InitialProducts.FirstOrDefault(p => p.Barcode == scanned.Barcode);
+                _initialCache.TryGetValue(scanned.Barcode, out var initial);
 
                 Products.Add(new ScannedProduct
                 {
@@ -227,54 +215,16 @@ namespace ZebraSCannerTest1.ViewModels
             }
         }
 
-        //public void AddProduct(string name)
-        //{
-        //    // Check if product already exists in scanned table
-        //    var existing = _db.ScannedProducts.FirstOrDefault(p => p.Name == name);
-        //    if (existing != null)
-        //    {
-        //        existing.Quantity += 1;
-        //        _db.SaveChanges();
-
-        //        var existingInCollection = Products.FirstOrDefault(p => p.Id == existing.Id);
-        //        if (existingInCollection != null)
-        //            existingInCollection.Quantity = existing.Quantity;
-
-        //        return;
-        //    }
-
-        //    // Get initial data from reference table
-        //    var initial = _db.InitialProducts.FirstOrDefault(p => p.Name == name);
-
-        //    var newScanned = new ScannedProduct
-        //    {
-        //        Name = initial?.Name ?? name,
-        //        Quantity = initial?.Quantity ?? 0
-        //    };
-
-        //    _db.ScannedProducts.Add(newScanned);
-        //    _db.SaveChanges();
-
-        //    Products.Insert(0, new ScannedProduct
-        //    {
-        //        Id = newScanned.Id,
-        //        Name = newScanned.Name,
-        //        Quantity = newScanned.Quantity
-        //    });
-        //}
-
-
         public async Task AddProductAsync(string scannedBarcode)
         {
-            if (_isShowingAlert)
-                return;
+            if (_isShowingAlert) return;
+            scannedBarcode = scannedBarcode?.Trim();
 
-            // Check if the scanned barcode exists in InitialProducts
-            var initial = _db.InitialProducts.FirstOrDefault(p => p.Barcode == scannedBarcode);
-            if (initial == null)
+            Console.WriteLine($"[DOTNET] Scanned: '{scannedBarcode}' (len={scannedBarcode?.Length})");
+
+            if (!_initialCache.TryGetValue(scannedBarcode, out var initial))
             {
                 _isShowingAlert = true;
-                // Await the alert to pause execution until user presses OK
                 await MainThread.InvokeOnMainThreadAsync(async () =>
                 {
                     await Application.Current.MainPage.DisplayAlert(
@@ -283,22 +233,17 @@ namespace ZebraSCannerTest1.ViewModels
                         "OK"
                     );
                 });
-
                 _isShowingAlert = false;
-                return; // stop further scanning
+                return;
             }
 
-            // Check if product already exists in ScannedProducts
-            var scanned = _db.ScannedProducts.FirstOrDefault(p => p.Barcode == scannedBarcode);
+            // ✅ Use EF Core async methods, no Task.Run
+            var scanned = await _db.ScannedProducts.FirstOrDefaultAsync(p => p.Barcode == scannedBarcode);
             if (scanned != null)
             {
-                // Increment quantity if already scanned
                 scanned.Quantity += 1;
                 scanned.UpdatedAt = DateTime.Now;
 
-                _db.SaveChanges();
-
-                // Save a log for this scan
                 _db.ScanLogs.Add(new ScanLog
                 {
                     Barcode = scanned.Barcode,
@@ -307,90 +252,60 @@ namespace ZebraSCannerTest1.ViewModels
                     ScannedProductId = scanned.Id,
                     Timestamp = DateTime.Now
                 });
-                _db.SaveChanges();
-
-                // Update ObservableCollection
-                var existingInCollection = Products.FirstOrDefault(p => p.Barcode == scanned.Barcode);
-                if (existingInCollection != null)
+            }
+            else
+            {
+                var newScanned = new ScannedProduct
                 {
-                    existingInCollection.Quantity = scanned.Quantity;
-                    Products.Move(Products.IndexOf(existingInCollection), 0);
+                    Barcode = initial.Barcode,
+                    Quantity = 1,
+                    InitialQuantity = initial.Quantity
+                };
+                _db.ScannedProducts.Add(newScanned);
+                await _db.SaveChangesAsync(); // save once to get Id
 
-                }
-
-                return;
+                _db.ScanLogs.Add(new ScanLog
+                {
+                    Barcode = newScanned.Barcode,
+                    Quantity = newScanned.Quantity,
+                    InitialQuantity = newScanned.InitialQuantity,
+                    ScannedProductId = newScanned.Id,
+                    Timestamp = DateTime.Now
+                });
             }
 
-            // Add new scanned product
-            var newScanned = new ScannedProduct
+            await _db.SaveChangesAsync();
+
+            // ✅ Update UI after DB is done
+            var existingInCollection = Products.FirstOrDefault(p => p.Barcode == scannedBarcode);
+            if (existingInCollection != null)
             {
-                Barcode = initial.Barcode,
-                Quantity = 1, // start with 1 for first scan
-                InitialQuantity = initial.Quantity
-            };
-
-            _db.ScannedProducts.Add(newScanned);
-            _db.SaveChanges();
-
-            // ✅ Save log for first scan
-            _db.ScanLogs.Add(new ScanLog
+                existingInCollection.Quantity += 1;
+                Products.Move(Products.IndexOf(existingInCollection), 0);
+            }
+            else
             {
-                Barcode = newScanned.Barcode,
-                Quantity = newScanned.Quantity,
-                InitialQuantity = newScanned.InitialQuantity, // take initial quantity from ScannedProduct
-                ScannedProductId = newScanned.Id,
-                Timestamp = DateTime.Now
-            });
-            _db.SaveChanges();
-
-
-
-            Products.Insert(0, new ScannedProduct
-            {
-                Id = newScanned.Id,
-                Barcode = newScanned.Barcode,
-                Quantity = newScanned.Quantity,
-                InitialQuantity = newScanned.InitialQuantity
-            });
-        }
-
-
-        private async Task GoToDetailsAsync(ScannedProduct product)
-        {
-            if (product == null)
-                return;
-
-            var navigationParameter = new Dictionary<string, object>
-    {
-        { "ProductId", product.Id }
-    };
-
-            await Shell.Current.GoToAsync(nameof(DetailsPage), true, navigationParameter);
-        }
-
-
-        private void OnGoToDetails(IList selection)
-        {
-            if (selection?.Count > 0 && selection[0] is ScannedProduct selectedProduct)
-            {
-                // Navigate to details page with selectedProduct
+                Products.Insert(0, new ScannedProduct
+                {
+                    Barcode = scannedBarcode,
+                    Quantity = 1,
+                    InitialQuantity = initial.Quantity
+                });
             }
         }
+
 
         private async Task OnItemTappedAsync(ScannedProduct product)
         {
-            if (product == null)
-                return;
-
-            // Navigate to DetailsPage using Shell routing
+            if (product == null) return;
             await Shell.Current.GoToAsync($"{nameof(Views.DetailsPage)}?ProductId={product.Id}");
         }
+
         private async Task OnGoToLogsAsync()
         {
             await Shell.Current.GoToAsync(nameof(LogsPage));
         }
 
-        // Boilerplate for property change notifications
         public event PropertyChangedEventHandler PropertyChanged;
         void OnPropertyChanged([CallerMemberName] string name = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

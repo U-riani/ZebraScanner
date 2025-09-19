@@ -1,47 +1,54 @@
-﻿using ClosedXML.Excel;
+﻿using MiniExcelLibs;
 using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Models;
 
-namespace ZebraSCannerTest1.Services;
-
-public class ExcelImportService
+namespace ZebraSCannerTest1.Services
 {
-    private readonly AppDbContext _db;
-
-    public ExcelImportService(AppDbContext db)
+    public class ExcelImportService
     {
-        _db = db;
-    }
+        private readonly AppDbContext _db;
 
-    public async Task ImportExcelAsync(string filePath)
-    {
-        using var workbook = new XLWorkbook(filePath);
-        var worksheet = workbook.Worksheets.First();
-
-        // Assuming row 1 = headers
-        foreach (var row in worksheet.RowsUsed().Skip(1))
+        public ExcelImportService(AppDbContext db)
         {
-            var id = row.Cell(1).GetValue<int>();
-            var barcode = row.Cell(2).GetValue<string>();
-            var quantity = row.Cell(3).GetValue<int>();
-
-            // Insert into InitialProducts
-            var existing = _db.InitialProducts.FirstOrDefault(p => p.Barcode == barcode);
-            if (existing == null)
-            {
-                _db.InitialProducts.Add(new InitialProduct
-                {
-                    Id = id,
-                    Barcode = barcode,
-                    Quantity = quantity
-                });
-            }
-            else
-            {
-                existing.Quantity = quantity; // update if exists
-            }
+            _db = db;
         }
 
-        await _db.SaveChangesAsync();
+        public async Task ImportExcelAsync(string filePath)
+        {
+            Console.WriteLine($"[DOTNET] Importing from Excel: {filePath}");
+
+            var rows = MiniExcel.Query<ExcelProductDto>(filePath).ToList();
+
+            foreach (var row in rows)
+            {
+                if (string.IsNullOrWhiteSpace(row.Barcode))
+                {
+                    Console.WriteLine("[DOTNET] ❌ Skipping row - empty Barcode");
+                    continue;
+                }
+
+                string barcode = row.Barcode.Trim();
+
+                Console.WriteLine($"[DOTNET] Import Row => Id={row.Id}, Barcode='{barcode}', Qty={row.Quantity}");
+
+                var existing = _db.InitialProducts.FirstOrDefault(p => p.Barcode == barcode);
+                if (existing == null)
+                {
+                    _db.InitialProducts.Add(new InitialProduct
+                    {
+                        Id = row.Id,
+                        Barcode = barcode,
+                        Quantity = row.Quantity
+                    });
+                }
+                else
+                {
+                    existing.Quantity = row.Quantity;
+                }
+            }
+
+            await _db.SaveChangesAsync();
+            Console.WriteLine($"[DOTNET] ✅ Import finished. InitialProducts count = {_db.InitialProducts.Count()}");
+        }
     }
 }
