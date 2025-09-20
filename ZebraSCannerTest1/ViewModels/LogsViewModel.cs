@@ -14,19 +14,15 @@ public class LogsViewModel : INotifyPropertyChanged
 
     public ObservableCollection<ScanLog> Logs { get; set; } = new();
 
-    public LogsViewModel(AppDbContext db) // DI
+    public LogsViewModel(AppDbContext db)
     {
         _db = db;
         LoadLogs();
 
-        // Subscribe to new ScanLog messages
         WeakReferenceMessenger.Default.Register<NewScanLogMessage>(this, (r, m) =>
         {
-            //// Insert at the top
-            //Logs.Insert(0, m.Value);
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                // Insert at top
                 Logs.Insert(0, m.Value);
             });
         });
@@ -36,7 +32,7 @@ public class LogsViewModel : INotifyPropertyChanged
     {
         Logs.Clear();
         var history = _db.ScanLogs
-            .OrderByDescending(l => l.Timestamp) // most recent first
+            .OrderByDescending(l => l.Timestamp)
             .ToList();
 
         foreach (var item in history)

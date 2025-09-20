@@ -1,18 +1,21 @@
-<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.ViewModels"
              x:Class="ZebraSCannerTest1.Views.DetailsPage"
              x:DataType="viewmodel:DetailsViewModel"
              Title="Details">
+
     <VerticalStackLayout Padding="20">
         <Label Text="BARCODE"/>
-        <Label Text="{Binding Product.Barcode}" FontSize="20" Margin="0,0,0,30"/>
+        <Label Text="{Binding ProductBarcode}" FontSize="20" Margin="0,0,0,30"/>
 
-        <Label Text="QUANTITY"/>
-        <Entry Text="{Binding Product.Quantity}" Placeholder="Quantity" FontSize="20" Margin="0,0,0,8"/>
+        <Label Text="SCANNED QUANTITY"/>
+        <Entry Text="{Binding ScannedQuantity, Mode=TwoWay}"
+               Keyboard="Numeric" FontSize="20" Margin="0,0,0,8"/>
 
-        <Label Text="{Binding SaveStatus}" TextColor="Green" FontAttributes="Bold" Margin="0,0,0,15"/>
-        <Button Text="Save" Command="{Binding SaveUpdatedDetailsCommand}"/>
+        <Label Text="INITIAL QUANTITY"/>
+        <Label Text="{Binding InitialQuantity}" FontSize="20" Margin="0,0,0,8"/>
+
+        <Button Text="Save" Command="{Binding SaveCommand}"/>
     </VerticalStackLayout>
 </ContentPage>

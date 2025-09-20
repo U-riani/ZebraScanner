@@ -24,12 +24,12 @@ namespace ZebraSCannerTest1
 
             string dbPath = Path.Combine(FileSystem.AppDataDirectory, "zebraData.db");
 
-            //  Delete existing database for testing purposes
-            if (File.Exists(dbPath))
-            {
-                File.Delete(dbPath);
-                Console.WriteLine("Database deleted.");
-            }
+            ////  Delete existing database for testing purposes
+            //if (File.Exists(dbPath))
+            //{
+            //    File.Delete(dbPath);
+            //    Console.WriteLine("Database deleted.");
+            //}
 
             builder.Services.AddSingleton<AppDbContext>(s =>
             {
