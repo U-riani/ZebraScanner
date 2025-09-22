@@ -1,11 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Helpers;
 using ZebraSCannerTest1.Messages;
 using ZebraSCannerTest1.Models;
@@ -16,10 +15,10 @@ namespace ZebraSCannerTest1.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        private readonly AppDbContext _db;
+        private readonly SqliteConnection _conn;
         private readonly ExcelImportService _importService;
 
-        // Fast lookup caches
+        // Caches
         private Dictionary<string, InitialProduct> _initialCache = new();
         private Dictionary<string, ScannedProduct> _scannedCache = new();
 
@@ -31,15 +30,15 @@ namespace ZebraSCannerTest1.ViewModels
         private bool _isShowingAlert;
         private bool _isManualEntryVisible = true;
 
-        // background save control
+        // Background save control
         private readonly object _saveLock = new();
         private bool _savePending;
 
         public ObservableCollection<ScannedProduct> Products { get; } = new();
 
-        public MainViewModel(AppDbContext db, ExcelImportService importService)
+        public MainViewModel(SqliteConnection conn, ExcelImportService importService)
         {
-            _db = db;
+            _conn = conn;
             _importService = importService;
 
             LoadProducts();
@@ -52,8 +51,31 @@ namespace ZebraSCannerTest1.ViewModels
             ImportExcelCommand = new AsyncRelayCommand(OnImportExcelAsync);
             ToggleManualEntryCommand = new RelayCommand(() => IsManualEntryVisible = !IsManualEntryVisible);
 
-            // background periodic save
             Task.Run(SaveLoopAsync);
+
+            // 🔔 Listen for updates from DetailsPage
+            WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(this, (r, m) =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    _scannedCache[m.Product.Barcode] = m.Product;
+
+                    var row = Products.FirstOrDefault(p => p.Barcode == m.Product.Barcode);
+                    if (row != null)
+                    {
+                        row.Quantity = m.Product.Quantity;
+                        row.InitialQuantity = m.Product.InitialQuantity;
+                        row.UpdatedAt = m.Product.UpdatedAt;
+                        Products.Move(Products.IndexOf(row), 0);
+                    }
+                    else
+                    {
+                        Products.Insert(0, m.Product);
+                    }
+
+                    lock (_saveLock) _savePending = true;
+                });
+            });
         }
 
         // ====== Bindable properties ======
@@ -103,17 +125,46 @@ namespace ZebraSCannerTest1.ViewModels
         // ====== Cache builders ======
         private void BuildInitialCache()
         {
-            _initialCache = _db.InitialProducts
-                .AsNoTracking()
-                .ToDictionary(p => p.Barcode, p => p);
+            var dict = new Dictionary<string, InitialProduct>();
+
+            using var cmd = _conn.CreateCommand();
+            cmd.CommandText = "SELECT Id, Barcode, Quantity FROM InitialProducts";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                dict[reader.GetString(1)] = new InitialProduct
+                {
+                    Id = reader.GetInt32(0),
+                    Barcode = reader.GetString(1),
+                    Quantity = reader.GetInt32(2)
+                };
+            }
+            _initialCache = dict;
+
             Console.WriteLine($"[DOTNET] Initial cache size: {_initialCache.Count}");
         }
 
         private void BuildScannedCache()
         {
-            _scannedCache = _db.ScannedProducts
-                .AsNoTracking()
-                .ToDictionary(p => p.Barcode, p => p);
+            var dict = new Dictionary<string, ScannedProduct>();
+
+            using var cmd = _conn.CreateCommand();
+            cmd.CommandText = "SELECT Id, Barcode, Quantity, InitialQuantity, CreatedAt, UpdatedAt FROM ScannedProducts";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                dict[reader.GetString(1)] = new ScannedProduct
+                {
+                    Id = reader.GetInt32(0),
+                    Barcode = reader.GetString(1),
+                    Quantity = reader.GetInt32(2),
+                    InitialQuantity = reader.GetInt32(3),
+                    CreatedAt = DateTime.Parse(reader.GetString(4)),
+                    UpdatedAt = DateTime.Parse(reader.GetString(5))
+                };
+            }
+            _scannedCache = dict;
+
             Console.WriteLine($"[DOTNET] Scanned cache size: {_scannedCache.Count}");
         }
 
@@ -121,23 +172,27 @@ namespace ZebraSCannerTest1.ViewModels
         public void LoadProducts()
         {
             Products.Clear();
-            var list = _db.ScannedProducts.AsNoTracking().OrderByDescending(p => p.UpdatedAt).ToList();
-            foreach (var s in list)
+
+            using var cmd = _conn.CreateCommand();
+            cmd.CommandText = "SELECT Id, Barcode, Quantity, InitialQuantity, CreatedAt, UpdatedAt FROM ScannedProducts ORDER BY UpdatedAt DESC";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
             {
-                _initialCache.TryGetValue(s.Barcode, out var init);
+                _initialCache.TryGetValue(reader.GetString(1), out var init);
+
                 Products.Add(new ScannedProduct
                 {
-                    Id = s.Id,
-                    Barcode = s.Barcode,
-                    Quantity = s.Quantity,
-                    InitialQuantity = init?.Quantity ?? 0,
-                    CreatedAt = s.CreatedAt,
-                    UpdatedAt = s.UpdatedAt
+                    Id = reader.GetInt32(0),
+                    Barcode = reader.GetString(1),
+                    Quantity = reader.GetInt32(2),
+                    InitialQuantity = init?.Quantity ?? reader.GetInt32(3),
+                    CreatedAt = DateTime.Parse(reader.GetString(4)),
+                    UpdatedAt = DateTime.Parse(reader.GetString(5))
                 });
             }
         }
 
-        // ====== FAST scan path (no DB hit, only memory; DB saved in background) ======
+        // ====== FAST scan path ======
         public async Task AddProductAsync(string scannedBarcode)
         {
             if (_isShowingAlert) return;
@@ -154,10 +209,9 @@ namespace ZebraSCannerTest1.ViewModels
                 return;
             }
 
-            // Update the in-memory scanned cache
             if (_scannedCache.TryGetValue(scannedBarcode, out var scanned))
             {
-                scanned.Quantity += 1;
+                scanned.Quantity++;
                 scanned.UpdatedAt = DateTime.Now;
             }
             else
@@ -173,7 +227,6 @@ namespace ZebraSCannerTest1.ViewModels
                 _scannedCache[scannedBarcode] = scanned;
             }
 
-            // Instant UI update
             var existing = Products.FirstOrDefault(p => p.Barcode == scannedBarcode);
             if (existing != null)
             {
@@ -183,17 +236,9 @@ namespace ZebraSCannerTest1.ViewModels
             }
             else
             {
-                Products.Insert(0, new ScannedProduct
-                {
-                    Barcode = scanned.Barcode,
-                    Quantity = scanned.Quantity,
-                    InitialQuantity = scanned.InitialQuantity,
-                    CreatedAt = scanned.CreatedAt,
-                    UpdatedAt = scanned.UpdatedAt
-                });
+                Products.Insert(0, scanned);
             }
 
-            // flag background save
             lock (_saveLock) _savePending = true;
         }
 
@@ -215,7 +260,7 @@ namespace ZebraSCannerTest1.ViewModels
 
                 try
                 {
-                    await SaveCachesToDbAsync();
+                    SaveCachesToDb();
                 }
                 catch (Exception ex)
                 {
@@ -224,49 +269,54 @@ namespace ZebraSCannerTest1.ViewModels
             }
         }
 
-        private async Task SaveCachesToDbAsync()
+        private void SaveCachesToDb()
         {
-            var snapshot = _scannedCache.Values.Select(v => new
-            {
-                v.Barcode,
-                v.Quantity,
-                v.InitialQuantity,
-                v.CreatedAt,
-                v.UpdatedAt
-            }).ToList();
+            using var tx = _conn.BeginTransaction();
 
-            foreach (var s in snapshot)
+            foreach (var s in _scannedCache.Values)
             {
-                var dbItem = await _db.ScannedProducts.FirstOrDefaultAsync(p => p.Barcode == s.Barcode);
-                if (dbItem != null)
-                {
-                    dbItem.Quantity = s.Quantity;
-                    dbItem.UpdatedAt = s.UpdatedAt;
-                }
-                else
-                {
-                    _db.ScannedProducts.Add(new ScannedProduct
+                // Upsert ScannedProducts
+                using var upsertCmd = _conn.CreateCommand();
+                upsertCmd.CommandText = @"
+            INSERT INTO ScannedProducts (Id, Barcode, Quantity, InitialQuantity, CreatedAt, UpdatedAt)
+            VALUES ($id,$barcode,$qty,$init,$created,$updated)
+            ON CONFLICT(Barcode) DO UPDATE SET
+                Quantity=$qty,
+                UpdatedAt=$updated";
+                upsertCmd.Parameters.AddWithValue("$id", s.Id);
+                upsertCmd.Parameters.AddWithValue("$barcode", s.Barcode);
+                upsertCmd.Parameters.AddWithValue("$qty", s.Quantity);
+                upsertCmd.Parameters.AddWithValue("$init", s.InitialQuantity);
+                upsertCmd.Parameters.AddWithValue("$created", s.CreatedAt.ToString("o"));
+                upsertCmd.Parameters.AddWithValue("$updated", s.UpdatedAt.ToString("o"));
+                upsertCmd.ExecuteNonQuery();
+
+                // Insert ScanLog
+                using var logCmd = _conn.CreateCommand();
+                logCmd.CommandText = @"
+            INSERT INTO ScanLogs (Barcode, Quantity, InitialQuantity, Timestamp)
+            VALUES ($barcode,$qty,$init,$ts)";
+                logCmd.Parameters.AddWithValue("$barcode", s.Barcode);
+                logCmd.Parameters.AddWithValue("$qty", s.Quantity);
+                logCmd.Parameters.AddWithValue("$init", s.InitialQuantity);
+                logCmd.Parameters.AddWithValue("$ts", DateTime.Now.ToString("o"));
+                logCmd.ExecuteNonQuery();
+
+                // 🔔 Tell LogsViewModel immediately
+                WeakReferenceMessenger.Default.Send(
+                    new NewScanLogMessage(new ScanLog
                     {
                         Barcode = s.Barcode,
                         Quantity = s.Quantity,
                         InitialQuantity = s.InitialQuantity,
-                        CreatedAt = s.CreatedAt,
-                        UpdatedAt = s.UpdatedAt
-                    });
-                }
-
-                _db.ScanLogs.Add(new ScanLog
-                {
-                    Barcode = s.Barcode,
-                    Quantity = s.Quantity,
-                    InitialQuantity = s.InitialQuantity,
-                    Timestamp = DateTime.Now
-                });
+                        Timestamp = DateTime.Now
+                    }));
             }
 
-            await _db.SaveChangesAsync();
+            tx.Commit();
             Console.WriteLine("[DOTNET] Background save completed.");
         }
+
 
         // ====== Import & navigation ======
         private async Task OnImportExcelAsync()
@@ -291,10 +341,7 @@ namespace ZebraSCannerTest1.ViewModels
             try
             {
                 await Shell.Current.GoToAsync(
-                    $"{nameof(DetailsPage)}" +
-                    $"?Barcode={product.Barcode}" +
-                    $"&Quantity={product.Quantity}" +
-                    $"&InitialQuantity={product.InitialQuantity}");
+                    $"{nameof(DetailsPage)}?Barcode={product.Barcode}&Quantity={product.Quantity}&InitialQuantity={product.InitialQuantity}");
             }
             finally
             {
@@ -306,15 +353,9 @@ namespace ZebraSCannerTest1.ViewModels
         private async Task OnItemTappedAsync(ScannedProduct product)
         {
             if (product == null) return;
-
             await Shell.Current.GoToAsync(
-                $"{nameof(DetailsPage)}" +
-                $"?Barcode={product.Barcode}" +
-                $"&Quantity={product.Quantity}" +
-                $"&InitialQuantity={product.InitialQuantity}");
+                $"{nameof(DetailsPage)}?Barcode={product.Barcode}&Quantity={product.Quantity}&InitialQuantity={product.InitialQuantity}");
         }
-
-
 
         private async Task OnGoToLogsAsync()
         {
