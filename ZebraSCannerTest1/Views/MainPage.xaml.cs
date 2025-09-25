@@ -10,83 +10,48 @@ public partial class MainPage : ContentPage
     {
         InitializeComponent();
         _viewModel = vm;
-        BindingContext = _viewModel; // connect ViewModel to XAML
+        BindingContext = _viewModel;
 
-        //barcodeEntry.TextChanged += (s, args) =>
-        {                   
-            //barcodeEntry.Text = string.Empty;
-
-            var scannedData = _viewModel.CurrentBarcode;
-            if (!string.IsNullOrWhiteSpace(scannedData))
-            {
-                _viewModel.ShowCurrentBarcode = scannedData;
-                _viewModel.AddProductAsync(scannedData);
-                _viewModel.CurrentBarcode = string.Empty; // clear Entry
-
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    if(_viewModel.Products.Count > 0)
-                    {
-                        scannedBarcodesCollectionView.ScrollTo(
-                            _viewModel.Products[0], 
-                            position: ScrollToPosition.Start, 
-                            animate: true
-                        );
-                    }
-                });
-            }
-        };
-
+        // Focus entry when page loads
         barcodeEntry.Loaded += (s, e) =>
         {
             MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
         };
+
+        // Scanner completes input (Enter key)
+        barcodeEntry.Completed += BarcodeEntry_Completed;
     }
 
-    protected override void OnAppearing()
+    private async void BarcodeEntry_Completed(object sender, EventArgs e)
     {
-        base.OnAppearing();
-
-        barcodeEntry.TextChanged -= BarcodeEntry_TextChanged; // avoid double subscriptions
-        barcodeEntry.TextChanged += BarcodeEntry_TextChanged;
-
-        MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
-    }
-
-    private async void BarcodeEntry_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        var scannedData = e.NewTextValue; // use the Entry's new value
-        if (!string.IsNullOrWhiteSpace(scannedData))
+        var scannedData = barcodeEntry.Text?.Trim();
+        if (!string.IsNullOrEmpty(scannedData))
         {
+            // Update label BEFORE adding
             _viewModel.ShowCurrentBarcode = scannedData;
-            await _viewModel.AddProductAsync(scannedData);
 
-            barcodeEntry.Text = string.Empty; // reset Entry
+            await _viewModel.AddProductAsync(scannedData);
+            barcodeEntry.Text = string.Empty;
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
+                barcodeEntry.Focus();
+
                 if (_viewModel.Products.Count > 0)
                 {
                     scannedBarcodesCollectionView.ScrollTo(
                         _viewModel.Products[0],
                         position: ScrollToPosition.Start,
-                        animate: true
+                        animate: false
                     );
                 }
             });
         }
     }
 
-    private async void OnStartScannerClicked(object sender, EventArgs e)
+    protected override void OnAppearing()
     {
-        // For now, simulate adding a scanned barcode
-        string scannedData = _viewModel.CurrentBarcode;
-        if (!string.IsNullOrWhiteSpace(scannedData))
-        {
-            await _viewModel.AddProductAsync(scannedData);
-            _viewModel.CurrentBarcode = string.Empty; // clears Entry
-
-        }
-
+        base.OnAppearing();
+        MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
     }
 }

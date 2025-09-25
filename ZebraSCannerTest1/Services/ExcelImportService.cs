@@ -1,53 +1,54 @@
 ﻿using Microsoft.Data.Sqlite;
 using MiniExcelLibs;
-using ZebraSCannerTest1.Models;
+using ZebraSCannerTest1.Dtos;
 
-namespace ZebraSCannerTest1.Services;
-
-public class ExcelImportService
+namespace ZebraSCannerTest1.Services
 {
-    private readonly SqliteConnection _conn;
-
-    public ExcelImportService(SqliteConnection conn)
+    public class ExcelImportService
     {
-        _conn = conn;
-    }
+        private readonly SqliteConnection _conn;
 
-    public async Task ImportExcelAsync(string filePath)
-    {
-        Console.WriteLine($"[DOTNET] Importing from Excel: {filePath}");
-        var rows = MiniExcel.Query<ExcelProductDto>(filePath).ToList();
-        Console.WriteLine($"[DOTNET] Read {rows.Count} rows from Excel");
+        public ExcelImportService(SqliteConnection conn) => _conn = conn;
 
-        await _conn.OpenAsync();
-        using var tx = _conn.BeginTransaction();
-
-        // Prepared insert/update
-        var insertCmd = _conn.CreateCommand();
-        insertCmd.CommandText = @"
-            INSERT INTO InitialProducts (Id, Barcode, Quantity)
-            VALUES ($id, $barcode, $qty)
-            ON CONFLICT(Barcode) DO UPDATE SET Quantity = $qty;";
-        insertCmd.Parameters.Add("$id", SqliteType.Integer);
-        insertCmd.Parameters.Add("$barcode", SqliteType.Text);
-        insertCmd.Parameters.Add("$qty", SqliteType.Integer);
-
-        int processed = 0;
-        foreach (var row in rows)
+        public async Task ImportExcelAsync(string filePath)
         {
-            if (string.IsNullOrWhiteSpace(row.Barcode)) continue;
+            Console.WriteLine($"[DOTNET] Importing from Excel: {filePath}");
+            var rows = MiniExcel.Query<ExcelProductDto>(filePath).ToList();
+            Console.WriteLine($"[DOTNET] Read {rows.Count} rows from Excel");
 
-            insertCmd.Parameters["$id"].Value = row.Id;
-            insertCmd.Parameters["$barcode"].Value = row.Barcode.Trim();
-            insertCmd.Parameters["$qty"].Value = row.Quantity;
-            await insertCmd.ExecuteNonQueryAsync();
+            using var tx = _conn.BeginTransaction();
 
-            processed++;
-            if (processed % 1000 == 0)
-                Console.WriteLine($"[DOTNET] Imported {processed}/{rows.Count}...");
+            using var upsert = _conn.CreateCommand();
+            upsert.Transaction = tx;
+            upsert.CommandText = @"
+INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+VALUES ($barcode, $initial, COALESCE((SELECT ScannedQuantity FROM Products WHERE Barcode=$barcode),0), $created, $updated)
+ON CONFLICT(Barcode) DO UPDATE SET
+    InitialQuantity = $initial,
+    UpdatedAt       = $updated;";
+            upsert.Parameters.Add("$barcode", SqliteType.Text);
+            upsert.Parameters.Add("$initial", SqliteType.Integer);
+            upsert.Parameters.Add("$created", SqliteType.Text);
+            upsert.Parameters.Add("$updated", SqliteType.Text);
+
+            int processed = 0;
+            foreach (var r in rows)
+            {
+                if (string.IsNullOrWhiteSpace(r.Barcode)) continue;
+
+                upsert.Parameters["$barcode"].Value = r.Barcode.Trim();
+                upsert.Parameters["$initial"].Value = r.Quantity;
+                var now = DateTime.UtcNow.ToString("o");
+                upsert.Parameters["$created"].Value = now;
+                upsert.Parameters["$updated"].Value = now;
+                upsert.ExecuteNonQuery();
+
+                if (++processed % 1000 == 0)
+                    Console.WriteLine($"[DOTNET] Imported {processed}/{rows.Count}...");
+            }
+
+            tx.Commit();
+            Console.WriteLine($"[DOTNET] ✅ Import finished. Total rows = {processed}");
         }
-
-        await tx.CommitAsync();
-        Console.WriteLine($"[DOTNET] ✅ Import finished. Total rows = {processed}");
     }
 }

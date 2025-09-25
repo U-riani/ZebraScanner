@@ -1,6 +1,8 @@
-﻿public class ExcelProductDto
+﻿namespace ZebraSCannerTest1.Dtos
 {
-    public int Id { get; set; }
-    public string Barcode { get; set; }
-    public int Quantity { get; set; }
+    public class ExcelProductDto
+    {
+        public string Barcode { get; set; }
+        public int Quantity { get; set; } // Initial quantity from Excel
+    }
 }

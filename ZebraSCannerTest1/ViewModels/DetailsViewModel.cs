@@ -30,96 +30,44 @@ public partial class DetailsViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(ProductBarcode)) return;
 
-        // Try find existing scanned product
-        int? existingId = null;
-        using (var checkCmd = _conn.CreateCommand())
+        var now = DateTime.UtcNow.ToString("o");
+
+        using (var cmd = _conn.CreateCommand())
         {
-            checkCmd.CommandText = "SELECT Id FROM ScannedProducts WHERE Barcode=$barcode LIMIT 1";
-            checkCmd.Parameters.AddWithValue("$barcode", ProductBarcode);
-            var result = await checkCmd.ExecuteScalarAsync();
-            if (result != null && result != DBNull.Value)
-                existingId = Convert.ToInt32(result);
+            cmd.CommandText = @"
+INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+VALUES ($barcode,$initial,$scanned,$created,$updated)
+ON CONFLICT(Barcode) DO UPDATE SET
+    ScannedQuantity = $scanned,
+    InitialQuantity = $initial,
+    UpdatedAt = $updated;";
+            cmd.Parameters.AddWithValue("$barcode", ProductBarcode);
+            cmd.Parameters.AddWithValue("$initial", InitialQuantity);
+            cmd.Parameters.AddWithValue("$scanned", ScannedQuantity);
+            cmd.Parameters.AddWithValue("$created", now);
+            cmd.Parameters.AddWithValue("$updated", now);
+            cmd.ExecuteNonQuery();
         }
 
-        if (existingId.HasValue)
+        using (var log = _conn.CreateCommand())
         {
-            // Update
-            using var updateCmd = _conn.CreateCommand();
-            updateCmd.CommandText = @"
-                UPDATE ScannedProducts
-                SET Quantity=$qty, UpdatedAt=$updatedAt
-                WHERE Id=$id";
-            updateCmd.Parameters.AddWithValue("$qty", ScannedQuantity);
-            updateCmd.Parameters.AddWithValue("$updatedAt", DateTime.Now.ToString("o"));
-            updateCmd.Parameters.AddWithValue("$id", existingId.Value);
-            await updateCmd.ExecuteNonQueryAsync();
-
-            // Log
-            using var logCmd = _conn.CreateCommand();
-            logCmd.CommandText = @"
-                INSERT INTO ScanLogs (Barcode, Quantity, InitialQuantity, ScannedProductId, Timestamp)
-                VALUES ($barcode,$qty,$init,$spid,$ts)";
-            logCmd.Parameters.AddWithValue("$barcode", ProductBarcode);
-            logCmd.Parameters.AddWithValue("$qty", ScannedQuantity);
-            logCmd.Parameters.AddWithValue("$init", InitialQuantity);
-            logCmd.Parameters.AddWithValue("$spid", existingId.Value);
-            logCmd.Parameters.AddWithValue("$ts", DateTime.Now.ToString("o"));
-            await logCmd.ExecuteNonQueryAsync();
-
-            WeakReferenceMessenger.Default.Send(
-                new ProductUpdatedMessage(new ScannedProduct
-                {
-                    Id = existingId.Value,
-                    Barcode = ProductBarcode,
-                    Quantity = ScannedQuantity,
-                    InitialQuantity = InitialQuantity,
-                    UpdatedAt = DateTime.Now
-                }));
+            log.CommandText = @"
+INSERT INTO ScanLogs (Barcode, ScannedQuantity, Timestamp)
+VALUES ($barcode,$scanned,$ts)";
+            log.Parameters.AddWithValue("$barcode", ProductBarcode);
+            log.Parameters.AddWithValue("$scanned", ScannedQuantity);
+            log.Parameters.AddWithValue("$ts", DateTime.UtcNow.ToString("o"));
+            log.ExecuteNonQuery();
         }
-        else
+
+        WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(new Product
         {
-            // Insert new
-            using var insertCmd = _conn.CreateCommand();
-            insertCmd.CommandText = @"
-                INSERT INTO ScannedProducts (Barcode, Quantity, InitialQuantity, CreatedAt, UpdatedAt)
-                VALUES ($barcode,$qty,$init,$created,$updated)";
-            insertCmd.Parameters.AddWithValue("$barcode", ProductBarcode);
-            insertCmd.Parameters.AddWithValue("$qty", ScannedQuantity);
-            insertCmd.Parameters.AddWithValue("$init", InitialQuantity);
-            insertCmd.Parameters.AddWithValue("$created", DateTime.Now.ToString("o"));
-            insertCmd.Parameters.AddWithValue("$updated", DateTime.Now.ToString("o"));
-            await insertCmd.ExecuteNonQueryAsync();
-
-            // ✅ fetch last inserted id
-            long newId;
-            using (var idCmd = _conn.CreateCommand())
-            {
-                idCmd.CommandText = "SELECT last_insert_rowid();";
-                newId = (long)(await idCmd.ExecuteScalarAsync());
-            }
-
-            // Insert log
-            using var logCmd = _conn.CreateCommand();
-            logCmd.CommandText = @"
-                INSERT INTO ScanLogs (Barcode, Quantity, InitialQuantity, ScannedProductId, Timestamp)
-                VALUES ($barcode,$qty,$init,$spid,$ts)";
-            logCmd.Parameters.AddWithValue("$barcode", ProductBarcode);
-            logCmd.Parameters.AddWithValue("$qty", ScannedQuantity);
-            logCmd.Parameters.AddWithValue("$init", InitialQuantity);
-            logCmd.Parameters.AddWithValue("$spid", (int)newId);
-            logCmd.Parameters.AddWithValue("$ts", DateTime.Now.ToString("o"));
-            await logCmd.ExecuteNonQueryAsync();
-
-            WeakReferenceMessenger.Default.Send(
-                new ProductUpdatedMessage(new ScannedProduct
-                {
-                    Id = (int)newId,
-                    Barcode = ProductBarcode,
-                    Quantity = ScannedQuantity,
-                    InitialQuantity = InitialQuantity,
-                    UpdatedAt = DateTime.Now
-                }));
-        }
+            Barcode = ProductBarcode,
+            InitialQuantity = InitialQuantity,
+            ScannedQuantity = ScannedQuantity,
+            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
+        }));
 
         await Shell.Current.GoToAsync("..");
     }

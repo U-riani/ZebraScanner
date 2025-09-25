@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
 using System.IO;
 
 namespace ZebraSCannerTest1.Data
@@ -9,38 +8,42 @@ namespace ZebraSCannerTest1.Data
         public static SqliteConnection GetConnection()
         {
             string dbPath = Path.Combine(FileSystem.AppDataDirectory, "scanner.db3");
+
             var conn = new SqliteConnection($"Data Source={dbPath}");
             conn.Open();
 
+            using (var pragma = conn.CreateCommand())
+            {
+                // Fast, safe-enough defaults for mobile
+                pragma.CommandText = @"
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA temp_store = MEMORY;
+PRAGMA page_size = 4096;
+PRAGMA cache_size = -20000;";
+                pragma.ExecuteNonQuery();
+            }
+
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-            CREATE TABLE IF NOT EXISTS InitialProducts (
-                Id INTEGER PRIMARY KEY,
-                Barcode TEXT NOT NULL UNIQUE,
-                Quantity INTEGER NOT NULL
-            );
+CREATE TABLE IF NOT EXISTS Products (
+    Barcode         TEXT PRIMARY KEY,
+    InitialQuantity INTEGER NOT NULL,
+    ScannedQuantity INTEGER NOT NULL,
+    CreatedAt       TEXT NOT NULL,
+    UpdatedAt       TEXT NOT NULL
+);
 
-            CREATE TABLE IF NOT EXISTS ScannedProducts (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Barcode TEXT NOT NULL UNIQUE,
-                Quantity INTEGER NOT NULL,
-                InitialQuantity INTEGER NOT NULL,
-                CreatedAt TEXT NOT NULL,
-                UpdatedAt TEXT NOT NULL
-            );
+CREATE TABLE IF NOT EXISTS ScanLogs (
+    Id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    Barcode         TEXT NOT NULL,
+    ScannedQuantity INTEGER NOT NULL,
+    Timestamp       TEXT NOT NULL,
+    FOREIGN KEY (Barcode) REFERENCES Products (Barcode)
+);
 
-            CREATE TABLE IF NOT EXISTS ScanLogs (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Barcode TEXT NOT NULL,
-                Quantity INTEGER NOT NULL,
-                InitialQuantity INTEGER NOT NULL,
-                Timestamp TEXT NOT NULL,
-                ScannedProductId INTEGER
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_initial_barcode ON InitialProducts(Barcode);
-            CREATE INDEX IF NOT EXISTS idx_scanned_barcode ON ScannedProducts(Barcode);
-            ";
+CREATE INDEX IF NOT EXISTS idx_logs_barcode_ts ON ScanLogs(Barcode, Timestamp DESC);
+";
             cmd.ExecuteNonQuery();
 
             return conn;

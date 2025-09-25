@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ZebraSCannerTest1.Models;
+﻿using ZebraSCannerTest1.Models;
 
-namespace ZebraSCannerTest1.Messages;
-
-public class ProductUpdatedMessage
+namespace ZebraSCannerTest1.Messages
 {
-    public ScannedProduct Product { get; }
-
-    public ProductUpdatedMessage(ScannedProduct product)
+    public class ProductUpdatedMessage
     {
-        Product = product;
+        public Product Product { get; }
+        public ProductUpdatedMessage(Product p) => Product = p;
     }
 }

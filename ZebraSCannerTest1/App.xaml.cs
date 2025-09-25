@@ -1,13 +1,14 @@
-﻿namespace ZebraSCannerTest1
+﻿using ZebraSCannerTest1.ViewModels;
+
+namespace ZebraSCannerTest1
 {
     public partial class App : Application
     {
-        public App()
+        public App(MainViewModel vm)
         {
             InitializeComponent();
-
-            MainPage = new AppShell(); // set your Shell as the main page
-
+            // MainPage created via DI elsewhere; Shell is fine to construct directly
+            MainPage = new AppShell();
         }
     }
 }

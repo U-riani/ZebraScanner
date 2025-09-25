@@ -9,7 +9,7 @@
                     <Grid RowDefinitions="20,30" ColumnDefinitions="Auto,15,Auto,*">
 
                         <Label Grid.Row="0" Grid.ColumnSpan="4" VerticalOptions="Center" Text="{Binding Barcode}" />
-                        <Label Grid.Row="1" Grid.Column="0" VerticalOptions="Center" Text="{Binding Quantity}" />
+                        <Label Grid.Row="1" Grid.Column="0" VerticalOptions="Center" Text="{Binding ScannedQuantity}" />
                         <Label Grid.Row="1" Grid.Column="1" VerticalOptions="Center" HorizontalOptions="Center" Padding="3,0,3,0" FontSize="20" Text="/" />
                         <Label Grid.Row="1" Grid.Column="2" VerticalOptions="Center" Text="{Binding InitialQuantity}" />
                         <Label Grid.Row="1" Grid.Column="3" VerticalOptions="Center" HorizontalOptions="End" Text="{Binding Timestamp}" />
