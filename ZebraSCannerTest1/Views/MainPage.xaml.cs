@@ -1,4 +1,5 @@
 ﻿using ZebraSCannerTest1.ViewModels;
+using ZebraSCannerTest1.Models;
 
 namespace ZebraSCannerTest1;
 
@@ -18,7 +19,35 @@ public partial class MainPage : ContentPage
             MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
         };
 
-        // Scanner completes input (Enter key)
+        //// Scanner completes input (Enter key)
+        //barcodeEntry.Completed += BarcodeEntry_Completed;
+
+        //// 🔥 Subscribe to scroll-to-product event
+        //_viewModel.NewProductAdded += product =>
+        //{
+        //    MainThread.BeginInvokeOnMainThread(() =>
+        //    {
+        //        if (scannedBarcodesCollectionView.ItemsSource != null)
+        //        {
+        //            scannedBarcodesCollectionView.ScrollTo(
+        //                product,
+        //                position: ScrollToPosition.Center,
+        //                animate: true
+        //            );
+        //        }
+        //    });
+        //};
+
+        // Subscribe to scroll event
+        _viewModel.NewProductAdded += (p) =>
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                scannedBarcodesCollectionView.ScrollTo(p, position: ScrollToPosition.MakeVisible, animate: false);
+            });
+        };
+
+        // Scanner completes input
         barcodeEntry.Completed += BarcodeEntry_Completed;
     }
 
@@ -33,19 +62,7 @@ public partial class MainPage : ContentPage
             await _viewModel.AddProductAsync(scannedData);
             barcodeEntry.Text = string.Empty;
 
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                barcodeEntry.Focus();
-
-                if (_viewModel.Products.Count > 0)
-                {
-                    scannedBarcodesCollectionView.ScrollTo(
-                        _viewModel.Products[0],
-                        position: ScrollToPosition.Start,
-                        animate: false
-                    );
-                }
-            });
+            MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
         }
     }
 

@@ -4,7 +4,8 @@
              xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.ViewModels"
              xmlns:models="clr-namespace:ZebraSCannerTest1.Models"
              x:Class="ZebraSCannerTest1.MainPage"
-             x:DataType="viewmodel:MainViewModel">
+             x:DataType="viewmodel:MainViewModel"
+             BackgroundColor="White">
 
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Import DB" Command="{Binding ImportExcelCommand}" />
@@ -12,52 +13,112 @@
     </ContentPage.ToolbarItems>
 
     <AbsoluteLayout>
-        <Grid RowDefinitions="50,50,*" ColumnDefinitions="1,*" Padding="10"
+
+        <Grid RowDefinitions="50,50,*"
+              ColumnDefinitions="120,*"
+              Padding="10"
               AbsoluteLayout.LayoutBounds="0,0,1,1"
               AbsoluteLayout.LayoutFlags="All">
 
-            <!-- Hidden/Background Entry for scanner -->
+            <!-- Scanner input -->
             <Entry x:Name="barcodeEntry"
-               Grid.Row="0"
-               Grid.Column="0"
-               FontSize="20"
-               Placeholder="Scan barcode here"
-               ReturnType="Done"
-               Completed="BarcodeEntry_Completed"
-               Text="{Binding CurrentBarcode, Mode=TwoWay}" />  
+                   Grid.Row="0"
+                   Grid.Column="0"
+                   WidthRequest="120"
+                   HeightRequest="40"
+                   FontSize="18"
+                   Placeholder="Scan barcode"
+                   ReturnType="Done"
+                   Completed="BarcodeEntry_Completed"
+                   Text="{Binding CurrentBarcode, Mode=TwoWay}"
+                   HorizontalOptions="Start"
+                   VerticalOptions="Center"
+                   IsSpellCheckEnabled="False"
+                   IsTextPredictionEnabled="False" />
 
-
-
-            <Label Grid.Row="0" Grid.Column="1" FontSize="20"
+            <!-- Show scanned -->
+            <Label Grid.Row="0"
+                   Grid.Column="1"
+                   FontSize="20"
                    Text="{Binding ShowCurrentBarcode}"
                    BackgroundColor="BlueViolet"
-                   VerticalOptions="Center" HorizontalOptions="Center"/>
+                   TextColor="White"
+                   WidthRequest="200"
+                   HeightRequest="40"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
 
+            <!-- Optimized fast list -->
             <CollectionView x:Name="scannedBarcodesCollectionView"
-                            Grid.Row="2" Grid.ColumnSpan="2"
-                            ItemsSource="{Binding Products}"
-                            SelectionMode="None"
-                            SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">
+                Grid.Row="2"
+                Grid.ColumnSpan="2"
+                ItemsSource="{Binding Products}"
+                SelectionMode="None"
+                SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                ItemSizingStrategy="MeasureFirstItem"
+                VerticalScrollBarVisibility="Always"
+                HorizontalScrollBarVisibility="Never">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical"
+                           ItemSpacing="2"
+                           SnapPointsType="None"
+                           SnapPointsAlignment="Start" />
+                </CollectionView.ItemsLayout>
+
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:Product">
-                        <Frame BorderColor="LightGray" CornerRadius="5" Padding="0" Margin="5" InputTransparent="True">
-                            <Grid ColumnDefinitions="*,Auto,15,Auto" Padding="10"
-                                  BackgroundColor="{Binding QuantityBackgroundColor}">
-                                <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="16" VerticalOptions="Center"/>
-                                <Label Grid.Column="1" Text="{Binding ScannedQuantity}" FontSize="16" VerticalOptions="Center"/>
-                                <Label Grid.Column="2" Text="/" Padding="3,0,3,0" FontSize="25" VerticalOptions="Center"/>
-                                <Label Grid.Column="3" Text="{Binding InitialQuantity}" VerticalOptions="Center"/>
+                        <!-- Border is lighter than Frame -->
+                        <Border Stroke="LightGray"
+                                StrokeThickness="1"
+                                StrokeShape="Rectangle"
+                                Background="{Binding IsHighlighted, Converter={StaticResource BoolToColorConverter}}"
+                                HeightRequest="44"
+                                Margin="1"
+                                Padding="0">
+
+                            <Grid ColumnDefinitions="160,60,20,60"
+                                  RowDefinitions="44"
+                                  Padding="4">
+
+                                <Label Grid.Column="0"
+                                       Text="{Binding Barcode}"
+                                       FontSize="16"
+                                       VerticalOptions="Center"
+                                       LineBreakMode="NoWrap" />
+
+                                <Label Grid.Column="1"
+                                       Text="{Binding ScannedQuantity}"
+                                       FontSize="16"
+                                       HorizontalTextAlignment="Center"
+                                       VerticalOptions="Center" />
+
+                                <Label Grid.Column="2"
+                                       Text="/"
+                                       FontSize="18"
+                                       HorizontalTextAlignment="Center"
+                                       VerticalOptions="Center" />
+
+                                <Label Grid.Column="3"
+                                       Text="{Binding InitialQuantity}"
+                                       FontSize="16"
+                                       HorizontalTextAlignment="Center"
+                                       VerticalOptions="Center" />
                             </Grid>
-                        </Frame>
+                        </Border>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
         </Grid>
 
-        <ImageButton  Source="pencil.png" WidthRequest="50" HeightRequest="50"
-                      VerticalOptions="Center" HorizontalOptions="Center"
-                      Command="{Binding ToggleManualEntryCommand}"
-                      AbsoluteLayout.LayoutBounds="0.9,0.04,0,0"
-                      AbsoluteLayout.LayoutFlags="PositionProportional" />
+        <!-- Floating button -->
+        <ImageButton Source="pencil.png"
+                     WidthRequest="50"
+                     HeightRequest="50"
+                     BackgroundColor="Transparent"
+                     Command="{Binding ToggleManualEntryCommand}"
+                     AbsoluteLayout.LayoutBounds="0.9,0.04,50,140"
+                     AbsoluteLayout.LayoutFlags="PositionProportional" />
     </AbsoluteLayout>
 </ContentPage>
