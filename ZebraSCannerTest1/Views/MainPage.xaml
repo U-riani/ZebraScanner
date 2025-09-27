@@ -24,7 +24,8 @@
                    Placeholder="Scan or type barcode…"
                    ReturnType="Done"
                    ClearButtonVisibility="WhileEditing"
-                   Text="{Binding CurrentBarcode}" />
+                   Text="{Binding CurrentBarcode}" 
+                   TextColor="Black"/>
 
             <Button Grid.Column="1"
                     Text="{Binding IsManualEntryVisible, Converter={StaticResource BoolToTextConverter}, ConverterParameter='Hide,Show'}"
@@ -84,7 +85,7 @@
         <HorizontalStackLayout Spacing="8">
             <Button Text="Logs" Command="{Binding GoToLogsCommand}" />
             <Button Text="Import Excel" Command="{Binding ImportExcelCommand}" />
+            <Button Text="Export Excel" Command="{Binding ExportExcelCommand}" />
         </HorizontalStackLayout>
-
     </VerticalStackLayout>
 </ContentPage>

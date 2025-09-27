@@ -24,6 +24,7 @@ public static class MauiProgram
 
         // Services
         builder.Services.AddSingleton<ExcelImportService>();
+        builder.Services.AddSingleton<ExcelExportService>();
         builder.Services.AddSingleton<LogBufferService>();
 
         // VMs

@@ -17,6 +17,7 @@ public class MainViewModel : INotifyPropertyChanged
 {
     private readonly SqliteConnection _conn;
     private readonly ExcelImportService _importService;
+    private readonly ExcelExportService _exportService;
     private readonly LogBufferService _logBuffer;
 
     // scan queue for thread-safe fast ingestion
@@ -47,10 +48,14 @@ public class MainViewModel : INotifyPropertyChanged
         Enumerable.Range(0, SlotCount).Select(_ => new ProductSlot())
     );
 
-    public MainViewModel(SqliteConnection conn, ExcelImportService importService, LogBufferService logBuffer)
+    public IAsyncRelayCommand ExportExcelCommand { get; }
+
+
+    public MainViewModel(SqliteConnection conn, ExcelImportService importService, ExcelExportService exportService, LogBufferService logBuffer)
     {
         _conn = conn;
         _importService = importService;
+        _exportService = exportService;
         _logBuffer = logBuffer;
 
         // prepare UPSERT
@@ -87,6 +92,9 @@ ON CONFLICT(Barcode) DO UPDATE SET
                 UpdateSlotFromCache(idx, m.Product.Barcode);
             }
         });
+
+        ExportExcelCommand = new AsyncRelayCommand(OnExportExcelAsync);
+
     }
 
     // =========== Bindables ===========
@@ -310,6 +318,35 @@ ON CONFLICT(Barcode) DO UPDATE SET
         if (product == null) return;
         await Shell.Current.GoToAsync($"{nameof(DetailsPage)}?Barcode={product.Barcode}&Quantity={product.ScannedQuantity}&InitialQuantity={product.InitialQuantity}");
     }
+
+
+    private async Task OnExportExcelAsync()
+    {
+#if ANDROID
+        // Save into Downloads with timestamped filename
+        var downloadsPath = Android.OS.Environment
+            .GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads)
+            .AbsolutePath;
+
+        var fileName = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+        var exportPath = Path.Combine(downloadsPath, fileName);
+#else
+    // Fallback for other platforms
+    var fileName = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+    var exportPath = Path.Combine(FileSystem.AppDataDirectory, fileName);
+#endif
+
+        await _exportService.ExportProductsAsync(exportPath);
+
+        Console.WriteLine($"[DOTNET] ✅ Export complete. File saved at {exportPath}");
+
+        await Shell.Current.DisplayAlert(
+            "Export Complete",
+            $"File saved in Downloads:\n{fileName}",
+            "OK"
+        );
+    }
+
 
     private async Task OnGoToLogsAsync() =>
         await Shell.Current.GoToAsync(nameof(LogsPage));
