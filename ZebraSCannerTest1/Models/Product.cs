@@ -31,14 +31,12 @@ public class Product : INotifyPropertyChanged
         set { _updatedAt = value; OnPropertyChanged(); }
     }
 
-    // For highlight flash
     public bool IsHighlighted
     {
         get => _isHighlighted;
         set { _isHighlighted = value; OnPropertyChanged(); }
     }
 
-    // === INotify ===
     public event PropertyChangedEventHandler PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

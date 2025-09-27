@@ -1,8 +1,7 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
-using Microsoft.Maui.Graphics; // for Colors
-
+using Microsoft.Maui.Graphics;
 
 namespace ZebraSCannerTest1.Models
 {
@@ -22,10 +21,11 @@ namespace ZebraSCannerTest1.Models
         public int Quantity
         {
             get => _quantity;
-            set { 
-                _quantity = value; 
+            set
+            {
+                _quantity = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(QuantityBackgroundColor)); // update color
+                OnPropertyChanged(nameof(QuantityBackgroundColor));
             }
         }
 
@@ -42,30 +42,25 @@ namespace ZebraSCannerTest1.Models
             get => _updatedAt;
             set { _updatedAt = value; OnPropertyChanged(); }
         }
-        private int _initialQuantity; // <-- add this
+
+        private int _initialQuantity;
         public int InitialQuantity
         {
             get => _initialQuantity;
             set { _initialQuantity = value; OnPropertyChanged(); }
-
         }
-
 
         public bool IsBelowInitial => Quantity < InitialQuantity;
         public bool IsEqualInitial => Quantity == InitialQuantity;
         public bool IsAboveInitial => Quantity > InitialQuantity;
 
-
         public Color QuantityBackgroundColor
         {
             get
             {
-                if (Quantity < InitialQuantity)
-                    return Colors.Orange;
-                else if (Quantity == InitialQuantity)
-                    return Colors.Green;
-                else
-                    return Colors.OrangeRed;
+                if (Quantity < InitialQuantity) return Colors.Orange;
+                if (Quantity == InitialQuantity) return Colors.Green;
+                return Colors.OrangeRed;
             }
         }
 

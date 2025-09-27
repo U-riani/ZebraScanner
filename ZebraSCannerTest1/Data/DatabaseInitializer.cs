@@ -14,7 +14,6 @@ namespace ZebraSCannerTest1.Data
 
             using (var pragma = conn.CreateCommand())
             {
-                // Fast, safe-enough defaults for mobile
                 pragma.CommandText = @"
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;

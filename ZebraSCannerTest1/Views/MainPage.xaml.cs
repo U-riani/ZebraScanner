@@ -1,7 +1,6 @@
 ﻿using ZebraSCannerTest1.ViewModels;
-using ZebraSCannerTest1.Models;
 
-namespace ZebraSCannerTest1;
+namespace ZebraSCannerTest1.Views;
 
 public partial class MainPage : ContentPage
 {
@@ -19,34 +18,6 @@ public partial class MainPage : ContentPage
             MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
         };
 
-        //// Scanner completes input (Enter key)
-        //barcodeEntry.Completed += BarcodeEntry_Completed;
-
-        //// 🔥 Subscribe to scroll-to-product event
-        //_viewModel.NewProductAdded += product =>
-        //{
-        //    MainThread.BeginInvokeOnMainThread(() =>
-        //    {
-        //        if (scannedBarcodesCollectionView.ItemsSource != null)
-        //        {
-        //            scannedBarcodesCollectionView.ScrollTo(
-        //                product,
-        //                position: ScrollToPosition.Center,
-        //                animate: true
-        //            );
-        //        }
-        //    });
-        //};
-
-        // Subscribe to scroll event
-        _viewModel.NewProductAdded += (p) =>
-        {
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                scannedBarcodesCollectionView.ScrollTo(p, position: ScrollToPosition.MakeVisible, animate: false);
-            });
-        };
-
         // Scanner completes input
         barcodeEntry.Completed += BarcodeEntry_Completed;
     }
@@ -56,9 +27,7 @@ public partial class MainPage : ContentPage
         var scannedData = barcodeEntry.Text?.Trim();
         if (!string.IsNullOrEmpty(scannedData))
         {
-            // Update label BEFORE adding
             _viewModel.ShowCurrentBarcode = scannedData;
-
             await _viewModel.AddProductAsync(scannedData);
             barcodeEntry.Text = string.Empty;
 

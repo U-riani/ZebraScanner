@@ -35,7 +35,7 @@ namespace ZebraSCannerTest1.ViewModels
         public void LoadLogs()
         {
             Logs.Clear();
-            _logBuffer.FlushNow(); // ensure buffered logs are persisted
+            _logBuffer.FlushNow();
 
             using var cmd = _conn.CreateCommand();
             cmd.CommandText = @"

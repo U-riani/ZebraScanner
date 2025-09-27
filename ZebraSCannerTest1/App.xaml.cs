@@ -7,7 +7,6 @@ namespace ZebraSCannerTest1
         public App(MainViewModel vm)
         {
             InitializeComponent();
-            // MainPage created via DI elsewhere; Shell is fine to construct directly
             MainPage = new AppShell();
         }
     }
