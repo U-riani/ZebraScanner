@@ -10,7 +10,7 @@ public class Product : INotifyPropertyChanged
     private DateTime _updatedAt;
     private bool _isHighlighted;
 
-    public string Barcode { get; set; }
+    public string? Barcode { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public int InitialQuantity

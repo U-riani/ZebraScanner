@@ -1,4 +1,5 @@
 ﻿using ZebraSCannerTest1.ViewModels;
+using Microsoft.Maui.ApplicationModel;
 
 namespace ZebraSCannerTest1.Views;
 
@@ -13,10 +14,7 @@ public partial class MainPage : ContentPage
         BindingContext = _viewModel;
 
         // Focus entry when page loads
-        barcodeEntry.Loaded += (s, e) =>
-        {
-            MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
-        };
+        barcodeEntry.Loaded += (s, e) => FocusScannerEntry();
 
         // Scanner completes input
         barcodeEntry.Completed += BarcodeEntry_Completed;
@@ -31,13 +29,38 @@ public partial class MainPage : ContentPage
             await _viewModel.AddProductAsync(scannedData);
             barcodeEntry.Text = string.Empty;
 
-            MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
+            FocusScannerEntry();
         }
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
-        MainThread.BeginInvokeOnMainThread(() => barcodeEntry.Focus());
+
+        var readStatus = await Permissions.RequestAsync<Permissions.StorageRead>();
+        var writeStatus = await Permissions.RequestAsync<Permissions.StorageWrite>();
+
+        if (writeStatus != PermissionStatus.Granted)
+        {
+            await DisplayAlert("Permission needed", "Storage access is required to export Excel files.", "OK");
+        }
+
+        FocusScannerEntry();
+    }
+
+    /// <summary>
+    /// Forcefully resets and refocuses the scanner entry
+    /// Fixes bug where Entry shows focus but does not accept input after navigation
+    /// </summary>
+    private void FocusScannerEntry()
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            // Reset enabled state to forcefully refresh focus
+            barcodeEntry.IsEnabled = false;
+            barcodeEntry.IsEnabled = true;
+
+            barcodeEntry.Focus();
+        });
     }
 }

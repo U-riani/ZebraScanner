@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ZebraSCannerTest1.Views.ScannedProductsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.ViewModels"
+    x:DataType="viewmodel:ScannedProductsViewModel"
+    Title="Scanned Products Stats">
+
+    <VerticalStackLayout Padding="20" Spacing="15">
+        <Label Text="📊 Scanned Products Statistics" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" />
+
+        <Frame Padding="10" BackgroundColor="#eeeeee">
+            <VerticalStackLayout>
+                <Label Text="{Binding TotalProducts, StringFormat='Total Products: {0}'}" FontSize="16" />
+                <Label Text="{Binding ScannedProducts, StringFormat='Scanned Products: {0}'}" FontSize="16" />
+                <Label Text="{Binding ShortageProducts, StringFormat='Shortages (Scanned &lt; Initial): {0}'}" FontSize="16" />
+                <Label Text="{Binding OverstockProducts, StringFormat='Overstock (Scanned > Initial): {0}'}" FontSize="16" />
+                <Label Text="{Binding ZeroInitialProducts, StringFormat='Zero Initial Quantity: {0}'}" FontSize="16" />
+            </VerticalStackLayout>
+        </Frame>
+    </VerticalStackLayout>
+</ContentPage>

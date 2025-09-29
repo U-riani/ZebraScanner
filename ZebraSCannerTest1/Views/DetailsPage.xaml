@@ -6,16 +6,16 @@
              Title="Details">
 
     <VerticalStackLayout Padding="20">
-        <Label Text="BARCODE"/>
-        <Label Text="{Binding ProductBarcode}" FontSize="20" Margin="0,0,0,30"/>
+        <Label Text="BARCODE" TextColor="Black"/>
+        <Label Text="{Binding ProductBarcode}" TextColor="black" FontSize="20" Margin="0,0,0,30"/>
 
-        <Label Text="SCANNED QUANTITY"/>
+        <Label Text="?????????????" TextColor="black"/>
         <Entry Text="{Binding ScannedQuantity, Mode=TwoWay}"
-               Keyboard="Numeric" FontSize="20" Margin="0,0,0,8"/>
+               Keyboard="Numeric" FontSize="20" TextColor="black" Margin="0,0,0,8"/>
 
-        <Label Text="INITIAL QUANTITY"/>
-        <Label Text="{Binding InitialQuantity}" FontSize="20" Margin="0,0,0,8"/>
+        <Label Text="?????????? ?????????" TextColor="black"/>
+        <Label Text="{Binding InitialQuantity}" TextColor="black" FontSize="20" Margin="0,0,0,8"/>
 
-        <Button Text="Save" Command="{Binding SaveCommand}"/>
+        <Button Text="???????" Command="{Binding SaveCommand}"/>
     </VerticalStackLayout>
 </ContentPage>

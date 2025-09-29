@@ -18,13 +18,29 @@ namespace ZebraSCannerTest1.Services
 
             using var tx = _conn.BeginTransaction();
 
+            // 1. Fresh start: clear old data
+            using (var clear = _conn.CreateCommand())
+            {
+                clear.Transaction = tx;
+                clear.CommandText = @"
+PRAGMA foreign_keys = OFF;
+DELETE FROM ScanLogs;
+DELETE FROM ScannedProducts;
+DELETE FROM Products;
+DELETE FROM sqlite_sequence WHERE name IN ('Products','ScanLogs','ScannedProducts');
+PRAGMA foreign_keys = ON;";
+                clear.ExecuteNonQuery();
+            }
+
+            // 2. Insert imported rows with ScannedQuantity reset
             using var upsert = _conn.CreateCommand();
             upsert.Transaction = tx;
             upsert.CommandText = @"
 INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-VALUES ($barcode, $initial, COALESCE((SELECT ScannedQuantity FROM Products WHERE Barcode=$barcode),0), $created, $updated)
+VALUES ($barcode, $initial, 0, $created, $updated)
 ON CONFLICT(Barcode) DO UPDATE SET
     InitialQuantity = $initial,
+    ScannedQuantity = 0,
     UpdatedAt       = $updated;";
             upsert.Parameters.Add("$barcode", SqliteType.Text);
             upsert.Parameters.Add("$initial", SqliteType.Integer);

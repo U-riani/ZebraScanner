@@ -40,6 +40,43 @@
 		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
+		<AndroidKeyStore>True</AndroidKeyStore>
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+
+		<!-- Signing settings -->
+		<AndroidSigningKeyStore>D:\My Projects\csharp\ZebraSCannerTest1\myapp.keystore</AndroidSigningKeyStore>
+		<AndroidSigningStorePass>123456</AndroidSigningStorePass>
+		<AndroidSigningKeyAlias>myalias</AndroidSigningKeyAlias>
+		<AndroidSigningKeyPass>123456</AndroidSigningKeyPass>
+		<TargetSdkVersion>30</TargetSdkVersion>
+		<EmbedAssembliesIntoApk>False</EmbedAssembliesIntoApk>
+		<PublishTrimmed>false</PublishTrimmed>
+		<MauiTrimMode>none</MauiTrimMode>
+
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
+		<AndroidKeyStore>True</AndroidKeyStore>
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+
+		<!-- Signing settings -->
+		<AndroidSigningKeyStore>D:\My Projects\csharp\ZebraSCannerTest1\myapp.keystore</AndroidSigningKeyStore>
+		<AndroidSigningStorePass>123456</AndroidSigningStorePass>
+		<AndroidSigningKeyAlias>myalias</AndroidSigningKeyAlias>
+		<AndroidSigningKeyPass>123456</AndroidSigningKeyPass>
+
+		<TargetSdkVersion>30</TargetSdkVersion>
+
+		<!-- Disable trimming and AOT to prevent crashes -->
+		<PublishTrimmed>false</PublishTrimmed>
+		<MauiTrimMode>none</MauiTrimMode>
+		<RunAOTCompilation>false</RunAOTCompilation>
+	</PropertyGroup>
+
+
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
@@ -72,6 +109,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\LogsPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\ScannedProductsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

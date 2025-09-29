@@ -7,9 +7,6 @@ using ZebraSCannerTest1.Models;
 
 namespace ZebraSCannerTest1.ViewModels;
 
-[QueryProperty(nameof(ProductBarcode), "Barcode")]
-[QueryProperty(nameof(ScannedQuantity), "Quantity")]
-[QueryProperty(nameof(InitialQuantity), "InitialQuantity")]
 public partial class DetailsViewModel : ObservableObject
 {
     private readonly SqliteConnection _conn;
@@ -69,6 +66,11 @@ VALUES ($barcode,$scanned,$ts)";
             CreatedAt = DateTime.UtcNow
         }));
 
-        await Shell.Current.GoToAsync("..");
+        // ❌ Remove auto navigation:
+        // await Shell.Current.GoToAsync("..");
+
+        // ✅ Instead, show confirmation and stay on page
+        await Shell.Current.DisplayAlert("Saved", "Product updated successfully.", "OK");
     }
+
 }

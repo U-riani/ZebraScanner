@@ -2,7 +2,7 @@
 {
     public class ExcelProductDto
     {
-        public string Barcode { get; set; }
+        public string? Barcode { get; set; }
         public int Quantity { get; set; } // Initial quantity from Excel
     }
 }

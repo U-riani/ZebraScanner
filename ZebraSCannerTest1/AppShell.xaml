@@ -7,4 +7,5 @@
     Shell.FlyoutBehavior="Disabled">
 
     <ShellContent Title="Scan" ContentTemplate="{DataTemplate views:MainPage}" />
+
 </Shell>

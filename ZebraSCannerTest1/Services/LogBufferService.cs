@@ -3,72 +3,68 @@ using ZebraSCannerTest1.Models;
 
 namespace ZebraSCannerTest1.Services
 {
-    public class LogBufferService : IDisposable
+    public class LogBufferService
     {
         private readonly SqliteConnection _conn;
         private readonly List<ScanLog> _buffer = new();
         private readonly object _lock = new();
-        private bool _running = true;
-        private readonly Task _worker;
-        private readonly SqliteCommand _insertCmd;
+        private readonly Timer _timer;
 
         public LogBufferService(SqliteConnection conn)
         {
             _conn = conn;
-
-            _insertCmd = _conn.CreateCommand();
-            _insertCmd.CommandText = @"
-INSERT INTO ScanLogs (Barcode, ScannedQuantity, Timestamp)
-VALUES ($barcode,$qty,$ts)";
-            _insertCmd.Parameters.Add("$barcode", SqliteType.Text);
-            _insertCmd.Parameters.Add("$qty", SqliteType.Integer);
-            _insertCmd.Parameters.Add("$ts", SqliteType.Text);
-
-            _worker = Task.Run(FlushLoopAsync);
+            // Flush buffer every 2 seconds
+            _timer = new Timer(_ => Flush(), null, 2000, 2000);
         }
 
         public void AddLog(ScanLog log)
         {
-            lock (_lock) _buffer.Add(log);
+            lock (_lock)
+            {
+                _buffer.Add(log);
+            }
         }
 
-        public void FlushNow()
+        public void Flush()
         {
-            List<ScanLog> snap;
+            List<ScanLog> toWrite;
             lock (_lock)
             {
                 if (_buffer.Count == 0) return;
-                snap = new List<ScanLog>(_buffer);
+                toWrite = new List<ScanLog>(_buffer);
                 _buffer.Clear();
             }
 
             using var tx = _conn.BeginTransaction();
-            _insertCmd.Transaction = tx;
-            foreach (var l in snap)
+            using var cmd = _conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+INSERT INTO ScanLogs (Barcode, ScannedQuantity, Timestamp)
+VALUES ($b, $q, $t);";
+            cmd.Parameters.Add("$b", SqliteType.Text);
+            cmd.Parameters.Add("$q", SqliteType.Integer);
+            cmd.Parameters.Add("$t", SqliteType.Text);
+
+            foreach (var log in toWrite)
             {
-                _insertCmd.Parameters["$barcode"].Value = l.Barcode;
-                _insertCmd.Parameters["$qty"].Value = l.ScannedQuantity;
-                _insertCmd.Parameters["$ts"].Value = l.Timestamp.ToString("o");
-                _insertCmd.ExecuteNonQuery();
+                cmd.Parameters["$b"].Value = log.Barcode;
+                cmd.Parameters["$q"].Value = log.ScannedQuantity;
+                cmd.Parameters["$t"].Value = log.Timestamp.ToString("o");
+                cmd.ExecuteNonQuery();
             }
+
             tx.Commit();
-            _insertCmd.Transaction = null;
         }
 
-        private async Task FlushLoopAsync()
+        /// <summary>
+        /// Clears any buffered logs (used on fresh import).
+        /// </summary>
+        public void Clear()
         {
-            while (_running)
+            lock (_lock)
             {
-                await Task.Delay(1500);
-                FlushNow();
+                _buffer.Clear();
             }
-        }
-
-        public void Dispose()
-        {
-            _running = false;
-            try { _worker.Wait(2000); } catch { }
-            _insertCmd.Dispose();
         }
     }
 }
