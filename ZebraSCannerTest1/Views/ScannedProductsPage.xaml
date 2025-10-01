@@ -25,7 +25,14 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:StatsProduct">
                     <Grid Padding="4" ColumnDefinitions="2*,*,*,*">
-                        <Label TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding Barcode}" />
+                        <Label TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding Barcode}">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer 
+                                    Command="{Binding BindingContext.CopyBarcodeCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" 
+                                    CommandParameter="{Binding Barcode}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+
                         <Label Grid.Column="1" TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding ScannedQuantity}" />
                         <Label Grid.Column="2" TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding InitialQuantity}" />
                         <Label Grid.Column="3" TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding Difference}" 

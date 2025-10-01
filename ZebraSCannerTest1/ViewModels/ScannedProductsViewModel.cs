@@ -3,12 +3,14 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
 using ZebraSCannerTest1.Models;
+using ZebraSCannerTest1.Services;
 
 namespace ZebraSCannerTest1.ViewModels;
 
 public partial class ScannedProductsViewModel : ObservableObject
 {
     private readonly SqliteConnection _conn;
+    private readonly ClipboardService _clipboard;
     private string _currentSortField = "UpdatedAt";
     private bool _currentSortDescending = true;
     private string _currentFilter = "ScannedQuantity > 0";
@@ -19,9 +21,10 @@ public partial class ScannedProductsViewModel : ObservableObject
 
     public ObservableCollection<StatsProduct> ScannedProductsStats { get; private set; } = new();
 
-    public ScannedProductsViewModel(SqliteConnection conn)
+    public ScannedProductsViewModel(SqliteConnection conn, ClipboardService clipboard)
     {
         _conn = conn;
+        _clipboard = clipboard;
         LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
     }
 
@@ -183,5 +186,12 @@ public partial class ScannedProductsViewModel : ObservableObject
                 "InitialQuantity = 0" => "Filter: ZeroInit",
                 _ => "Filter: Custom"
             };
+    }
+
+
+    [RelayCommand]
+    private async Task CopyBarcode(string barcode)
+    {
+        await _clipboard.CopyAsync(barcode);
     }
 }

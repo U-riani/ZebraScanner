@@ -4,16 +4,19 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Data.Sqlite;
 using ZebraSCannerTest1.Messages;
 using ZebraSCannerTest1.Models;
+using ZebraSCannerTest1.Services;
 
 namespace ZebraSCannerTest1.ViewModels;
 
 public partial class DetailsViewModel : ObservableObject
 {
     private readonly SqliteConnection _conn;
+    private readonly ClipboardService _clipboard;
 
-    public DetailsViewModel(SqliteConnection conn)
+    public DetailsViewModel(SqliteConnection conn, ClipboardService clipboard)
     {
         _conn = conn;
+        _clipboard = clipboard;
         SaveCommand = new AsyncRelayCommand(SaveUpdatedDetailsAsync);
     }
 
@@ -66,11 +69,18 @@ VALUES ($barcode,$scanned,$ts)";
             CreatedAt = DateTime.UtcNow
         }));
 
+
         // ❌ Remove auto navigation:
         // await Shell.Current.GoToAsync("..");
 
         // ✅ Instead, show confirmation and stay on page
         await Shell.Current.DisplayAlert("Saved", "Product updated successfully.", "OK");
+    }
+
+    [RelayCommand]
+    private async Task CopyBarcode(string barcode)
+    {
+        await _clipboard.CopyAsync(barcode);
     }
 
 }

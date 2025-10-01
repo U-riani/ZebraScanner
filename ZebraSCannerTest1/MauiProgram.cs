@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using CommunityToolkit.Maui;
+//using Microsoft.Data.Sqlite;
 using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Services;
 using ZebraSCannerTest1.ViewModels;
@@ -13,6 +14,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseMauiCommunityToolkit() // ✅ Register CommunityToolkit
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -26,6 +28,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<ExcelImportService>();
         builder.Services.AddSingleton<ExcelExportService>();
         builder.Services.AddSingleton<LogBufferService>();
+        builder.Services.AddSingleton<ClipboardService>();
+
 
         // VMs
         builder.Services.AddTransient<MainViewModel>();

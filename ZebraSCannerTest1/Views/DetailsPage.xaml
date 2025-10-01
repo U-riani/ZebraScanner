@@ -7,7 +7,11 @@
 
     <VerticalStackLayout Padding="20">
         <Label Text="BARCODE" TextColor="Black"/>
-        <Label Text="{Binding ProductBarcode}" TextColor="black" FontSize="20" Margin="0,0,0,30"/>
+        <Label Text="{Binding ProductBarcode}" TextColor="black" FontSize="20" Margin="0,0,0,30">
+            <Label.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding ProductBarcode}" />
+            </Label.GestureRecognizers>
+        </Label>
 
         <Label Text="SCANNED QUANTITY" TextColor="black"/>
         <Entry Text="{Binding ScannedQuantity, Mode=TwoWay}"

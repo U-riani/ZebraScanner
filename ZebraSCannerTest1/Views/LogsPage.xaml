@@ -1,21 +1,126 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="ZebraSCannerTest1.Views.LogsPage">
+             x:Class="ZebraSCannerTest1.Views.LogsPage"
+             Title="Logs">
 
-    <CollectionView x:Name="logsCollectionView" ItemsSource="{Binding Logs}">
-        <CollectionView.ItemTemplate>
-            <DataTemplate>
-                <StackLayout Padding="10" BackgroundColor="Green" Margin="0,0,0,10">
-                    <Grid RowDefinitions="20,30" ColumnDefinitions="Auto,15,Auto,*">
+    <VerticalStackLayout Padding="2" Spacing="0">
+        <!-- Header -->
+        <HorizontalStackLayout HorizontalOptions="Center" Padding="6" Spacing="12">
+            <Button Text="Filter" Command="{Binding FilterCommand}" />
+            <Button Text="Clear" Command="{Binding ClearFilterCommand}" />
+        </HorizontalStackLayout>
+        
+        <Grid ColumnDefinitions="2*,*,*,2*" Padding="6,4">
+            <Label Text="Barcode" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Text="Scanned" Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Text="Initial" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Text="Time" Grid.Column="3" HorizontalTextAlignment="End" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+        </Grid>
 
-                        <Label Grid.Row="0" Grid.ColumnSpan="4" VerticalOptions="Center" Text="{Binding Barcode}" />
-                        <Label Grid.Row="1" Grid.Column="0" VerticalOptions="Center" Text="{Binding ScannedQuantity}" />
-                        <Label Grid.Row="1" Grid.Column="1" VerticalOptions="Center" HorizontalOptions="Center" Padding="3,0,3,0" FontSize="20" Text="/" />
-                        <Label Grid.Row="1" Grid.Column="2" VerticalOptions="Center" Text="{Binding InitialQuantity}" />
-                        <Label Grid.Row="1" Grid.Column="3" VerticalOptions="Center" HorizontalOptions="End" Text="{Binding Timestamp}" />
-                    </Grid>
-                </StackLayout>
-            </DataTemplate>
-        </CollectionView.ItemTemplate>
-    </CollectionView>
+        <!-- Static 10 slots -->
+        <Grid ColumnDefinitions="2*,*,*,2*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="3" Padding="4">
+
+            <Label Grid.Row="0" Grid.Column="0" Text="{Binding Slots[0].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[0].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="0" Grid.Column="1" Text="{Binding Slots[0].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
+            <Label Grid.Row="0" Grid.Column="2" Text="{Binding Slots[0].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="0" Grid.Column="3" Text="{Binding Slots[0].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="1" Grid.Column="0" Text="{Binding Slots[1].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[1].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="1" Grid.Column="1" Text="{Binding Slots[1].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
+            <Label Grid.Row="1" Grid.Column="2" Text="{Binding Slots[1].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="1" Grid.Column="3" Text="{Binding Slots[1].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="2" Grid.Column="0" Text="{Binding Slots[2].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[2].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="2" Grid.Column="1" Text="{Binding Slots[2].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="2" Grid.Column="2" Text="{Binding Slots[2].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="2" Grid.Column="3" Text="{Binding Slots[2].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="3" Grid.Column="0" Text="{Binding Slots[3].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[3].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="3" Grid.Column="1" Text="{Binding Slots[3].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="3" Grid.Column="2" Text="{Binding Slots[3].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="3" Grid.Column="3" Text="{Binding Slots[3].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="4" Grid.Column="0" Text="{Binding Slots[4].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[4].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="4" Grid.Column="1" Text="{Binding Slots[4].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="4" Grid.Column="2" Text="{Binding Slots[4].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="4" Grid.Column="3" Text="{Binding Slots[4].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="5" Grid.Column="0" Text="{Binding Slots[5].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[5].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="5" Grid.Column="1" Text="{Binding Slots[5].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="5" Grid.Column="2" Text="{Binding Slots[5].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="5" Grid.Column="3" Text="{Binding Slots[5].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="6" Grid.Column="0" Text="{Binding Slots[6].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[6].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="6" Grid.Column="1" Text="{Binding Slots[6].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="6" Grid.Column="2" Text="{Binding Slots[6].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="6" Grid.Column="3" Text="{Binding Slots[6].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="7" Grid.Column="0" Text="{Binding Slots[7].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[7].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="7" Grid.Column="1" Text="{Binding Slots[7].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="7" Grid.Column="2" Text="{Binding Slots[7].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="7" Grid.Column="3" Text="{Binding Slots[7].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="8" Grid.Column="0" Text="{Binding Slots[8].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[8].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="8" Grid.Column="1" Text="{Binding Slots[8].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="8" Grid.Column="2" Text="{Binding Slots[8].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="8" Grid.Column="3" Text="{Binding Slots[8].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+            <Label Grid.Row="9" Grid.Column="0" Text="{Binding Slots[9].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" CommandParameter="{Binding Slots[9].Barcode}" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label Grid.Row="9" Grid.Column="1" Text="{Binding Slots[9].ScannedQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="9" Grid.Column="2" Text="{Binding Slots[9].InitialQuantity}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="9" Grid.Column="3" Text="{Binding Slots[9].Timestamp}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+
+
+        </Grid>
+
+        <!-- Pagination controls -->
+        <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+            <Button Text="Prev" Command="{Binding PrevPageCommand}" />
+            <Label Text="{Binding CurrentPage}" VerticalOptions="Center"  TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Text="/" VerticalOptions="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Text="{Binding TotalPages}" VerticalOptions="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Button Text="Next" Command="{Binding NextPageCommand}" />
+        </HorizontalStackLayout>
+
+    </VerticalStackLayout>
 </ContentPage>
