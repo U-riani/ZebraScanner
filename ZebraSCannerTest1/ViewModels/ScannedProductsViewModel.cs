@@ -79,10 +79,12 @@ public partial class ScannedProductsViewModel : ObservableObject
             "Scanned > 0",
             "Shortage (Scanned < Initial)",
             "Overstock (Scanned > Initial)",
+            "Equal (Scanned = Initial)",
+            "Equal And Scanned (Scanned = Initial And Scanned > 0)",
             "Zero Initial",
             "Search by Barcode");
 
-        if (fieldChoice == "Cancel") return;
+        if (string.IsNullOrEmpty(fieldChoice) || fieldChoice == "Cancel") return;
 
         if (fieldChoice == "Search by Barcode")
         {
@@ -103,6 +105,8 @@ public partial class ScannedProductsViewModel : ObservableObject
                 "Scanned > 0" => "ScannedQuantity > 0",
                 "Shortage (Scanned < Initial)" => "ScannedQuantity < InitialQuantity",
                 "Overstock (Scanned > Initial)" => "ScannedQuantity > InitialQuantity",
+                "Equal (Scanned = Initial)" => "ScannedQuantity = InitialQuantity",
+                "Equal And Scanned (Scanned = Initial And Scanned > 0)" => "ScannedQuantity > 0 AND ScannedQuantity = InitialQuantity",
                 "Zero Initial" => "InitialQuantity = 0",
                 _ => ""
             };
@@ -113,6 +117,8 @@ public partial class ScannedProductsViewModel : ObservableObject
                 "Scanned > 0" => "Filter: Scanned",
                 "Shortage (Scanned < Initial)" => "Filter: Shortage",
                 "Overstock (Scanned > Initial)" => "Filter: Over",
+                "Equal (Scanned = Initial)" => "Filter: Equal",
+                "Equal And Scanned (Scanned = Initial And Scanned > 0)" => "Filter: Equal & > 0",
                 "Zero Initial" => "Filter: ZeroInit",
                 _ => "No filter"
             };
@@ -125,13 +131,13 @@ public partial class ScannedProductsViewModel : ObservableObject
     [RelayCommand]
     private void ClearFilter()
     {
-        _currentFilter = "";
+        _currentFilter = "ScannedQuantity > 0";
         _currentSortField = "UpdatedAt";
         _currentSortDescending = true;
 
         LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
 
-        CurrentFilterDescription = "Filter: All";
+        CurrentFilterDescription = "Filter: All Scanned";
         CurrentSortDescription = "Sort: Upd ↓";
     }
 
@@ -183,9 +189,17 @@ public partial class ScannedProductsViewModel : ObservableObject
                 "ScannedQuantity > 0" => "Filter: Scanned",
                 "ScannedQuantity < InitialQuantity" => "Filter: Shortage",
                 "ScannedQuantity > InitialQuantity" => "Filter: Over",
+                "ScannedQuantity = InitialQuantity" => "Filter: Equal",
+                "ScannedQuantity > 0 AND ScannedQuantity = InitialQuantity" => "Filter: Equal & > 0",
                 "InitialQuantity = 0" => "Filter: ZeroInit",
                 _ => "Filter: Custom"
             };
+    }
+
+    [RelayCommand]
+    private async Task ShowOveralCommand()
+    {
+        var fieldChoice = await Shell.Current.DisplayPromptAsync("Overal Stats", "Cancel", null);
     }
 
 

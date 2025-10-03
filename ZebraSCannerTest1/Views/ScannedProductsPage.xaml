@@ -6,22 +6,55 @@
              x:DataType="viewmodel:ScannedProductsViewModel"
              Title="Scanned Products">
 
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,2*">
+    <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*,2*">
         <!-- Status labels -->
         <VerticalStackLayout Grid.Row="0" Grid.Column="0" Padding="8">
             <Label Text="{Binding CurrentSortDescription}" TextColor="Gray" FontSize="12"/>
             <Label Text="{Binding CurrentFilterDescription}" TextColor="Gray" FontSize="12"/>
         </VerticalStackLayout>
+
         <!-- Buttons -->
-        <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Padding="8" Spacing="8">
-            <Button Text="Sort" Command="{Binding SortCommand}" />
-            <Button Text="Filter" Command="{Binding FilterCommand}" />
-            <Button Text="Clear" Command="{Binding ClearFilterCommand}" />
+        <HorizontalStackLayout Grid.Row="0" Grid.Column="3" Padding="0,5,8,5" Spacing="8">
+            <Button Text="Sort" Command="{Binding SortCommand}" Padding="10"/>
+            <Button Text="Filter" Command="{Binding FilterCommand}" Padding="10"/>
+            <Button Text="Clear" Command="{Binding ClearFilterCommand}" Padding="10"/>
+
         </HorizontalStackLayout>
 
+        <!-- Header row -->
+        <Grid Grid.Row="1" Grid.ColumnSpan="2"
+              Padding="4"
+              ColumnDefinitions="2*,*,*,*"
+              BackgroundColor="#EEEEEE">
+            <Label Grid.Column="0" Text="Barcode" 
+                   FontAttributes="Bold" 
+                   HorizontalOptions="Start"
+                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+            <Label Grid.Column="1" Text="Scanned" 
+                   HorizontalTextAlignment="Start" 
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+            <Label Grid.Column="2" Text="Initial" 
+                   HorizontalTextAlignment="Start" 
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+            <Label Grid.Column="3" Text="Diff" 
+                   HorizontalTextAlignment="End" 
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+        </Grid>
 
         <!-- Product list -->
-        <CollectionView Grid.Row="1" Grid.ColumnSpan="2" ItemsSource="{Binding ScannedProductsStats}">
+        <CollectionView 
+            Grid.Row="2" Grid.ColumnSpan="2"
+            ItemsSource="{Binding ScannedProductsStats}"
+            VerticalScrollBarVisibility="Always"
+            Margin="0,0,8,0"
+            BackgroundColor="Transparent">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical"/>
+            </CollectionView.ItemsLayout>
+
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:StatsProduct">
                     <Grid Padding="4" ColumnDefinitions="2*,*,*,*">
@@ -32,15 +65,12 @@
                                     CommandParameter="{Binding Barcode}" />
                             </Label.GestureRecognizers>
                         </Label>
-
-                        <Label Grid.Column="1" TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding ScannedQuantity}" />
-                        <Label Grid.Column="2" TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding InitialQuantity}" />
-                        <Label Grid.Column="3" TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding Difference}" 
-                           HorizontalTextAlignment="End"/>
+                        <Label HorizontalTextAlignment="Center" Grid.Column="1" Text="{Binding ScannedQuantity}" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                        <Label HorizontalTextAlignment="Center" Grid.Column="2" Text="{Binding InitialQuantity}" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                        <Label Grid.Column="3" Text="{Binding Difference}" TextColor="{AppThemeBinding Light=Black, Dark=White}" HorizontalTextAlignment="End"/>
                     </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
     </Grid>
-
 </ContentPage>

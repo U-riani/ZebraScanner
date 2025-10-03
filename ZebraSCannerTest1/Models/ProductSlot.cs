@@ -18,14 +18,27 @@ public class ProductSlot : INotifyPropertyChanged
     public int ScannedQuantity
     {
         get => _scannedQuantity;
-        set { _scannedQuantity = value; OnPropertyChanged(); }
+        set
+        {
+            _scannedQuantity = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Difference)); // ✅ notify UI
+        }
     }
 
     public int InitialQuantity
     {
         get => _initialQuantity;
-        set { _initialQuantity = value; OnPropertyChanged(); }
+        set
+        {
+            _initialQuantity = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Difference)); // ✅ notify UI
+        }
     }
+
+    // 🔹 Computed property
+    public int Difference => ScannedQuantity - InitialQuantity;
 
     public void Set(string barcode, int scanned, int initial)
     {
@@ -35,6 +48,7 @@ public class ProductSlot : INotifyPropertyChanged
         OnPropertyChanged(nameof(Barcode));
         OnPropertyChanged(nameof(ScannedQuantity));
         OnPropertyChanged(nameof(InitialQuantity));
+        OnPropertyChanged(nameof(Difference)); // ✅ notify when using Set()
     }
 
     public event PropertyChangedEventHandler PropertyChanged;

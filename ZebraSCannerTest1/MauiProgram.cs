@@ -43,6 +43,8 @@ public static class MauiProgram
         builder.Services.AddTransient<LogsPage>();
         builder.Services.AddTransient<ScannedProductsPage>();
 
+
+
         return builder.Build();
     }
 }

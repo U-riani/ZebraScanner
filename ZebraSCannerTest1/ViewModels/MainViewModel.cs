@@ -11,6 +11,10 @@ using ZebraSCannerTest1.Models;
 using ZebraSCannerTest1.Services;
 using ZebraSCannerTest1.Views;
 
+#if ANDROID
+using Android.Media;
+#endif
+
 namespace ZebraSCannerTest1.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
@@ -232,6 +236,177 @@ ON CONFLICT(Barcode) DO UPDATE SET
                 _ = Task.Run(ProcessScanQueueAsync);
         }
 
+        //private async Task ProcessScanQueueAsync()
+        //{
+        //    _isFlushingScans = true;
+        //    try
+        //    {
+        //        while (true)
+        //        {
+        //            string nextBarcode = null;
+        //            lock (_scanLock)
+        //            {
+        //                if (_scanQueue.Count > 0)
+        //                    nextBarcode = _scanQueue.Dequeue();
+        //            }
+        //            if (nextBarcode == null) break;
+
+        //            if (!_cache.TryGetValue(nextBarcode, out var product))
+        //            {
+        //                product = new Product
+        //                {
+        //                    Barcode = nextBarcode,
+        //                    InitialQuantity = 0,
+        //                    ScannedQuantity = 0,
+        //                    CreatedAt = DateTime.UtcNow,
+        //                    UpdatedAt = DateTime.UtcNow
+        //                };
+        //                _cache[nextBarcode] = product;
+        //            }
+
+        //            product.ScannedQuantity++;
+        //            product.UpdatedAt = DateTime.UtcNow;
+
+        //            _upsertProductCmd.Parameters["$barcode"].Value = product.Barcode;
+        //            _upsertProductCmd.Parameters["$initial"].Value = product.InitialQuantity;
+        //            _upsertProductCmd.Parameters["$scanned"].Value = product.ScannedQuantity;
+        //            _upsertProductCmd.Parameters["$created"].Value = product.CreatedAt.ToString("o");
+        //            _upsertProductCmd.Parameters["$updated"].Value = product.UpdatedAt.ToString("o");
+        //            _upsertProductCmd.ExecuteNonQuery();
+
+        //            var log = new ScanLog
+        //            {
+        //                Barcode = product.Barcode,
+        //                ScannedQuantity = product.ScannedQuantity,
+        //                Timestamp = DateTime.UtcNow
+        //            };
+        //            _logBuffer.AddLog(log);
+        //            WeakReferenceMessenger.Default.Send(new NewScanLogMessage(log));
+
+        //            int existing = _recent.IndexOf(nextBarcode);
+        //            if (existing >= 0) _recent.RemoveAt(existing);
+        //            _recent.Insert(0, nextBarcode);
+        //            if (_recent.Count > SlotCount) _recent.RemoveAt(_recent.Count - 1);
+
+        //            for (int i = 0; i < SlotCount; i++)
+        //            {
+        //                if (i < _recent.Count)
+        //                    UpdateSlotFromCache(i, _recent[i]);
+        //                else
+        //                    ClearSlot(i);
+        //            }
+        //        }
+        //    }
+        //    finally
+        //    {
+        //        _isFlushingScans = false;
+        //    }
+        //}
+
+
+        //        private async Task ProcessScanQueueAsync()
+        //        {
+        //            _isFlushingScans = true;
+        //            try
+        //            {
+        //                while (true)
+        //                {
+        //                    string nextBarcode = null;
+        //                    lock (_scanLock)
+        //                    {
+        //                        if (_scanQueue.Count > 0)
+        //                            nextBarcode = _scanQueue.Dequeue();
+        //                    }
+        //                    if (nextBarcode == null) break;
+
+        //                    Product product;
+
+        //                    if (!_cache.TryGetValue(nextBarcode, out product))
+        //                    {
+        //                        // 🔹 Ask user if they want to add unknown barcode
+        //                        bool addNew = await MainThread.InvokeOnMainThreadAsync(async () =>
+        //                        {
+        //                            return await Shell.Current.DisplayAlert(
+        //                                "Unknown Barcode",
+        //                                $"Barcode {nextBarcode} was not found in the database.\n\nDo you want to add it?",
+        //                                "Yes", "No");
+        //                        });
+
+        //                        if (!addNew)
+        //                            continue; // ❌ Skip this barcode if user said No
+
+        //                        // ✅ Create and insert a new product
+        //                        product = new Product
+        //                        {
+        //                            Barcode = nextBarcode,
+        //                            InitialQuantity = 0,
+        //                            ScannedQuantity = 0,
+        //                            CreatedAt = DateTime.UtcNow,
+        //                            UpdatedAt = DateTime.UtcNow
+        //                        };
+        //                        _cache[nextBarcode] = product;
+
+        //                        using var insertCmd = _conn.CreateCommand();
+        //                        insertCmd.CommandText = @"
+        //INSERT OR IGNORE INTO Products 
+        //(Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+        //VALUES ($barcode, $initial, $scanned, $created, $updated)";
+        //                        insertCmd.Parameters.AddWithValue("$barcode", product.Barcode);
+        //                        insertCmd.Parameters.AddWithValue("$initial", product.InitialQuantity);
+        //                        insertCmd.Parameters.AddWithValue("$scanned", product.ScannedQuantity);
+        //                        insertCmd.Parameters.AddWithValue("$created", product.CreatedAt.ToString("o"));
+        //                        insertCmd.Parameters.AddWithValue("$updated", product.UpdatedAt.ToString("o"));
+        //                        insertCmd.ExecuteNonQuery();
+        //                    }
+
+        //                    // 🔹 Increase scanned quantity
+        //                    product.ScannedQuantity++;
+        //                    product.UpdatedAt = DateTime.UtcNow;
+
+        //                    _upsertProductCmd.Parameters["$barcode"].Value = product.Barcode;
+        //                    _upsertProductCmd.Parameters["$initial"].Value = product.InitialQuantity;
+        //                    _upsertProductCmd.Parameters["$scanned"].Value = product.ScannedQuantity;
+        //                    _upsertProductCmd.Parameters["$created"].Value = product.CreatedAt.ToString("o");
+        //                    _upsertProductCmd.Parameters["$updated"].Value = product.UpdatedAt.ToString("o");
+        //                    _upsertProductCmd.ExecuteNonQuery();
+
+        //                    var log = new ScanLog
+        //                    {
+        //                        Barcode = product.Barcode,
+        //                        ScannedQuantity = product.ScannedQuantity,
+        //                        Timestamp = DateTime.UtcNow
+        //                    };
+        //                    _logBuffer.AddLog(log);
+        //                    WeakReferenceMessenger.Default.Send(new NewScanLogMessage(log));
+
+        //// success case
+        //#if ANDROID
+        //var toneOk = new ToneGenerator(Android.Media.Stream.System, 100);
+        //toneOk.StartTone(Tone.PropAck, 100); // short beep for success
+        //#endif
+
+        //                                        int existing = _recent.IndexOf(nextBarcode);
+        //                    if (existing >= 0) _recent.RemoveAt(existing);
+        //                    _recent.Insert(0, nextBarcode);
+        //                    if (_recent.Count > SlotCount) _recent.RemoveAt(_recent.Count - 1);
+
+        //                    for (int i = 0; i < SlotCount; i++)
+        //                    {
+        //                        if (i < _recent.Count)
+        //                            UpdateSlotFromCache(i, _recent[i]);
+        //                        else
+        //                            ClearSlot(i);
+        //                    }
+        //                }
+        //            }
+        //            finally
+        //            {
+        //                _isFlushingScans = false;
+        //            }
+        //        }
+
+        // =========== Navigation & Import ===========
+
         private async Task ProcessScanQueueAsync()
         {
             _isFlushingScans = true;
@@ -247,8 +422,30 @@ ON CONFLICT(Barcode) DO UPDATE SET
                     }
                     if (nextBarcode == null) break;
 
-                    if (!_cache.TryGetValue(nextBarcode, out var product))
+                    Product product;
+
+                    if (!_cache.TryGetValue(nextBarcode, out product))
                     {
+                        // 🔹 Ask user if they want to add unknown barcode
+                        bool addNew = await MainThread.InvokeOnMainThreadAsync(async () =>
+                        {
+#if ANDROID
+                    // ❌ Play error beep
+                    var toneError = new Android.Media.ToneGenerator(Android.Media.Stream.System, 100);
+                    toneError.StartTone(Android.Media.Tone.CdmaPip, 1000);
+#endif
+                            return await Shell.Current.DisplayAlert(
+                                "Unknown Barcode",
+                                $"Barcode {nextBarcode} was not found in the database.\n\nDo you want to add it?",
+                                "Yes", "No");
+                        });
+
+                        if (!addNew)
+                        {
+                            continue; // Skip this barcode
+                        }
+
+                        // ✅ Create and insert a new product
                         product = new Product
                         {
                             Barcode = nextBarcode,
@@ -258,8 +455,21 @@ ON CONFLICT(Barcode) DO UPDATE SET
                             UpdatedAt = DateTime.UtcNow
                         };
                         _cache[nextBarcode] = product;
+
+                        using var insertCmd = _conn.CreateCommand();
+                        insertCmd.CommandText = @"
+INSERT OR IGNORE INTO Products 
+(Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+VALUES ($barcode, $initial, $scanned, $created, $updated)";
+                        insertCmd.Parameters.AddWithValue("$barcode", product.Barcode);
+                        insertCmd.Parameters.AddWithValue("$initial", product.InitialQuantity);
+                        insertCmd.Parameters.AddWithValue("$scanned", product.ScannedQuantity);
+                        insertCmd.Parameters.AddWithValue("$created", product.CreatedAt.ToString("o"));
+                        insertCmd.Parameters.AddWithValue("$updated", product.UpdatedAt.ToString("o"));
+                        insertCmd.ExecuteNonQuery();
                     }
 
+                    // 🔹 Increase scanned quantity
                     product.ScannedQuantity++;
                     product.UpdatedAt = DateTime.UtcNow;
 
@@ -291,6 +501,12 @@ ON CONFLICT(Barcode) DO UPDATE SET
                         else
                             ClearSlot(i);
                     }
+
+#if ANDROID
+            // ✅ Play short success beep
+            var toneOk = new Android.Media.ToneGenerator(Android.Media.Stream.System, 100);
+            toneOk.StartTone(Android.Media.Tone.PropAck, 100);
+#endif
                 }
             }
             finally
@@ -299,7 +515,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
             }
         }
 
-        // =========== Navigation & Import ===========
+
         private async Task OnImportExcelAsync()
         {
             var result = await FilePicker.PickAsync(new PickOptions
@@ -342,18 +558,28 @@ ON CONFLICT(Barcode) DO UPDATE SET
 
         private async Task OnExportExcelAsync()
         {
-#if ANDROID
-            var downloadsPath = Android.OS.Environment
-                .GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads)
-                .AbsolutePath;
+            // 🔹 Ask user first
+            bool confirm = await Shell.Current.DisplayAlert(
+                "Confirm Export",
+                "Do you want to export products to Excel?",
+                "Yes", "No");
 
-            var fileName = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
-            var exportPath = Path.Combine(downloadsPath, fileName);
+            if (!confirm)
+                return; // ❌ User canceled
+
+#if ANDROID
+    var downloadsPath = Android.OS.Environment
+        .GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads)
+        .AbsolutePath;
+
+    var fileName = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+    var exportPath = Path.Combine(downloadsPath, fileName);
 #else
             var fileName = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
             var exportPath = Path.Combine(FileSystem.AppDataDirectory, fileName);
 #endif
 
+            // ✅ Do the export
             await _exportService.ExportProductsAsync(exportPath);
 
             Console.WriteLine($"[DOTNET] ✅ Export complete. File saved at {exportPath}");
