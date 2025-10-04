@@ -24,6 +24,7 @@
             <Button Text="Sort" Command="{Binding SortCommand}" Padding="10"/>
             <Button Text="Filter" Command="{Binding FilterCommand}" Padding="10"/>
             <Button Text="Clear" Command="{Binding ClearFilterCommand}" Padding="10"/>
+            <Button Text="Mnl Fltr" Clicked="OnManualFilterClicked" Padding="10" BackgroundColor="#0078D7" TextColor="White"/>
 
         </HorizontalStackLayout>
 
@@ -55,7 +56,6 @@
             Grid.Row="2" Grid.ColumnSpan="2"
             ItemsSource="{Binding ScannedProductsStats}"
             VerticalScrollBarVisibility="Always"
-            Margin="0,0,8,0"
             BackgroundColor="Transparent">
             <CollectionView.ItemsLayout>
                 <LinearItemsLayout Orientation="Vertical"/>

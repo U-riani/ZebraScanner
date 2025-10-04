@@ -19,7 +19,7 @@
         </Grid>
 
         <!-- Static 10 slots -->
-        <Grid ColumnDefinitions="2*,*,*,*,2*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="3" Padding="4">
+        <Grid ColumnDefinitions="3*,*,*,*,2*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="3" Padding="4">
 
             <Label Grid.Row="0" Grid.Column="0" Text="{Binding Slots[0].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
                 <Label.GestureRecognizers>
@@ -29,7 +29,7 @@
             <Label Grid.Row="0" Grid.Column="1" Text="{Binding Slots[0].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="0" Grid.Column="2" Text="{Binding Slots[0].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="0" Grid.Column="3" Text="{Binding Slots[0].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="0" Grid.Column="4" Text="{Binding Slots[0].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="0" Grid.Column="4" Text="{Binding Slots[0].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
 
            
             <Label Grid.Row="1" Grid.Column="0" Text="{Binding Slots[1].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -40,7 +40,7 @@
             <Label Grid.Row="1" Grid.Column="1" Text="{Binding Slots[1].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="1" Grid.Column="2" Text="{Binding Slots[1].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="1" Grid.Column="3" Text="{Binding Slots[1].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="1" Grid.Column="4" Text="{Binding Slots[1].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="1" Grid.Column="4" Text="{Binding Slots[1].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             
             
             <Label Grid.Row="2" Grid.Column="0" Text="{Binding Slots[2].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -51,7 +51,7 @@
             <Label Grid.Row="2" Grid.Column="1" Text="{Binding Slots[2].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="2" Grid.Column="2" Text="{Binding Slots[2].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="2" Grid.Column="3" Text="{Binding Slots[2].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="2" Grid.Column="4" Text="{Binding Slots[2].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="2" Grid.Column="4" Text="{Binding Slots[2].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
            
             
             <Label Grid.Row="3" Grid.Column="0" Text="{Binding Slots[3].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -62,7 +62,7 @@
             <Label Grid.Row="3" Grid.Column="1" Text="{Binding Slots[3].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="3" Grid.Column="2" Text="{Binding Slots[3].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="3" Grid.Column="3" Text="{Binding Slots[3].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="3" Grid.Column="4" Text="{Binding Slots[3].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="3" Grid.Column="4" Text="{Binding Slots[3].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             
             
             <Label Grid.Row="4" Grid.Column="0" Text="{Binding Slots[4].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -73,7 +73,7 @@
             <Label Grid.Row="4" Grid.Column="1" Text="{Binding Slots[4].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="4" Grid.Column="2" Text="{Binding Slots[4].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="4" Grid.Column="3" Text="{Binding Slots[4].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="4" Grid.Column="4" Text="{Binding Slots[4].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="4" Grid.Column="4" Text="{Binding Slots[4].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             
            
             <Label Grid.Row="5" Grid.Column="0" Text="{Binding Slots[5].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -84,7 +84,7 @@
             <Label Grid.Row="5" Grid.Column="1" Text="{Binding Slots[5].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="5" Grid.Column="2" Text="{Binding Slots[5].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="5" Grid.Column="3" Text="{Binding Slots[5].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="5" Grid.Column="4" Text="{Binding Slots[5].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="5" Grid.Column="4" Text="{Binding Slots[5].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             
             
             <Label Grid.Row="6" Grid.Column="0" Text="{Binding Slots[6].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -95,7 +95,7 @@
             <Label Grid.Row="6" Grid.Column="1" Text="{Binding Slots[6].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="6" Grid.Column="2" Text="{Binding Slots[6].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="6" Grid.Column="3" Text="{Binding Slots[6].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="6" Grid.Column="4" Text="{Binding Slots[6].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="6" Grid.Column="4" Text="{Binding Slots[6].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             
             
             <Label Grid.Row="7" Grid.Column="0" Text="{Binding Slots[7].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -106,7 +106,7 @@
             <Label Grid.Row="7" Grid.Column="1" Text="{Binding Slots[7].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="7" Grid.Column="2" Text="{Binding Slots[7].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="7" Grid.Column="3" Text="{Binding Slots[7].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="7" Grid.Column="4" Text="{Binding Slots[7].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="7" Grid.Column="4" Text="{Binding Slots[7].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
 
 
             <Label Grid.Row="8" Grid.Column="0" Text="{Binding Slots[8].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -117,7 +117,7 @@
             <Label Grid.Row="8" Grid.Column="1" Text="{Binding Slots[8].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="8" Grid.Column="2" Text="{Binding Slots[8].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="8" Grid.Column="3" Text="{Binding Slots[8].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="8" Grid.Column="4" Text="{Binding Slots[8].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="8" Grid.Column="4" Text="{Binding Slots[8].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
 
 
             <Label Grid.Row="9" Grid.Column="0" Text="{Binding Slots[9].Barcode}" TextColor="{AppThemeBinding Dark=white, Light=black}">
@@ -128,7 +128,7 @@
             <Label Grid.Row="9" Grid.Column="1" Text="{Binding Slots[9].Was}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"></Label>
             <Label Grid.Row="9" Grid.Column="2" Text="{Binding Slots[9].IncrementBy}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Grid.Row="9" Grid.Column="3" Text="{Binding Slots[9].IsValue}" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Grid.Row="9" Grid.Column="4" Text="{Binding Slots[9].UpdatedAt}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Grid.Row="9" Grid.Column="4" Text="{Binding Slots[9].UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
 
         </Grid>
 
