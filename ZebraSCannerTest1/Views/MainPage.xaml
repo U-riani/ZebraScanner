@@ -30,20 +30,6 @@
                FontAttributes="Bold"
                HorizontalTextAlignment="Center" />
 
-        <ProgressBar 
-                Progress="{Binding ImportProgress}" 
-                IsVisible="{Binding IsBusy}" 
-                ProgressColor="Orange"
-                HeightRequest="6"
-                Margin="20,0,20,0" />
-
-        <Label 
-    Text="{Binding ImportStatusText}" 
-    FontSize="14"
-    HorizontalTextAlignment="Center"
-    TextColor="Gray"
-    IsVisible="{Binding IsBusy}" />
-
         <!-- Manual entry toggle -->
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
             <Entry x:Name="barcodeEntry"

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
 using MiniExcelLibs;
-using ZebraSCannerTest1.Models;
 
 namespace ZebraSCannerTest1.Services
 {
@@ -10,12 +9,20 @@ namespace ZebraSCannerTest1.Services
 
         public ExcelExportService(SqliteConnection conn) => _conn = conn;
 
-        public async Task ExportProductsAsync(string filePath)
+        public async Task ExportProductsAsync(string filePath, IProgress<double>? progress = null)
         {
             Console.WriteLine($"[DOTNET] Starting export to Excel: {filePath}");
 
             var rows = new List<object>();
             int count = 0;
+            int totalCount = 0;
+
+            // Get total for progress
+            using (var countCmd = _conn.CreateCommand())
+            {
+                countCmd.CommandText = "SELECT COUNT(*) FROM Products";
+                totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
+            }
 
             using var cmd = _conn.CreateCommand();
             cmd.CommandText = "SELECT Barcode, InitialQuantity, ScannedQuantity, UpdatedAt FROM Products ORDER BY UpdatedAt DESC";
@@ -31,12 +38,16 @@ namespace ZebraSCannerTest1.Services
                 });
 
                 count++;
-                if (count % 1000 == 0)
-                    Console.WriteLine($"[DOTNET] Exported {count} rows so far...");
+                if (count % 200 == 0 && totalCount > 0)
+                {
+                    double progressValue = (double)count / totalCount;
+                    progress?.Report(progressValue);
+                }
             }
 
             await MiniExcel.SaveAsAsync(filePath, rows);
 
+            progress?.Report(1.0); // 100%
             Console.WriteLine($"[DOTNET] ✅ Export finished. Total rows = {count}");
         }
     }

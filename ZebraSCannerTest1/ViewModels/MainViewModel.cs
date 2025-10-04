@@ -46,18 +46,6 @@ namespace ZebraSCannerTest1.ViewModels
 
         public const int SlotCount = 8;
 
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set { _isBusy = value; OnPropertyChanged(); }
-        }
-
-        public double ImportProgress
-        {
-            get => _importProgress;
-            set { _importProgress = value; OnPropertyChanged(); }
-        }
-
         public string ImportStatusText
         {
             get => _importStatusText;
@@ -348,6 +336,10 @@ VALUES ($barcode,$initial,$scanned,$created,$updated)";
 
                 if (result == null) return;
 
+                // ✅ Show popup before import begins
+                await ShowingLongPopup.ShowAsync("Importing data...");
+
+
                 string ext = Path.GetExtension(result.FileName).ToLowerInvariant();
                 using var stream = await result.OpenReadAsync();
                 if (ext != ".xlsx" && ext != ".json" && ext != ".db")
@@ -356,9 +348,6 @@ VALUES ($barcode,$initial,$scanned,$created,$updated)";
                     return;
                 }
 
-                IsBusy = true;
-                ImportProgress = 0;
-                ImportStatusText = $"Importing {result.FileName}...";
 
                 if (ext == ".json")
                 {
@@ -366,7 +355,6 @@ VALUES ($barcode,$initial,$scanned,$created,$updated)";
                     var json = await reader.ReadToEndAsync();
                     var items = JsonSerializer.Deserialize<List<JsonProduct>>(json) ?? new();
                     int total = items.Count;
-                    int done = 0;
 
                     using var tx = _conn.BeginTransaction();
                     using var cmd = _conn.CreateCommand();
@@ -400,13 +388,6 @@ VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
                         cmd.Parameters["$a"].Value = p.ArticCode ?? "";
                         cmd.ExecuteNonQuery();
 
-                        done++;
-                        double progress = (double)done / total;
-                        MainThread.BeginInvokeOnMainThread(() =>
-                        {
-                            ImportProgress = progress;
-                            ImportStatusText = $"Imported {done}/{total} ({progress:P0})";
-                        });
                     }
 
                     tx.Commit();
@@ -415,24 +396,28 @@ VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
                 {
                     ImportStatusText = "Importing Excel...";
                     await _dataImportService.ImportExcelAsync(stream);
-                    ImportProgress = 1;
                 }
                 else if (ext == ".db")
                 {
                     ImportStatusText = "Importing DB file...";
                     await _dataImportService.ImportDbAsync(stream);
-                    ImportProgress = 1;
                 }
 
                 ResetAndReload();
+
                 ImportStatusText = "✅ Import Complete";
+
+                // ✅ Close popup
+                await ShowingLongPopup.CloseAsync();
+
                 await Shell.Current.DisplayAlert("✅ Success", "Import finished successfully!", "OK");
             }
             catch (Exception ex)
             {
+                await ShowingLongPopup.CloseAsync(); // close popup even on error
                 await Shell.Current.DisplayAlert("❌ Import Error", ex.Message, "OK");
             }
-            finally { IsBusy = false; }
+        
         }
 
         // ===== Navigation & Reset =====
@@ -448,15 +433,36 @@ VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
 
         private async Task OnExportExcelAsync()
         {
+            try
+            {
+                // 🌀 Show simple loading popup
+                await ShowingLongPopup.ShowAsync("Exporting data...");
+
 #if ANDROID
-            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath;
+        var path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath;
 #else
-            var path = FileSystem.AppDataDirectory;
+                var path = FileSystem.AppDataDirectory;
 #endif
-            var name = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
-            await _exportService.ExportProductsAsync(Path.Combine(path, name));
-            await Shell.Current.DisplayAlert("Export Complete", $"Saved:\n{name}", "OK");
+                var name = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+                var fullPath = Path.Combine(path, name);
+
+                // 🧠 Perform export
+                await _exportService.ExportProductsAsync(fullPath);
+
+                // ✅ Dismiss popup
+                // ✅ Close popup
+                await ShowingLongPopup.CloseAsync();
+
+                await Shell.Current.DisplayAlert("✅ Export Complete", $"File saved:\n{name}", "OK");
+            }
+            catch (Exception ex)
+            {
+                await ShowingLongPopup.CloseAsync(); // ensure closed on error
+                await Shell.Current.DisplayAlert("❌ Export Error", ex.Message, "OK");
+            }
         }
+        
+
 
         private async Task OnGoToLogsAsync() =>
             await Shell.Current.GoToAsync(nameof(LogsPage));
