@@ -10,9 +10,9 @@ namespace ZebraSCannerTest1.Converters
         {
             if (value is int diff)
             {
-                if (diff < 0) return Colors.Orange;   // shortage
-                if (diff == 0) return Colors.Green;   // exact match
-                if (diff > 0) return Colors.LightGray; // overstock
+                if (diff < 0) return Color.FromArgb("#FFCDD2");   // light red
+                if (diff == 0) return Color.FromArgb("#C8E6C9");  // light green
+                if (diff > 0) return Color.FromArgb("#FFE0B2");
             }
             return Colors.Transparent;
         }

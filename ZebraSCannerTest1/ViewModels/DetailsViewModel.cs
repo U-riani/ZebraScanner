@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Data.Sqlite;
+using System.Collections.ObjectModel;
 using ZebraSCannerTest1.Messages;
 using ZebraSCannerTest1.Models;
 using ZebraSCannerTest1.Services;
@@ -13,53 +14,136 @@ public partial class DetailsViewModel : ObservableObject
     private readonly SqliteConnection _conn;
     private readonly ClipboardService _clipboard;
 
+    public ObservableCollection<ScanLog> Logs { get; } = new();
+
     public DetailsViewModel(SqliteConnection conn, ClipboardService clipboard)
     {
         _conn = conn;
         _clipboard = clipboard;
-        SaveCommand = new AsyncRelayCommand(SaveUpdatedDetailsAsync);
+
+        SaveCommand = new AsyncRelayCommand(() => SaveUpdatedDetailsAsync(isAutoSave: false, previousValue: null));
+        LoadLogsCommand = new AsyncRelayCommand(LoadLogsAsync);
     }
 
+    // Core product fields
     [ObservableProperty] private string productBarcode;
     [ObservableProperty] private int scannedQuantity;
     [ObservableProperty] private int initialQuantity;
 
-    public IAsyncRelayCommand SaveCommand { get; }
+    // Product info
+    [ObservableProperty] private string productName;
+    [ObservableProperty] private string productColor;
+    [ObservableProperty] private string productSize;
+    [ObservableProperty] private decimal productPrice;
+    [ObservableProperty] private string productArticCode;
 
-    public async Task SaveUpdatedDetailsAsync()
+    public IAsyncRelayCommand SaveCommand { get; }
+    public IAsyncRelayCommand LoadLogsCommand { get; }
+
+    // === Quantity Adjustment Commands ===
+    [RelayCommand]
+    private void Increment()
+    {
+        ScannedQuantity++;
+    }
+
+    [RelayCommand]
+    private void Decrement()
+    {
+        if (ScannedQuantity > 0)
+            ScannedQuantity--;
+    }
+
+    [RelayCommand]
+    private async Task ManualEditAsync()
+    {
+        string input = await Shell.Current.DisplayPromptAsync(
+            "Edit Quantity",
+            "Enter new scanned quantity:",
+            "OK", "Cancel", "e.g. 10",
+            maxLength: 5,
+            keyboard: Keyboard.Numeric,
+            initialValue: ScannedQuantity.ToString());
+
+        if (int.TryParse(input, out int newQty) && newQty >= 0)
+            ScannedQuantity = newQty;
+    }
+
+    // === Shared logic for saving and logging every quantity change ===
+    
+    // === Unified save logic (used by Save button + auto logging) ===
+    public async Task SaveUpdatedDetailsAsync(bool isAutoSave = false, int? previousValue = null)
     {
         if (string.IsNullOrWhiteSpace(ProductBarcode)) return;
 
         var now = DateTime.UtcNow.ToString("o");
+        int previousQty = previousValue ?? 0;
 
+        // Get last known quantity (if not passed)
+        if (previousValue == null)
+        {
+            using var checkCmd = _conn.CreateCommand();
+            checkCmd.CommandText = "SELECT ScannedQuantity FROM Products WHERE Barcode = $b";
+            checkCmd.Parameters.AddWithValue("$b", ProductBarcode);
+            var result = checkCmd.ExecuteScalar();
+            previousQty = result != null && result != DBNull.Value ? Convert.ToInt32(result) : 0;
+        }
+
+        int incrementBy = ScannedQuantity - previousQty;
+
+        // ✅ Skip saving & logging if nothing changed
+        if (incrementBy == 0)
+        {
+            if (!isAutoSave)
+                await Shell.Current.DisplayAlert("No Changes", "Scanned quantity is unchanged.", "OK");
+            return;
+        }
+
+        // Upsert into Products
         using (var cmd = _conn.CreateCommand())
         {
             cmd.CommandText = @"
-INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-VALUES ($barcode,$initial,$scanned,$created,$updated)
+INSERT INTO Products 
+    (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+VALUES 
+    ($barcode,$initial,$scanned,$created,$updated,$name,$color,$size,$price,$artic)
 ON CONFLICT(Barcode) DO UPDATE SET
     ScannedQuantity = $scanned,
     InitialQuantity = $initial,
-    UpdatedAt = $updated;";
+    UpdatedAt = $updated,
+    Name = $name,
+    Color = $color,
+    Size = $size,
+    Price = $price,
+    ArticCode = $artic;";
             cmd.Parameters.AddWithValue("$barcode", ProductBarcode);
             cmd.Parameters.AddWithValue("$initial", InitialQuantity);
             cmd.Parameters.AddWithValue("$scanned", ScannedQuantity);
             cmd.Parameters.AddWithValue("$created", now);
             cmd.Parameters.AddWithValue("$updated", now);
+            cmd.Parameters.AddWithValue("$name", ProductName ?? "");
+            cmd.Parameters.AddWithValue("$color", ProductColor ?? "");
+            cmd.Parameters.AddWithValue("$size", ProductSize ?? "");
+            cmd.Parameters.AddWithValue("$price", ProductPrice);
+            cmd.Parameters.AddWithValue("$artic", ProductArticCode ?? "");
             cmd.ExecuteNonQuery();
         }
 
+        // Add log record
         using (var log = _conn.CreateCommand())
         {
             log.CommandText = @"
-INSERT INTO ScanLogs (Barcode, ScannedQuantity, Timestamp)
-VALUES ($barcode,$scanned,$ts)";
+INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt)
+VALUES ($barcode, $was, $inc, $isValue, $updated)";
             log.Parameters.AddWithValue("$barcode", ProductBarcode);
-            log.Parameters.AddWithValue("$scanned", ScannedQuantity);
-            log.Parameters.AddWithValue("$ts", DateTime.UtcNow.ToString("o"));
+            log.Parameters.AddWithValue("$was", previousQty);
+            log.Parameters.AddWithValue("$inc", incrementBy);
+            log.Parameters.AddWithValue("$isValue", ScannedQuantity);
+            log.Parameters.AddWithValue("$updated", now);
             log.ExecuteNonQuery();
         }
 
+        // Notify and refresh UI
         WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(new Product
         {
             Barcode = ProductBarcode,
@@ -69,12 +153,63 @@ VALUES ($barcode,$scanned,$ts)";
             CreatedAt = DateTime.UtcNow
         }));
 
+        await LoadLogsAsync();
 
-        // ❌ Remove auto navigation:
-        // await Shell.Current.GoToAsync("..");
+        if (!isAutoSave)
+            await Shell.Current.DisplayAlert("Saved", "Product updated successfully.", "OK");
+    }
 
-        // ✅ Instead, show confirmation and stay on page
-        await Shell.Current.DisplayAlert("Saved", "Product updated successfully.", "OK");
+    private async Task LoadLogsAsync()
+    {
+        if (string.IsNullOrEmpty(ProductBarcode)) return;
+
+        Logs.Clear();
+
+        using var cmd = _conn.CreateCommand();
+        cmd.CommandText = @"
+SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt
+FROM ScanLogs
+WHERE Barcode = $b
+ORDER BY UpdatedAt DESC
+LIMIT 50";
+        cmd.Parameters.AddWithValue("$b", ProductBarcode);
+
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            Logs.Add(new ScanLog
+            {
+                Barcode = r.GetString(0),
+                Was = r.GetInt32(1),
+                IncrementBy = r.GetInt32(2),
+                IsValue = r.GetInt32(3),
+                UpdatedAt = DateTime.Parse(r.GetString(4))
+            });
+        }
+    }
+
+    public async Task LoadProductAsync()
+    {
+        if (string.IsNullOrEmpty(ProductBarcode)) return;
+
+        using var cmd = _conn.CreateCommand();
+        cmd.CommandText = @"
+SELECT Name, Color, Size, Price, ArticCode, InitialQuantity, ScannedQuantity
+FROM Products
+WHERE Barcode = $b";
+        cmd.Parameters.AddWithValue("$b", ProductBarcode);
+
+        using var r = cmd.ExecuteReader();
+        if (r.Read())
+        {
+            ProductName = r.IsDBNull(0) ? "" : r.GetString(0);
+            ProductColor = r.IsDBNull(1) ? "" : r.GetString(1);
+            ProductSize = r.IsDBNull(2) ? "" : r.GetString(2);
+            ProductPrice = r.IsDBNull(3) ? 0 : Convert.ToDecimal(r.GetString(3));
+            ProductArticCode = r.IsDBNull(4) ? "" : r.GetString(4);
+            InitialQuantity = r.IsDBNull(5) ? 0 : r.GetInt32(5);
+            ScannedQuantity = r.IsDBNull(6) ? 0 : r.GetInt32(6);
+        }
     }
 
     [RelayCommand]
@@ -82,5 +217,4 @@ VALUES ($barcode,$scanned,$ts)";
     {
         await _clipboard.CopyAsync(barcode);
     }
-
 }

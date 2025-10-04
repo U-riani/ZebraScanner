@@ -3,7 +3,9 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Windows.Input;
 using ZebraSCannerTest1.Helpers;
 using ZebraSCannerTest1.Messages;
@@ -17,99 +19,51 @@ using Android.Media;
 
 namespace ZebraSCannerTest1.ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public partial class MainViewModel : INotifyPropertyChanged
     {
         private readonly SqliteConnection _conn;
-        private readonly ExcelImportService _importService;
         private readonly ExcelExportService _exportService;
         private readonly LogBufferService _logBuffer;
+        private readonly DataImportService _dataImportService;
 
-        // scan queue for thread-safe fast ingestion
         private readonly Queue<string> _scanQueue = new();
         private readonly object _scanLock = new();
         private bool _isFlushingScans = false;
 
-        // cache for all products by barcode
         private readonly Dictionary<string, Product> _cache = new();
-
-        // recent list that feeds the 8 static slots (most recent first)
         private readonly List<string> _recent = new(capacity: 8);
-
-        // prepared UPSERT command
         private readonly SqliteCommand _upsertProductCmd;
 
         private string _currentBarcode;
         private string _showCurrentBarcode;
         private bool _isManualEntryVisible = true;
+        private bool _isBusy;
+        private double _importProgress;
+        private string _importStatusText = string.Empty;
 
         public event PropertyChangedEventHandler PropertyChanged;
-        public event Action<Product> NewProductAdded; // kept for compatibility, but not used for scrolling now
+        public event Action<Product> NewProductAdded;
 
         public const int SlotCount = 8;
 
-        // 8 static slots for the UI
-        public ObservableCollection<ProductSlot> Slots { get; } = new(
-            Enumerable.Range(0, SlotCount).Select(_ => new ProductSlot())
-        );
-
-        public IAsyncRelayCommand ExportExcelCommand { get; }
-
-        public MainViewModel(SqliteConnection conn, ExcelImportService importService, ExcelExportService exportService, LogBufferService logBuffer)
+        public bool IsBusy
         {
-            _conn = conn;
-            _importService = importService;
-            _exportService = exportService;
-            _logBuffer = logBuffer;
-
-            // prepare UPSERT
-            _upsertProductCmd = _conn.CreateCommand();
-            _upsertProductCmd.CommandText = @"
-INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-VALUES ($barcode,$initial,$scanned,$created,$updated)
-ON CONFLICT(Barcode) DO UPDATE SET
-    ScannedQuantity = $scanned,
-    UpdatedAt       = $updated;";
-            _upsertProductCmd.Parameters.Add("$barcode", SqliteType.Text);
-            _upsertProductCmd.Parameters.Add("$initial", SqliteType.Integer);
-            _upsertProductCmd.Parameters.Add("$scanned", SqliteType.Integer);
-            _upsertProductCmd.Parameters.Add("$created", SqliteType.Text);
-            _upsertProductCmd.Parameters.Add("$updated", SqliteType.Text);
-
-            LoadCache();
-            LoadRecentIntoSlots();
-
-            AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
-            GoToDetailsCommand = new AsyncRelayCommand<ProductSlot>(OnSlotTappedAsync);
-            GoToLogsCommand = new AsyncRelayCommand(OnGoToLogsAsync);
-            GoToScannedProductsCommand = new AsyncRelayCommand(OnGoToScannedProductsAsync);
-            ImportExcelCommand = new AsyncRelayCommand(OnImportExcelAsync);
-            ToggleManualEntryCommand = new RelayCommand(() => IsManualEntryVisible = !IsManualEntryVisible);
-
-            // if details page updates something, refresh cache and slots
-            WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(this, (r, m) =>
-            {
-                _cache[m.Product.Barcode] = m.Product;
-
-                // move updated product to top of recent list
-                int existing = _recent.IndexOf(m.Product.Barcode);
-                if (existing >= 0) _recent.RemoveAt(existing);
-                _recent.Insert(0, m.Product.Barcode);
-                if (_recent.Count > SlotCount) _recent.RemoveAt(_recent.Count - 1);
-
-                // refresh all slots
-                for (int i = 0; i < SlotCount; i++)
-                {
-                    if (i < _recent.Count)
-                        UpdateSlotFromCache(i, _recent[i]);
-                    else
-                        ClearSlot(i);
-                }
-            });
-
-            ExportExcelCommand = new AsyncRelayCommand(OnExportExcelAsync);
+            get => _isBusy;
+            set { _isBusy = value; OnPropertyChanged(); }
         }
 
-        // =========== Bindables ===========
+        public double ImportProgress
+        {
+            get => _importProgress;
+            set { _importProgress = value; OnPropertyChanged(); }
+        }
+
+        public string ImportStatusText
+        {
+            get => _importStatusText;
+            set { _importStatusText = value; OnPropertyChanged(); }
+        }
+
         public string CurrentBarcode
         {
             get => _currentBarcode;
@@ -128,15 +82,102 @@ ON CONFLICT(Barcode) DO UPDATE SET
             set { _isManualEntryVisible = value; OnPropertyChanged(); }
         }
 
-        // =========== Commands ===========
-        public IAsyncRelayCommand ImportExcelCommand { get; }
+        public ObservableCollection<ProductSlot> Slots { get; } =
+            new(Enumerable.Range(0, SlotCount).Select(_ => new ProductSlot()));
+
+        public IAsyncRelayCommand ExportExcelCommand { get; }
+        public IAsyncRelayCommand ImportDataCommand { get; }
         public ICommand AddProductCommand { get; }
         public ICommand GoToDetailsCommand { get; }
         public ICommand GoToLogsCommand { get; }
         public ICommand GoToScannedProductsCommand { get; }
         public ICommand ToggleManualEntryCommand { get; }
 
-        // =========== Data Loaders ===========
+        public MainViewModel(
+            SqliteConnection conn,
+            ExcelImportService importService,
+            ExcelExportService exportService,
+            LogBufferService logBuffer)
+        {
+            _conn = conn;
+            _exportService = exportService;
+            _logBuffer = logBuffer;
+            _dataImportService = new DataImportService(conn);
+            
+                // ✅ Ensure required tables exist (especially ScanLogs)
+    using (var cmd = _conn.CreateCommand())
+    {
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS ScanLogs (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Barcode TEXT NOT NULL,
+                Quantity INTEGER DEFAULT 1,
+                ScannedAt TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS Products (
+                Barcode TEXT PRIMARY KEY,
+                InitialQuantity INTEGER NOT NULL DEFAULT 0,
+                ScannedQuantity INTEGER NOT NULL DEFAULT 0,
+                CreatedAt TEXT NOT NULL,
+                UpdatedAt TEXT NOT NULL,
+                Name TEXT,
+                Color TEXT,
+                Size TEXT,
+                Price TEXT,
+                ArticCode TEXT
+            );";
+        cmd.ExecuteNonQuery();
+    }
+
+
+            // SQL command for upserting
+            _upsertProductCmd = _conn.CreateCommand();
+            _upsertProductCmd.CommandText = @"
+                INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+                VALUES ($barcode,$initial,$scanned,$created,$updated)
+                ON CONFLICT(Barcode) DO UPDATE SET
+                    ScannedQuantity = $scanned,
+                    UpdatedAt       = $updated;";
+            _upsertProductCmd.Parameters.Add("$barcode", SqliteType.Text);
+            _upsertProductCmd.Parameters.Add("$initial", SqliteType.Integer);
+            _upsertProductCmd.Parameters.Add("$scanned", SqliteType.Integer);
+            _upsertProductCmd.Parameters.Add("$created", SqliteType.Text);
+            _upsertProductCmd.Parameters.Add("$updated", SqliteType.Text);
+
+            LoadCache();
+            LoadRecentIntoSlots();
+
+            // Commands
+            AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
+            GoToDetailsCommand = new AsyncRelayCommand<ProductSlot>(OnSlotTappedAsync);
+            GoToLogsCommand = new AsyncRelayCommand(OnGoToLogsAsync);
+            GoToScannedProductsCommand = new AsyncRelayCommand(OnGoToScannedProductsAsync);
+            ImportDataCommand = new AsyncRelayCommand(OnImportDataAsync);
+            ToggleManualEntryCommand = new RelayCommand(() => IsManualEntryVisible = !IsManualEntryVisible);
+            ExportExcelCommand = new AsyncRelayCommand(OnExportExcelAsync);
+
+            // Messenger to refresh slots
+            WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(this, (r, m) =>
+            {
+                _cache[m.Product.Barcode] = m.Product;
+
+                int existing = _recent.IndexOf(m.Product.Barcode);
+                if (existing >= 0) _recent.RemoveAt(existing);
+                _recent.Insert(0, m.Product.Barcode);
+                if (_recent.Count > SlotCount) _recent.RemoveAt(_recent.Count - 1);
+
+                for (int i = 0; i < SlotCount; i++)
+                {
+                    if (i < _recent.Count)
+                        UpdateSlotFromCache(i, _recent[i]);
+                    else
+                        ClearSlot(i);
+                }
+            });
+        }
+
+        // ===== Loaders =====
         private void LoadCache()
         {
             _cache.Clear();
@@ -160,7 +201,6 @@ ON CONFLICT(Barcode) DO UPDATE SET
         private void LoadRecentIntoSlots()
         {
             _recent.Clear();
-
             using var cmd = _conn.CreateCommand();
             cmd.CommandText = @"SELECT Barcode FROM Products ORDER BY UpdatedAt DESC LIMIT 8";
             using var r = cmd.ExecuteReader();
@@ -177,30 +217,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
 
         private void UpdateSlotFromCache(int slotIndex, string barcode)
         {
-            if (!_cache.TryGetValue(barcode, out var p))
-            {
-                using var cmd = _conn.CreateCommand();
-                cmd.CommandText = "SELECT InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM Products WHERE Barcode=$b";
-                cmd.Parameters.AddWithValue("$b", barcode);
-                using var r = cmd.ExecuteReader();
-                if (r.Read())
-                {
-                    p = new Product
-                    {
-                        Barcode = barcode,
-                        InitialQuantity = r.GetInt32(0),
-                        ScannedQuantity = r.GetInt32(1),
-                        CreatedAt = DateTime.Parse(r.GetString(2)),
-                        UpdatedAt = DateTime.Parse(r.GetString(3))
-                    };
-                    _cache[barcode] = p;
-                }
-                else
-                {
-                    ClearSlot(slotIndex);
-                    return;
-                }
-            }
+            if (!_cache.TryGetValue(barcode, out var p)) return;
 
             var slot = Slots[slotIndex];
             MainThread.BeginInvokeOnMainThread(() =>
@@ -222,190 +239,18 @@ ON CONFLICT(Barcode) DO UPDATE SET
             });
         }
 
-        // =========== Scanning ===========
+        // ===== Scanning =====
         public async Task AddProductAsync(string scannedBarcode)
         {
             scannedBarcode = scannedBarcode?.Trim();
             if (string.IsNullOrEmpty(scannedBarcode)) return;
 
             lock (_scanLock) _scanQueue.Enqueue(scannedBarcode);
-
             ShowCurrentBarcode = scannedBarcode;
 
             if (!_isFlushingScans)
                 _ = Task.Run(ProcessScanQueueAsync);
         }
-
-        //private async Task ProcessScanQueueAsync()
-        //{
-        //    _isFlushingScans = true;
-        //    try
-        //    {
-        //        while (true)
-        //        {
-        //            string nextBarcode = null;
-        //            lock (_scanLock)
-        //            {
-        //                if (_scanQueue.Count > 0)
-        //                    nextBarcode = _scanQueue.Dequeue();
-        //            }
-        //            if (nextBarcode == null) break;
-
-        //            if (!_cache.TryGetValue(nextBarcode, out var product))
-        //            {
-        //                product = new Product
-        //                {
-        //                    Barcode = nextBarcode,
-        //                    InitialQuantity = 0,
-        //                    ScannedQuantity = 0,
-        //                    CreatedAt = DateTime.UtcNow,
-        //                    UpdatedAt = DateTime.UtcNow
-        //                };
-        //                _cache[nextBarcode] = product;
-        //            }
-
-        //            product.ScannedQuantity++;
-        //            product.UpdatedAt = DateTime.UtcNow;
-
-        //            _upsertProductCmd.Parameters["$barcode"].Value = product.Barcode;
-        //            _upsertProductCmd.Parameters["$initial"].Value = product.InitialQuantity;
-        //            _upsertProductCmd.Parameters["$scanned"].Value = product.ScannedQuantity;
-        //            _upsertProductCmd.Parameters["$created"].Value = product.CreatedAt.ToString("o");
-        //            _upsertProductCmd.Parameters["$updated"].Value = product.UpdatedAt.ToString("o");
-        //            _upsertProductCmd.ExecuteNonQuery();
-
-        //            var log = new ScanLog
-        //            {
-        //                Barcode = product.Barcode,
-        //                ScannedQuantity = product.ScannedQuantity,
-        //                Timestamp = DateTime.UtcNow
-        //            };
-        //            _logBuffer.AddLog(log);
-        //            WeakReferenceMessenger.Default.Send(new NewScanLogMessage(log));
-
-        //            int existing = _recent.IndexOf(nextBarcode);
-        //            if (existing >= 0) _recent.RemoveAt(existing);
-        //            _recent.Insert(0, nextBarcode);
-        //            if (_recent.Count > SlotCount) _recent.RemoveAt(_recent.Count - 1);
-
-        //            for (int i = 0; i < SlotCount; i++)
-        //            {
-        //                if (i < _recent.Count)
-        //                    UpdateSlotFromCache(i, _recent[i]);
-        //                else
-        //                    ClearSlot(i);
-        //            }
-        //        }
-        //    }
-        //    finally
-        //    {
-        //        _isFlushingScans = false;
-        //    }
-        //}
-
-
-        //        private async Task ProcessScanQueueAsync()
-        //        {
-        //            _isFlushingScans = true;
-        //            try
-        //            {
-        //                while (true)
-        //                {
-        //                    string nextBarcode = null;
-        //                    lock (_scanLock)
-        //                    {
-        //                        if (_scanQueue.Count > 0)
-        //                            nextBarcode = _scanQueue.Dequeue();
-        //                    }
-        //                    if (nextBarcode == null) break;
-
-        //                    Product product;
-
-        //                    if (!_cache.TryGetValue(nextBarcode, out product))
-        //                    {
-        //                        // 🔹 Ask user if they want to add unknown barcode
-        //                        bool addNew = await MainThread.InvokeOnMainThreadAsync(async () =>
-        //                        {
-        //                            return await Shell.Current.DisplayAlert(
-        //                                "Unknown Barcode",
-        //                                $"Barcode {nextBarcode} was not found in the database.\n\nDo you want to add it?",
-        //                                "Yes", "No");
-        //                        });
-
-        //                        if (!addNew)
-        //                            continue; // ❌ Skip this barcode if user said No
-
-        //                        // ✅ Create and insert a new product
-        //                        product = new Product
-        //                        {
-        //                            Barcode = nextBarcode,
-        //                            InitialQuantity = 0,
-        //                            ScannedQuantity = 0,
-        //                            CreatedAt = DateTime.UtcNow,
-        //                            UpdatedAt = DateTime.UtcNow
-        //                        };
-        //                        _cache[nextBarcode] = product;
-
-        //                        using var insertCmd = _conn.CreateCommand();
-        //                        insertCmd.CommandText = @"
-        //INSERT OR IGNORE INTO Products 
-        //(Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-        //VALUES ($barcode, $initial, $scanned, $created, $updated)";
-        //                        insertCmd.Parameters.AddWithValue("$barcode", product.Barcode);
-        //                        insertCmd.Parameters.AddWithValue("$initial", product.InitialQuantity);
-        //                        insertCmd.Parameters.AddWithValue("$scanned", product.ScannedQuantity);
-        //                        insertCmd.Parameters.AddWithValue("$created", product.CreatedAt.ToString("o"));
-        //                        insertCmd.Parameters.AddWithValue("$updated", product.UpdatedAt.ToString("o"));
-        //                        insertCmd.ExecuteNonQuery();
-        //                    }
-
-        //                    // 🔹 Increase scanned quantity
-        //                    product.ScannedQuantity++;
-        //                    product.UpdatedAt = DateTime.UtcNow;
-
-        //                    _upsertProductCmd.Parameters["$barcode"].Value = product.Barcode;
-        //                    _upsertProductCmd.Parameters["$initial"].Value = product.InitialQuantity;
-        //                    _upsertProductCmd.Parameters["$scanned"].Value = product.ScannedQuantity;
-        //                    _upsertProductCmd.Parameters["$created"].Value = product.CreatedAt.ToString("o");
-        //                    _upsertProductCmd.Parameters["$updated"].Value = product.UpdatedAt.ToString("o");
-        //                    _upsertProductCmd.ExecuteNonQuery();
-
-        //                    var log = new ScanLog
-        //                    {
-        //                        Barcode = product.Barcode,
-        //                        ScannedQuantity = product.ScannedQuantity,
-        //                        Timestamp = DateTime.UtcNow
-        //                    };
-        //                    _logBuffer.AddLog(log);
-        //                    WeakReferenceMessenger.Default.Send(new NewScanLogMessage(log));
-
-        //// success case
-        //#if ANDROID
-        //var toneOk = new ToneGenerator(Android.Media.Stream.System, 100);
-        //toneOk.StartTone(Tone.PropAck, 100); // short beep for success
-        //#endif
-
-        //                                        int existing = _recent.IndexOf(nextBarcode);
-        //                    if (existing >= 0) _recent.RemoveAt(existing);
-        //                    _recent.Insert(0, nextBarcode);
-        //                    if (_recent.Count > SlotCount) _recent.RemoveAt(_recent.Count - 1);
-
-        //                    for (int i = 0; i < SlotCount; i++)
-        //                    {
-        //                        if (i < _recent.Count)
-        //                            UpdateSlotFromCache(i, _recent[i]);
-        //                        else
-        //                            ClearSlot(i);
-        //                    }
-        //                }
-        //            }
-        //            finally
-        //            {
-        //                _isFlushingScans = false;
-        //            }
-        //        }
-
-        // =========== Navigation & Import ===========
 
         private async Task ProcessScanQueueAsync()
         {
@@ -422,30 +267,17 @@ ON CONFLICT(Barcode) DO UPDATE SET
                     }
                     if (nextBarcode == null) break;
 
-                    Product product;
-
-                    if (!_cache.TryGetValue(nextBarcode, out product))
+                    if (!_cache.TryGetValue(nextBarcode, out var product))
                     {
-                        // 🔹 Ask user if they want to add unknown barcode
-                        bool addNew = await MainThread.InvokeOnMainThreadAsync(async () =>
-                        {
 #if ANDROID
-                    // ❌ Play error beep
-                    var toneError = new Android.Media.ToneGenerator(Android.Media.Stream.System, 100);
-                    toneError.StartTone(Android.Media.Tone.CdmaPip, 1000);
+                        var toneError = new ToneGenerator(Android.Media.Stream.System, 100);
+                        toneError.StartTone(Tone.CdmaPip, 300);
 #endif
-                            return await Shell.Current.DisplayAlert(
-                                "Unknown Barcode",
-                                $"Barcode {nextBarcode} was not found in the database.\n\nDo you want to add it?",
-                                "Yes", "No");
-                        });
+                        bool addNew = await MainThread.InvokeOnMainThreadAsync(async () =>
+                            await Shell.Current.DisplayAlert("Unknown Barcode",
+                                $"Barcode {nextBarcode} not found.\nAdd it?", "Yes", "No"));
+                        if (!addNew) continue;
 
-                        if (!addNew)
-                        {
-                            continue; // Skip this barcode
-                        }
-
-                        // ✅ Create and insert a new product
                         product = new Product
                         {
                             Barcode = nextBarcode,
@@ -454,22 +286,21 @@ ON CONFLICT(Barcode) DO UPDATE SET
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         };
-                        _cache[nextBarcode] = product;
 
-                        using var insertCmd = _conn.CreateCommand();
-                        insertCmd.CommandText = @"
+                        using var cmd = _conn.CreateCommand();
+                        cmd.CommandText = @"
 INSERT OR IGNORE INTO Products 
 (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-VALUES ($barcode, $initial, $scanned, $created, $updated)";
-                        insertCmd.Parameters.AddWithValue("$barcode", product.Barcode);
-                        insertCmd.Parameters.AddWithValue("$initial", product.InitialQuantity);
-                        insertCmd.Parameters.AddWithValue("$scanned", product.ScannedQuantity);
-                        insertCmd.Parameters.AddWithValue("$created", product.CreatedAt.ToString("o"));
-                        insertCmd.Parameters.AddWithValue("$updated", product.UpdatedAt.ToString("o"));
-                        insertCmd.ExecuteNonQuery();
+VALUES ($barcode,$initial,$scanned,$created,$updated)";
+                        cmd.Parameters.AddWithValue("$barcode", product.Barcode);
+                        cmd.Parameters.AddWithValue("$initial", product.InitialQuantity);
+                        cmd.Parameters.AddWithValue("$scanned", product.ScannedQuantity);
+                        cmd.Parameters.AddWithValue("$created", product.CreatedAt.ToString("o"));
+                        cmd.Parameters.AddWithValue("$updated", product.UpdatedAt.ToString("o"));
+                        cmd.ExecuteNonQuery();
+                        _cache[nextBarcode] = product;
                     }
 
-                    // 🔹 Increase scanned quantity
                     product.ScannedQuantity++;
                     product.UpdatedAt = DateTime.UtcNow;
 
@@ -479,76 +310,135 @@ VALUES ($barcode, $initial, $scanned, $created, $updated)";
                     _upsertProductCmd.Parameters["$created"].Value = product.CreatedAt.ToString("o");
                     _upsertProductCmd.Parameters["$updated"].Value = product.UpdatedAt.ToString("o");
                     _upsertProductCmd.ExecuteNonQuery();
-
-                    var log = new ScanLog
+                   
+                    _logBuffer.AddLog(new ScanLog
                     {
                         Barcode = product.Barcode,
-                        ScannedQuantity = product.ScannedQuantity,
-                        Timestamp = DateTime.UtcNow
-                    };
-                    _logBuffer.AddLog(log);
-                    WeakReferenceMessenger.Default.Send(new NewScanLogMessage(log));
+                        Was = product.ScannedQuantity - 1,
+                        IncrementBy = 1,
+                        IsValue = product.ScannedQuantity,
+                        UpdatedAt = DateTime.UtcNow
+                    });
 
-                    int existing = _recent.IndexOf(nextBarcode);
-                    if (existing >= 0) _recent.RemoveAt(existing);
-                    _recent.Insert(0, nextBarcode);
-                    if (_recent.Count > SlotCount) _recent.RemoveAt(_recent.Count - 1);
-
-                    for (int i = 0; i < SlotCount; i++)
-                    {
-                        if (i < _recent.Count)
-                            UpdateSlotFromCache(i, _recent[i]);
-                        else
-                            ClearSlot(i);
-                    }
 
 #if ANDROID
-            // ✅ Play short success beep
-            var toneOk = new Android.Media.ToneGenerator(Android.Media.Stream.System, 100);
-            toneOk.StartTone(Android.Media.Tone.PropAck, 100);
+                    var toneOk = new ToneGenerator(Android.Media.Stream.System, 100);
+                    toneOk.StartTone(Tone.PropAck, 100);
 #endif
+
+                    WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
                 }
             }
-            finally
-            {
-                _isFlushingScans = false;
-            }
+            finally { _isFlushingScans = false; }
         }
 
-
-        private async Task OnImportExcelAsync()
+        // ===== Import with Progress =====
+        private async Task OnImportDataAsync()
         {
-            var result = await FilePicker.PickAsync(new PickOptions
+            try
             {
-                PickerTitle = "Select Excel File",
-                FileTypes = FileTypes.Excel
-            });
-            if (result == null) return;
+                var result = await FilePicker.PickAsync(new PickOptions
+                {
+                    PickerTitle = "Select File to Import",
+                    FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                    {
+                        { DevicePlatform.Android, new[] { "*/*" } }
+                    })
+                });
 
-            await _importService.ImportExcelAsync(result.FullPath);
-           
-            // 🔥 Clear in-memory logs too
-            _logBuffer.Clear();
+                if (result == null) return;
 
-            // 🔥 reset in-memory state for a truly fresh start
-            _cache.Clear();
-            _recent.Clear();
-            foreach (var slot in Slots)
-            {
-                slot.Barcode = string.Empty;
-                slot.InitialQuantity = 0;
-                slot.ScannedQuantity = 0;
+                string ext = Path.GetExtension(result.FileName).ToLowerInvariant();
+                using var stream = await result.OpenReadAsync();
+                if (ext != ".xlsx" && ext != ".json" && ext != ".db")
+                {
+                    await Shell.Current.DisplayAlert("Invalid File", "Select .xlsx, .json, or .db file.", "OK");
+                    return;
+                }
+
+                IsBusy = true;
+                ImportProgress = 0;
+                ImportStatusText = $"Importing {result.FileName}...";
+
+                if (ext == ".json")
+                {
+                    using var reader = new StreamReader(stream);
+                    var json = await reader.ReadToEndAsync();
+                    var items = JsonSerializer.Deserialize<List<JsonProduct>>(json) ?? new();
+                    int total = items.Count;
+                    int done = 0;
+
+                    using var tx = _conn.BeginTransaction();
+                    using var cmd = _conn.CreateCommand();
+                    cmd.Transaction = tx;
+                    cmd.CommandText = @"
+INSERT OR REPLACE INTO Products
+(Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
+                    cmd.Parameters.Add("$b", SqliteType.Text);
+                    cmd.Parameters.Add("$i", SqliteType.Integer);
+                    cmd.Parameters.Add("$s", SqliteType.Integer);
+                    cmd.Parameters.Add("$c", SqliteType.Text);
+                    cmd.Parameters.Add("$u", SqliteType.Text);
+                    cmd.Parameters.Add("$n", SqliteType.Text);
+                    cmd.Parameters.Add("$co", SqliteType.Text);
+                    cmd.Parameters.Add("$si", SqliteType.Text);
+                    cmd.Parameters.Add("$p", SqliteType.Text);
+                    cmd.Parameters.Add("$a", SqliteType.Text);
+
+                    foreach (var p in items)
+                    {
+                        cmd.Parameters["$b"].Value = p.Barcode ?? "";
+                        cmd.Parameters["$i"].Value = p.InitialQuantity;
+                        cmd.Parameters["$s"].Value = p.ScannedQuantity;
+                        cmd.Parameters["$c"].Value = p.CreatedAt ?? DateTime.UtcNow.ToString("o");
+                        cmd.Parameters["$u"].Value = p.UpdatedAt ?? DateTime.UtcNow.ToString("o");
+                        cmd.Parameters["$n"].Value = p.Name ?? "";
+                        cmd.Parameters["$co"].Value = p.Color ?? "";
+                        cmd.Parameters["$si"].Value = p.Size ?? "";
+                        cmd.Parameters["$p"].Value = p.Price ?? "";
+                        cmd.Parameters["$a"].Value = p.ArticCode ?? "";
+                        cmd.ExecuteNonQuery();
+
+                        done++;
+                        double progress = (double)done / total;
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            ImportProgress = progress;
+                            ImportStatusText = $"Imported {done}/{total} ({progress:P0})";
+                        });
+                    }
+
+                    tx.Commit();
+                }
+                else if (ext == ".xlsx")
+                {
+                    ImportStatusText = "Importing Excel...";
+                    await _dataImportService.ImportExcelAsync(stream);
+                    ImportProgress = 1;
+                }
+                else if (ext == ".db")
+                {
+                    ImportStatusText = "Importing DB file...";
+                    await _dataImportService.ImportDbAsync(stream);
+                    ImportProgress = 1;
+                }
+
+                ResetAndReload();
+                ImportStatusText = "✅ Import Complete";
+                await Shell.Current.DisplayAlert("✅ Success", "Import finished successfully!", "OK");
             }
-
-            LoadCache();
-            LoadRecentIntoSlots();
+            catch (Exception ex)
+            {
+                await Shell.Current.DisplayAlert("❌ Import Error", ex.Message, "OK");
+            }
+            finally { IsBusy = false; }
         }
 
+        // ===== Navigation & Reset =====
         private async Task OnSlotTappedAsync(ProductSlot slot)
         {
             if (slot == null || string.IsNullOrEmpty(slot.Barcode)) return;
-
-            // hydrate product from cache
             if (_cache.TryGetValue(slot.Barcode, out var product))
             {
                 await Shell.Current.GoToAsync(
@@ -558,37 +448,14 @@ VALUES ($barcode, $initial, $scanned, $created, $updated)";
 
         private async Task OnExportExcelAsync()
         {
-            // 🔹 Ask user first
-            bool confirm = await Shell.Current.DisplayAlert(
-                "Confirm Export",
-                "Do you want to export products to Excel?",
-                "Yes", "No");
-
-            if (!confirm)
-                return; // ❌ User canceled
-
 #if ANDROID
-    var downloadsPath = Android.OS.Environment
-        .GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads)
-        .AbsolutePath;
-
-    var fileName = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
-    var exportPath = Path.Combine(downloadsPath, fileName);
+            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath;
 #else
-            var fileName = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
-            var exportPath = Path.Combine(FileSystem.AppDataDirectory, fileName);
+            var path = FileSystem.AppDataDirectory;
 #endif
-
-            // ✅ Do the export
-            await _exportService.ExportProductsAsync(exportPath);
-
-            Console.WriteLine($"[DOTNET] ✅ Export complete. File saved at {exportPath}");
-
-            await Shell.Current.DisplayAlert(
-                "Export Complete",
-                $"File saved in Downloads:\n{fileName}",
-                "OK"
-            );
+            var name = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+            await _exportService.ExportProductsAsync(Path.Combine(path, name));
+            await Shell.Current.DisplayAlert("Export Complete", $"Saved:\n{name}", "OK");
         }
 
         private async Task OnGoToLogsAsync() =>
@@ -597,7 +464,35 @@ VALUES ($barcode, $initial, $scanned, $created, $updated)";
         private async Task OnGoToScannedProductsAsync() =>
             await Shell.Current.GoToAsync(nameof(ScannedProductsPage));
 
-        void OnPropertyChanged([CallerMemberName] string name = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private void ResetAndReload()
+        {
+            _cache.Clear();
+            _recent.Clear();
+            foreach (var s in Slots)
+            {
+                s.Barcode = "";
+                s.InitialQuantity = 0;
+                s.ScannedQuantity = 0;
+            }
+            LoadCache();
+            LoadRecentIntoSlots();
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string n = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+    }
+
+    public class JsonProduct
+    {
+        public string Barcode { get; set; }
+        public int InitialQuantity { get; set; }
+        public int ScannedQuantity { get; set; }
+        public string CreatedAt { get; set; }
+        public string UpdatedAt { get; set; }
+        public string Name { get; set; }
+        public string Color { get; set; }
+        public string Size { get; set; }
+        public string Price { get; set; }
+        public string ArticCode { get; set; }
     }
 }

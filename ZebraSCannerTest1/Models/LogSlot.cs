@@ -6,9 +6,10 @@ namespace ZebraSCannerTest1.Models;
 public class LogSlot : INotifyPropertyChanged
 {
     private string _barcode;
-    private int _scannedQuantity;
-    private int _initialQuantity;
-    private DateTime _timestamp;
+    private int _was;
+    private int _incrementBy;
+    private int _isValue;
+    private DateTime _updatedAt;
 
     public string Barcode
     {
@@ -16,22 +17,28 @@ public class LogSlot : INotifyPropertyChanged
         set { _barcode = value; OnPropertyChanged(); }
     }
 
-    public int ScannedQuantity
+    public int Was
     {
-        get => _scannedQuantity;
-        set { _scannedQuantity = value; OnPropertyChanged(); }
+        get => _was;
+        set { _was = value; OnPropertyChanged(); }
     }
 
-    public int InitialQuantity
+    public int IncrementBy
     {
-        get => _initialQuantity;
-        set { _initialQuantity = value; OnPropertyChanged(); }
+        get => _incrementBy;
+        set { _incrementBy = value; OnPropertyChanged(); }
     }
 
-    public DateTime Timestamp
+    public int IsValue
     {
-        get => _timestamp;
-        set { _timestamp = value; OnPropertyChanged(); }
+        get => _isValue;
+        set { _isValue = value; OnPropertyChanged(); }
+    }
+
+    public DateTime UpdatedAt
+    {
+        get => _updatedAt;
+        set { _updatedAt = value; OnPropertyChanged(); }
     }
 
     public event PropertyChangedEventHandler PropertyChanged;

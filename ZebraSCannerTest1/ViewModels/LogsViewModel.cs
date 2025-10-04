@@ -1,6 +1,4 @@
-﻿//using CommunityToolkit.Maui.Alerts;
-//using CommunityToolkit.Maui.Core;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
@@ -14,7 +12,6 @@ public partial class LogsViewModel : ObservableObject
     private readonly SqliteConnection _conn;
     private readonly LogBufferService _logBuffer;
     private readonly ClipboardService _clipboard;
-
 
     public const int PageSize = 10;
 
@@ -32,7 +29,7 @@ public partial class LogsViewModel : ObservableObject
         set => SetProperty(ref _totalPages, value);
     }
 
-    private string _currentFilter = ""; // 🔹 barcode filter
+    private string _currentFilter = "";
 
     public ObservableCollection<LogSlot> Slots { get; } =
         new(Enumerable.Range(0, PageSize).Select(_ => new LogSlot()));
@@ -44,16 +41,13 @@ public partial class LogsViewModel : ObservableObject
         _clipboard = clipboard;
 
         LoadPage(CurrentPage);
-
     }
 
     private int GetTotalCount()
     {
         using var cmd = _conn.CreateCommand();
         if (string.IsNullOrEmpty(_currentFilter))
-        {
             cmd.CommandText = "SELECT COUNT(*) FROM ScanLogs";
-        }
         else
         {
             cmd.CommandText = "SELECT COUNT(*) FROM ScanLogs WHERE Barcode LIKE $filter";
@@ -77,24 +71,18 @@ public partial class LogsViewModel : ObservableObject
         if (string.IsNullOrEmpty(_currentFilter))
         {
             cmd.CommandText = @"
-                SELECT L.Barcode, L.ScannedQuantity,
-                       IFNULL(P.InitialQuantity,0) as InitialQuantity,
-                       L.Timestamp
-                FROM ScanLogs L
-                LEFT JOIN Products P ON P.Barcode = L.Barcode
-                ORDER BY L.Timestamp DESC
+                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt
+                FROM ScanLogs
+                ORDER BY UpdatedAt DESC
                 LIMIT $limit OFFSET $offset";
         }
         else
         {
             cmd.CommandText = @"
-                SELECT L.Barcode, L.ScannedQuantity,
-                       IFNULL(P.InitialQuantity,0) as InitialQuantity,
-                       L.Timestamp
-                FROM ScanLogs L
-                LEFT JOIN Products P ON P.Barcode = L.Barcode
-                WHERE L.Barcode LIKE $filter
-                ORDER BY L.Timestamp DESC
+                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt
+                FROM ScanLogs
+                WHERE Barcode LIKE $filter
+                ORDER BY UpdatedAt DESC
                 LIMIT $limit OFFSET $offset";
             cmd.Parameters.AddWithValue("$filter", $"%{_currentFilter}%");
         }
@@ -109,9 +97,10 @@ public partial class LogsViewModel : ObservableObject
             rows.Add(new ScanLog
             {
                 Barcode = r.GetString(0),
-                ScannedQuantity = r.GetInt32(1),
-                InitialQuantity = r.GetInt32(2),
-                Timestamp = DateTime.Parse(r.GetString(3))
+                Was = r.GetInt32(1),
+                IncrementBy = r.GetInt32(2),
+                IsValue = r.GetInt32(3),
+                UpdatedAt = DateTime.Parse(r.GetString(4))
             });
         }
 
@@ -120,16 +109,18 @@ public partial class LogsViewModel : ObservableObject
             if (i < rows.Count)
             {
                 Slots[i].Barcode = rows[i].Barcode;
-                Slots[i].ScannedQuantity = rows[i].ScannedQuantity;
-                Slots[i].InitialQuantity = rows[i].InitialQuantity;
-                Slots[i].Timestamp = rows[i].Timestamp;
+                Slots[i].Was = rows[i].Was;
+                Slots[i].IncrementBy = rows[i].IncrementBy;
+                Slots[i].IsValue = rows[i].IsValue;
+                Slots[i].UpdatedAt = rows[i].UpdatedAt;
             }
             else
             {
                 Slots[i].Barcode = string.Empty;
-                Slots[i].ScannedQuantity = 0;
-                Slots[i].InitialQuantity = 0;
-                Slots[i].Timestamp = DateTime.MinValue;
+                Slots[i].Was = 0;
+                Slots[i].IncrementBy = 0;
+                Slots[i].IsValue = 0;
+                Slots[i].UpdatedAt = DateTime.MinValue;
             }
         }
     }
@@ -155,7 +146,7 @@ public partial class LogsViewModel : ObservableObject
             "Filter Logs", "Enter barcode (partial allowed):",
             "OK", "Cancel", "Barcode...", maxLength: 50);
 
-        if (input == null) return; // canceled
+        if (input == null) return;
         _currentFilter = input.Trim();
         LoadPage(1);
     }
@@ -171,6 +162,5 @@ public partial class LogsViewModel : ObservableObject
     private async Task CopyBarcode(string barcode)
     {
         await _clipboard.CopyAsync(barcode);
-
     }
 }

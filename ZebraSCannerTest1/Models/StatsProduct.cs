@@ -63,6 +63,13 @@ namespace ZebraSCannerTest1.Models
             set { if (_isHighlighted == value) return; _isHighlighted = value; OnPropertyChanged(); }
         }
 
+        // Static product info
+        public string? Name { get; set; }
+        public string? Color { get; set; }
+        public string? Size { get; set; }
+        public string? Price { get; set; }
+        public string? ArticCode { get; set; }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string? name = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

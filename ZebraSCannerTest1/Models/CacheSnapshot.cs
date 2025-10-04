@@ -1,4 +1,6 @@
-﻿namespace ZebraSCannerTest1.Models;
+﻿using ZebraSCannerTest1.Models;
+
+namespace ZebraSCannerTest1.Models;
 
 public class CacheSnapshot
 {

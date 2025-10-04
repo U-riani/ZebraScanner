@@ -8,7 +8,7 @@
     xmlns:converters="clr-namespace:ZebraSCannerTest1.Converters"
     mc:Ignorable="d"
     Title="Fast Scanner">
-    
+
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:DifferenceToColorConverter x:Key="DiffToColor" />
@@ -18,17 +18,31 @@
     <VerticalStackLayout Padding="0" Spacing="12">
 
         <HorizontalStackLayout Spacing="8" Padding="3" HorizontalOptions="CenterAndExpand">
-            <Button Text="Import Excel" Command="{Binding ImportExcelCommand}" />
+            <Button Text="Import Data" Command="{Binding ImportDataCommand}" />
             <Button Text="Export" Command="{Binding ExportExcelCommand}" />
             <Button Text="Stats" Command="{Binding GoToScannedProductsCommand}" />
             <Button Text="Logs" Command="{Binding GoToLogsCommand}" />
         </HorizontalStackLayout>
-        
+
         <!-- Current scanned barcode big and obvious -->
         <Label Text="{Binding ShowCurrentBarcode}"
                FontSize="24"
                FontAttributes="Bold"
                HorizontalTextAlignment="Center" />
+
+        <ProgressBar 
+                Progress="{Binding ImportProgress}" 
+                IsVisible="{Binding IsBusy}" 
+                ProgressColor="Orange"
+                HeightRequest="6"
+                Margin="20,0,20,0" />
+
+        <Label 
+    Text="{Binding ImportStatusText}" 
+    FontSize="14"
+    HorizontalTextAlignment="Center"
+    TextColor="Gray"
+    IsVisible="{Binding IsBusy}" />
 
         <!-- Manual entry toggle -->
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
@@ -41,7 +55,7 @@
                    Text="{Binding CurrentBarcode}" 
                    TextColor="{AppThemeBinding Light=Black, Dark=White}" />
 
-           
+
         </Grid>
 
         <!-- Header -->

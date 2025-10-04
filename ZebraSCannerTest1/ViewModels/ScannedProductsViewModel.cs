@@ -18,7 +18,6 @@ public partial class ScannedProductsViewModel : ObservableObject
     [ObservableProperty] private string currentSortDescription = "Sort: Upd ↓";
     [ObservableProperty] private string currentFilterDescription = "Filter: Scanned";
 
-
     public ObservableCollection<StatsProduct> ScannedProductsStats { get; private set; } = new();
 
     public ScannedProductsViewModel(SqliteConnection conn, ClipboardService clipboard)
@@ -26,119 +25,6 @@ public partial class ScannedProductsViewModel : ObservableObject
         _conn = conn;
         _clipboard = clipboard;
         LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
-    }
-
-    [RelayCommand]
-    private async Task Sort()
-    {
-        var fieldChoice = await Shell.Current.DisplayActionSheet(
-            "Choose sort field", "Cancel", null,
-            "Barcode", "ScannedQuantity", "InitialQuantity", "Difference", "UpdatedAt");
-
-        if (fieldChoice == "Cancel") return;
-
-        var directionChoice = await Shell.Current.DisplayActionSheet(
-            "Sort direction", "Cancel", null, "Ascending", "Descending");
-
-        if (directionChoice == "Cancel") return;
-
-        _currentSortField = fieldChoice switch
-        {
-            "Barcode" => "Barcode",
-            "ScannedQuantity" => "ScannedQuantity",
-            "InitialQuantity" => "InitialQuantity",
-            "Difference" => "(ScannedQuantity - InitialQuantity)",
-            "UpdatedAt" => "UpdatedAt",
-            _ => "UpdatedAt"
-        };
-
-        _currentSortDescending = directionChoice == "Descending";
-
-        LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
-
-        // 🔹 Short label (arrow + short word)
-        var arrow = _currentSortDescending ? "↓" : "↑";
-        var shortField = fieldChoice switch
-        {
-            "Barcode" => "Code",
-            "ScannedQuantity" => "Qty",
-            "InitialQuantity" => "Init",
-            "Difference" => "Diff",
-            "UpdatedAt" => "Upd",
-            _ => "Upd"
-        };
-        CurrentSortDescription = $"Sort: {shortField} {arrow}";
-    }
-
-    [RelayCommand]
-    private async Task Filter()
-    {
-        var fieldChoice = await Shell.Current.DisplayActionSheet(
-            "Choose filter", "Cancel", null,
-            "All Products",
-            "Scanned > 0",
-            "Shortage (Scanned < Initial)",
-            "Overstock (Scanned > Initial)",
-            "Equal (Scanned = Initial)",
-            "Equal And Scanned (Scanned = Initial And Scanned > 0)",
-            "Zero Initial",
-            "Search by Barcode");
-
-        if (string.IsNullOrEmpty(fieldChoice) || fieldChoice == "Cancel") return;
-
-        if (fieldChoice == "Search by Barcode")
-        {
-            // Prompt user for input
-            var input = await Shell.Current.DisplayPromptAsync(
-                "Search", "Enter part of barcode:", "OK", "Cancel", "12345");
-
-            if (string.IsNullOrWhiteSpace(input)) return;
-
-            _currentFilter = $"Barcode LIKE '%{input}%'";
-            CurrentFilterDescription = $"Filter: Code~{input}";
-        }
-        else
-        {
-            _currentFilter = fieldChoice switch
-            {
-                "All Products" => "",
-                "Scanned > 0" => "ScannedQuantity > 0",
-                "Shortage (Scanned < Initial)" => "ScannedQuantity < InitialQuantity",
-                "Overstock (Scanned > Initial)" => "ScannedQuantity > InitialQuantity",
-                "Equal (Scanned = Initial)" => "ScannedQuantity = InitialQuantity",
-                "Equal And Scanned (Scanned = Initial And Scanned > 0)" => "ScannedQuantity > 0 AND ScannedQuantity = InitialQuantity",
-                "Zero Initial" => "InitialQuantity = 0",
-                _ => ""
-            };
-
-            CurrentFilterDescription = fieldChoice switch
-            {
-                "All Products" => "Filter: All",
-                "Scanned > 0" => "Filter: Scanned",
-                "Shortage (Scanned < Initial)" => "Filter: Shortage",
-                "Overstock (Scanned > Initial)" => "Filter: Over",
-                "Equal (Scanned = Initial)" => "Filter: Equal",
-                "Equal And Scanned (Scanned = Initial And Scanned > 0)" => "Filter: Equal & > 0",
-                "Zero Initial" => "Filter: ZeroInit",
-                _ => "No filter"
-            };
-        }
-
-        // reload with combined sort+filter
-        LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
-    }
-
-    [RelayCommand]
-    private void ClearFilter()
-    {
-        _currentFilter = "ScannedQuantity > 0";
-        _currentSortField = "UpdatedAt";
-        _currentSortDescending = true;
-
-        LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
-
-        CurrentFilterDescription = "Filter: All Scanned";
-        CurrentSortDescription = "Sort: Upd ↓";
     }
 
     private void LoadProducts(string option, bool descending = true, string whereClause = "")
@@ -150,7 +36,7 @@ public partial class ScannedProductsViewModel : ObservableObject
         var where = string.IsNullOrWhiteSpace(whereClause) ? "" : $"WHERE {whereClause}";
 
         cmd.CommandText = $@"
-        SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
+        SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode
         FROM Products
         {where}
         ORDER BY {option} {direction}";
@@ -164,48 +50,49 @@ public partial class ScannedProductsViewModel : ObservableObject
                 InitialQuantity = r.GetInt32(1),
                 ScannedQuantity = r.GetInt32(2),
                 CreatedAt = DateTime.Parse(r.GetString(3)),
-                UpdatedAt = DateTime.Parse(r.GetString(4))
+                UpdatedAt = DateTime.Parse(r.GetString(4)),
+                Name = r.IsDBNull(5) ? null : r.GetString(5),
+                Color = r.IsDBNull(6) ? null : r.GetString(6),
+                Size = r.IsDBNull(7) ? null : r.GetString(7),
+                Price = r.IsDBNull(8) ? null : r.GetString(8),
+                ArticCode = r.IsDBNull(9) ? null : r.GetString(9)
             });
         }
 
         ScannedProductsStats = new ObservableCollection<StatsProduct>(temp);
         OnPropertyChanged(nameof(ScannedProductsStats));
+    }
 
-        // ✅ Always refresh short info
-        var arrow = descending ? "↓" : "↑";
-        var shortField = option switch
-        {
-            "Barcode" => "Code",
-            "ScannedQuantity" => "Qty",
-            "InitialQuantity" => "Init",
-            "(ScannedQuantity - InitialQuantity)" => "Diff",
-            _ => "Upd"
-        };
-        CurrentSortDescription = $"Sort: {shortField} {arrow}";
+    // 🔹 Commands for XAML buttons
+    [RelayCommand]
+    private void Sort()
+    {
+        // toggle between ScannedQuantity ascending/descending for demo
+        _currentSortField = "ScannedQuantity";
+        _currentSortDescending = !_currentSortDescending;
+        LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
 
-        CurrentFilterDescription = string.IsNullOrWhiteSpace(whereClause) ? "Filter: All" :
-            whereClause switch
-            {
-                "ScannedQuantity > 0" => "Filter: Scanned",
-                "ScannedQuantity < InitialQuantity" => "Filter: Shortage",
-                "ScannedQuantity > InitialQuantity" => "Filter: Over",
-                "ScannedQuantity = InitialQuantity" => "Filter: Equal",
-                "ScannedQuantity > 0 AND ScannedQuantity = InitialQuantity" => "Filter: Equal & > 0",
-                "InitialQuantity = 0" => "Filter: ZeroInit",
-                _ => "Filter: Custom"
-            };
+        var arrow = _currentSortDescending ? "↓" : "↑";
+        CurrentSortDescription = $"Sort: Qty {arrow}";
     }
 
     [RelayCommand]
-    private async Task ShowOveralCommand()
+    private void Filter()
     {
-        var fieldChoice = await Shell.Current.DisplayPromptAsync("Overal Stats", "Cancel", null);
+        // Example: only show products with Scanned > 0
+        _currentFilter = "ScannedQuantity > 0";
+        LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
+        CurrentFilterDescription = "Filter: Scanned";
     }
-
 
     [RelayCommand]
-    private async Task CopyBarcode(string barcode)
+    private void ClearFilter()
     {
-        await _clipboard.CopyAsync(barcode);
+        _currentFilter = "";
+        LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
+        CurrentFilterDescription = "Filter: All";
     }
+
+    [RelayCommand]
+    private async Task CopyBarcode(string barcode) => await _clipboard.CopyAsync(barcode);
 }

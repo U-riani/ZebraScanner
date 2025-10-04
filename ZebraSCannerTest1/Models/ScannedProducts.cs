@@ -50,6 +50,14 @@ namespace ZebraSCannerTest1.Models
             set { _initialQuantity = value; OnPropertyChanged(); }
         }
 
+        // Static product info (not changed by scanning)
+        public string? Name { get; set; }
+        public string? Color { get; set; }
+        public string? Size { get; set; }
+        public string? Price { get; set; }
+        public string? ArticCode { get; set; }
+
+        // Status helpers
         public bool IsBelowInitial => Quantity < InitialQuantity;
         public bool IsEqualInitial => Quantity == InitialQuantity;
         public bool IsAboveInitial => Quantity > InitialQuantity;

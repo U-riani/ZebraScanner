@@ -4,7 +4,13 @@
              xmlns:models="clr-namespace:ZebraSCannerTest1.Models"
              x:Class="ZebraSCannerTest1.Views.ScannedProductsPage"
              x:DataType="viewmodel:ScannedProductsViewModel"
+             xmlns:converters="clr-namespace:ZebraSCannerTest1.Converters"
              Title="Scanned Products">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:DifferenceToColorConverter x:Key="DiffToColor" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*,2*">
         <!-- Status labels -->
@@ -57,7 +63,9 @@
 
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:StatsProduct">
-                    <Grid Padding="4" ColumnDefinitions="2*,*,*,*">
+                    <Grid Padding="4" ColumnDefinitions="2*,*,*,*" 
+                          BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}"
+                          >
                         <Label TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding Barcode}">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer 
