@@ -80,6 +80,8 @@ namespace ZebraSCannerTest1.ViewModels
         public ICommand GoToLogsCommand { get; }
         public ICommand GoToScannedProductsCommand { get; }
         public ICommand ToggleManualEntryCommand { get; }
+        public ICommand ShowResultsCommand { get; }
+
 
         public MainViewModel(
             SqliteConnection conn,
@@ -163,6 +165,9 @@ namespace ZebraSCannerTest1.ViewModels
                         ClearSlot(i);
                 }
             });
+
+            ShowResultsCommand = new AsyncRelayCommand(OnShowResultsAsync);
+
         }
 
         // ===== Loaders =====
@@ -435,6 +440,15 @@ VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
         {
             try
             {
+                // ✅ Ask user for confirmation first
+                bool confirm = await Shell.Current.DisplayAlert(
+                    "Confirm Export",
+                    "Are you sure you want to export all product data to Excel?",
+                    "Yes", "No");
+
+                if (!confirm)
+                    return; // cancel export
+
                 // 🌀 Show simple loading popup
                 await ShowingLongPopup.ShowAsync("Exporting data...");
 
@@ -450,7 +464,6 @@ VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
                 await _exportService.ExportProductsAsync(fullPath);
 
                 // ✅ Dismiss popup
-                // ✅ Close popup
                 await ShowingLongPopup.CloseAsync();
 
                 await Shell.Current.DisplayAlert("✅ Export Complete", $"File saved:\n{name}", "OK");
@@ -461,7 +474,55 @@ VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
                 await Shell.Current.DisplayAlert("❌ Export Error", ex.Message, "OK");
             }
         }
-        
+
+
+        private async Task OnShowResultsAsync()
+        {
+            try
+            {
+                using var cmd = _conn.CreateCommand();
+                cmd.CommandText = @"
+            SELECT 
+                SUM(InitialQuantity), 
+                SUM(ScannedQuantity),
+                COUNT(*) AS TotalBarcodes,
+                SUM(CASE WHEN ScannedQuantity > 0 THEN 1 ELSE 0 END) AS ScannedBarcodes
+            FROM Products";
+
+                using var reader = cmd.ExecuteReader();
+
+                int totalInitial = 0, totalScanned = 0, totalBarcodes = 0, scannedBarcodes = 0;
+
+                if (reader.Read())
+                {
+                    totalInitial = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                    totalScanned = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+                    totalBarcodes = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
+                    scannedBarcodes = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+                }
+
+                int quantityDiff = totalScanned - totalInitial;
+                int barcodeDiff = scannedBarcodes - totalBarcodes;
+
+                string msg =
+                    "📊 Inventory Summary\n\n" +
+                    $"🔹 Quantities:\n" +
+                    $"• Scanned Total Qty: {totalScanned:N0}\n" +
+                    $"• Expected Total Qty: {totalInitial:N0}\n" +
+                    $"• Difference: {quantityDiff:N0}\n\n" +
+                    $"🔹 Barcodes:\n" +
+                    $"• Scanned Barcodes: {scannedBarcodes:N0}\n" +
+                    $"• Total Barcodes: {totalBarcodes:N0}\n" +
+                    $"• Difference: {scannedBarcodes - totalBarcodes:N0}";
+
+                await Shell.Current.DisplayAlert("📦 Inventory Results", msg, "OK");
+            }
+            catch (Exception ex)
+            {
+                await Shell.Current.DisplayAlert("❌ Error", ex.Message, "OK");
+            }
+        }
+
 
 
         private async Task OnGoToLogsAsync() =>
