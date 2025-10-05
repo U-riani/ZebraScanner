@@ -6,7 +6,7 @@
              BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#1E1E1E}">
 
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="12" Background="Aqua">
+        <VerticalStackLayout Padding="20" Spacing="12">
 
             <!-- Title -->
             <Label Text="Manual Filter Builder"
@@ -50,6 +50,8 @@
                         <x:String>=</x:String>
                         <x:String>&gt;</x:String>
                         <x:String>&lt;</x:String>
+                        <x:String>&gt;=</x:String>
+                        <x:String>&lt;=</x:String>
                         <x:String>!=</x:String>
                         <x:String>LIKE</x:String>
                     </x:Array>
@@ -98,24 +100,7 @@
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Combine Type -->
-            <HorizontalStackLayout Spacing="8">
-                <Label Text="Combine with:" 
-                       VerticalOptions="Center"
-                       TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
-                <Picker x:Name="CombinePicker"
-                        WidthRequest="100"
-                        BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
-                        TextColor="{AppThemeBinding Light=Black, Dark=White}">
-                    <Picker.ItemsSource>
-                        <x:Array Type="{x:Type x:String}">
-                            <x:String>AND</x:String>
-                            <x:String>OR</x:String>
-                        </x:Array>
-                    </Picker.ItemsSource>
-                    <Picker.SelectedIndex>0</Picker.SelectedIndex>
-                </Picker>
-            </HorizontalStackLayout>
+            
 
             <!-- Action Buttons -->
             <HorizontalStackLayout Spacing="10" Padding="0,10,0,0" HorizontalOptions="Center">

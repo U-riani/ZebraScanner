@@ -25,7 +25,7 @@ namespace ZebraSCannerTest1.Services
             }
 
             using var cmd = _conn.CreateCommand();
-            cmd.CommandText = "SELECT Barcode, InitialQuantity, ScannedQuantity, UpdatedAt FROM Products ORDER BY UpdatedAt DESC";
+            cmd.CommandText = "SELECT Barcode, InitialQuantity, ScannedQuantity, Name, Color, Size, Price, ArticCode, UpdatedAt FROM Products ORDER BY UpdatedAt DESC";
             using var r = cmd.ExecuteReader();
             while (r.Read())
             {
@@ -34,7 +34,12 @@ namespace ZebraSCannerTest1.Services
                     Barcode = r.GetString(0),
                     InitialQuantity = r.GetInt32(1),
                     ScannedQuantity = r.GetInt32(2),
-                    UpdatedAt = DateTime.Parse(r.GetString(3))
+                    Name = r.GetString(3),
+                    Color = r.GetString(4),
+                    Size = r.GetString(5),
+                    Price = r.GetString(6),
+                    ArticCode= r.GetString(7),
+                    UpdatedAt = DateTime.Parse(r.GetString(8))
                 });
 
                 count++;
