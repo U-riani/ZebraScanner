@@ -69,13 +69,15 @@
             </HorizontalStackLayout>
 
             
-            <HorizontalStackLayout Spacing="65" VerticalOptions="Center">
+            <HorizontalStackLayout Spacing="65" VerticalOptions="Center"
+                                   IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}">
                 <Button Text="wrt" Command="{Binding ManualEditCommand}" WidthRequest="62" FontSize="20" />
                 <Button Text="-" Command="{Binding DecrementCommand}" WidthRequest="60" FontSize="20" />
                 <Button Text="+" Command="{Binding IncrementCommand}" WidthRequest="60" FontSize="20" />
             </HorizontalStackLayout>
 
-            <Button Text="Save" Command="{Binding SaveCommand}" Margin="0,10,0,20"/>
+            <Button Text="Save" Command="{Binding SaveCommand}" Margin="0,10,0,20"
+                    IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"/>
 
             <!-- Logs -->
             <Grid ColumnDefinitions="2*,*,*,*,*" Padding="6,4">

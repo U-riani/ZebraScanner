@@ -429,10 +429,24 @@ VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
         private async Task OnSlotTappedAsync(ProductSlot slot)
         {
             if (slot == null || string.IsNullOrEmpty(slot.Barcode)) return;
+
             if (_cache.TryGetValue(slot.Barcode, out var product))
             {
-                await Shell.Current.GoToAsync(
-                    $"{nameof(DetailsPage)}?Barcode={product.Barcode}&Quantity={product.ScannedQuantity}&InitialQuantity={product.InitialQuantity}");
+                var query = new Dictionary<string, object>
+                {
+                    ["Barcode"] = product.Barcode,
+                    ["Quantity"] = product.ScannedQuantity,
+                    ["InitialQuantity"] = product.InitialQuantity,
+                    ["Name"] = product.Name ?? "",
+                    ["Color"] = product.Color ?? "",
+                    ["Size"] = product.Size ?? "",
+                    ["Price"] = decimal.TryParse(product.Price, out var p) ? p : 0,
+                    ["ArticCode"] = product.ArticCode ?? "",
+                    ["IsReadOnly"] = true  // 👈 NEW FLAG
+                };
+
+
+                await Shell.Current.GoToAsync(nameof(DetailsPage), query);
             }
         }
 

@@ -10,9 +10,15 @@ namespace ZebraSCannerTest1.Views;
 [QueryProperty(nameof(Size), "Size")]
 [QueryProperty(nameof(Price), "Price")]
 [QueryProperty(nameof(ArticCode), "ArticCode")]
+[QueryProperty(nameof(IsReadOnly), "IsReadOnly")]
+
 public partial class DetailsPage : ContentPage
 {
     private readonly DetailsViewModel _vm;
+    public bool IsReadOnly
+    {
+        set => _vm.IsReadOnly = value;
+    }
 
     // Required fields
     public string Barcode { set => _vm.ProductBarcode = value; }

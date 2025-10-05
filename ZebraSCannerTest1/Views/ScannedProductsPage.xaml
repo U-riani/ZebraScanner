@@ -2,83 +2,117 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.ViewModels"
              xmlns:models="clr-namespace:ZebraSCannerTest1.Models"
+             xmlns:converters="clr-namespace:ZebraSCannerTest1.Converters"
              x:Class="ZebraSCannerTest1.Views.ScannedProductsPage"
              x:DataType="viewmodel:ScannedProductsViewModel"
-             xmlns:converters="clr-namespace:ZebraSCannerTest1.Converters"
              Title="Scanned Products">
+
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:DifferenceToColorConverter x:Key="DiffToColor" />
+            <Style x:Key="HeaderStyle" TargetType="Label">
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="VerticalTextAlignment" Value="Center" />
+                <Setter Property="HorizontalTextAlignment" Value="Center" />
+                <Setter Property="Padding" Value="6,2" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light=Black, Dark=White}" />
+            </Style>
+            <Style x:Key="CellStyle" TargetType="Label">
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="VerticalTextAlignment" Value="Center" />
+                <Setter Property="HorizontalTextAlignment" Value="Center" />
+                <Setter Property="Padding" Value="6,2" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light=Black, Dark=White}" />
+            </Style>
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*,2*">
-        <!-- Status labels -->
-        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Padding="8">
-            <Label Text="{Binding CurrentSortDescription}" TextColor="Gray" FontSize="12"/>
-            <Label Text="{Binding CurrentFilterDescription}" TextColor="Gray" FontSize="12"/>
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Header: Status + Controls -->
+        <VerticalStackLayout Grid.Row="0" Padding="8">
+            <VerticalStackLayout Spacing="0">
+                <Label Text="{Binding CurrentSortDescription}" TextColor="Gray" FontSize="12" />
+                <Label Text="{Binding CurrentFilterDescription}" TextColor="Gray" FontSize="12" />
+            </VerticalStackLayout>
+
+            <HorizontalStackLayout Spacing="8" HorizontalOptions="End">
+                <Button Text="Sort" Command="{Binding SortCommand}" Padding="8" />
+                <Button Text="Filter" Command="{Binding FilterCommand}" Padding="8" />
+                <Button Text="Clear" Command="{Binding ClearFilterCommand}" Padding="8" />
+                <Button Text="Mnl Fltr" Clicked="OnManualFilterClicked"
+                        Padding="8" BackgroundColor="#0078D7" TextColor="White" />
+            </HorizontalStackLayout>
         </VerticalStackLayout>
 
-        <!-- Buttons -->
-        <HorizontalStackLayout Grid.Row="0" Grid.Column="3" Padding="0,5,8,5" Spacing="8">
-            <Button Text="Sort" Command="{Binding SortCommand}" Padding="10"/>
-            <Button Text="Filter" Command="{Binding FilterCommand}" Padding="10"/>
-            <Button Text="Clear" Command="{Binding ClearFilterCommand}" Padding="10"/>
-            <Button Text="Mnl Fltr" Clicked="OnManualFilterClicked" Padding="10" BackgroundColor="#0078D7" TextColor="White"/>
+        <!-- Horizontal scroll for header + content -->
+        <ScrollView Grid.Row="1" Grid.RowSpan="2" Orientation="Horizontal">
+            <VerticalStackLayout>
 
-        </HorizontalStackLayout>
+                <!-- Header Row -->
+                <Grid Padding="4"
+                      BackgroundColor="#EEEEEE"
+                      ColumnDefinitions="130,70,70,70,150,150,80,80,100,30">
+                    <Label Text="Barcode" Grid.Column="0" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Scanned" Grid.Column="1" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Initial" Grid.Column="2" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Diff" Grid.Column="3" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Name" Grid.Column="4" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Color" Grid.Column="5" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Size" Grid.Column="6" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Price" Grid.Column="7" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="ArticCode" Grid.Column="8" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="→" Grid.Column="9" Style="{StaticResource HeaderStyle}" />
+                </Grid>
 
-        <!-- Header row -->
-        <Grid Grid.Row="1" Grid.ColumnSpan="2"
-              Padding="4"
-              ColumnDefinitions="2*,*,*,*"
-              BackgroundColor="#EEEEEE">
-            <Label Grid.Column="0" Text="Barcode" 
-                   FontAttributes="Bold" 
-                   HorizontalOptions="Start"
-                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-            <Label Grid.Column="1" Text="Scanned" 
-                   HorizontalTextAlignment="Start" 
-                   FontAttributes="Bold"
-                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-            <Label Grid.Column="2" Text="Initial" 
-                   HorizontalTextAlignment="Start" 
-                   FontAttributes="Bold"
-                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-            <Label Grid.Column="3" Text="Diff" 
-                   HorizontalTextAlignment="End" 
-                   FontAttributes="Bold"
-                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-        </Grid>
+                <!-- Product List -->
+                <CollectionView ItemsSource="{Binding ScannedProductsStats}"
+                                VerticalScrollBarVisibility="Always"
+                                BackgroundColor="Transparent"
+                                HeightRequest="600">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" />
+                    </CollectionView.ItemsLayout>
 
-        <!-- Product list -->
-        <CollectionView 
-            Grid.Row="2" Grid.ColumnSpan="2"
-            ItemsSource="{Binding ScannedProductsStats}"
-            VerticalScrollBarVisibility="Always"
-            BackgroundColor="Transparent">
-            <CollectionView.ItemsLayout>
-                <LinearItemsLayout Orientation="Vertical"/>
-            </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:StatsProduct">
+                            <Grid Padding="4"
+                                  ColumnDefinitions="130,70,70,70,150,150,80,80,100,30"
+                                  BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}">
 
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:StatsProduct">
-                    <Grid Padding="4" ColumnDefinitions="2*,*,*,*" 
-                          BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}"
-                          >
-                        <Label TextColor="{AppThemeBinding Light=Black, Dark=White}" Text="{Binding Barcode}">
-                            <Label.GestureRecognizers>
-                                <TapGestureRecognizer 
-                                    Command="{Binding BindingContext.CopyBarcodeCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" 
-                                    CommandParameter="{Binding Barcode}" />
-                            </Label.GestureRecognizers>
-                        </Label>
-                        <Label HorizontalTextAlignment="Center" Grid.Column="1" Text="{Binding ScannedQuantity}" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
-                        <Label HorizontalTextAlignment="Center" Grid.Column="2" Text="{Binding InitialQuantity}" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
-                        <Label Grid.Column="3" Text="{Binding Difference}" TextColor="{AppThemeBinding Light=Black, Dark=White}" HorizontalTextAlignment="End"/>
-                    </Grid>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+                                <Label Grid.Column="0" Text="{Binding Barcode}" Style="{StaticResource CellStyle}">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding BindingContext.CopyBarcodeCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                            CommandParameter="{Binding Barcode}" />
+                                    </Label.GestureRecognizers>
+                                </Label>
+                                <Label Grid.Column="1" Text="{Binding ScannedQuantity}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="2" Text="{Binding InitialQuantity}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="3" Text="{Binding Difference}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="4" Text="{Binding Name}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="5" Text="{Binding Color}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="6" Text="{Binding Size}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="7" Text="{Binding Price}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="8" Text="{Binding ArticCode}" Style="{StaticResource CellStyle}" />
+                                <!-- ✅ New Details Button -->
+                                <Button Grid.Column="9"
+                                    Text="➡"
+                                    BackgroundColor="#0078D7"
+                                    TextColor="White"
+                                    FontSize="14"
+                                    WidthRequest="30"
+                                    HeightRequest="25"
+                                    Padding="0"
+                                    Command="{Binding BindingContext.OpenDetailsCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 </ContentPage>

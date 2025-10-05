@@ -16,6 +16,9 @@ public partial class DetailsViewModel : ObservableObject
 
     public ObservableCollection<ScanLog> Logs { get; } = new();
 
+    [ObservableProperty]
+    private bool isReadOnly = false; // Default: editable
+
     public DetailsViewModel(SqliteConnection conn, ClipboardService clipboard)
     {
         _conn = conn;

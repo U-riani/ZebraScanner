@@ -17,6 +17,7 @@ public partial class ScannedProductsViewModel : ObservableObject
     private bool _currentSortDescending = true;
     private string _currentFilter = "ScannedQuantity > 0";
 
+
     [ObservableProperty] private string currentSortDescription = "Sort: Updated ↓";
     [ObservableProperty] private string currentFilterDescription = "Filter: Scanned";
 
@@ -260,6 +261,29 @@ public partial class ScannedProductsViewModel : ObservableObject
         _currentFilter = filter;
         CurrentFilterDescription = $"Filter: Manual ({filter})";
         LoadProducts(_currentSortField, _currentSortDescending, _currentFilter);
+    }
+
+    [RelayCommand]
+    private async Task OpenDetailsAsync(StatsProduct product)
+    {
+        if (product == null)
+            return;
+
+        var query = new Dictionary<string, object>
+        {
+            ["Barcode"] = product.Barcode,
+            ["Quantity"] = product.ScannedQuantity,
+            ["InitialQuantity"] = product.InitialQuantity,
+            ["Name"] = product.Name ?? "",
+            ["Color"] = product.Color ?? "",
+            ["Size"] = product.Size ?? "",
+            ["Price"] = decimal.TryParse(product.Price, out var p) ? p : 0,
+            ["ArticCode"] = product.ArticCode ?? "",
+            ["IsReadOnly"] = false  // 👈 NEW FLAG
+        };
+
+
+        await Shell.Current.GoToAsync(nameof(DetailsPage), query);
     }
 
 }
