@@ -2,10 +2,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.ViewModels"
              xmlns:models="clr-namespace:ZebraSCannerTest1.Models"
+             xmlns:converters="clr-namespace:ZebraSCannerTest1.Converters"
              x:Class="ZebraSCannerTest1.Views.DetailsPage"
              x:DataType="viewmodel:DetailsViewModel"
              Title="Details">
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:ManualToColorConverter x:Key="ManualToColor" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="12">
 
@@ -91,7 +98,8 @@
             <CollectionView ItemsSource="{Binding Logs}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:ScanLog">
-                        <Grid Padding="4" ColumnDefinitions="2*,*,*,*,*">
+                        <Grid Padding="4" ColumnDefinitions="2*,*,*,*,*"
+                              BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}" >
                             <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="Black"/>
                             <Label Grid.Column="1" Text="{Binding Was}" 
                        HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>

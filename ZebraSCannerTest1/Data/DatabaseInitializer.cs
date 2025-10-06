@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS ScanLogs (
     Was INTEGER NOT NULL DEFAULT 0,
     IncrementBy INTEGER NOT NULL DEFAULT 1,
     IsValue INTEGER NOT NULL DEFAULT 0,
-    UpdatedAt TEXT NOT NULL
+    UpdatedAt TEXT NOT NULL,
+    IsManual INTEGER DEFAULT NULL
 );
 
 
@@ -65,6 +66,30 @@ CREATE TABLE IF NOT EXISTS ScannedProducts (
 );
 ";
             cmd.ExecuteNonQuery();
+
+            // 🔹 Upgrade check for IsManual column (for existing databases)
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.CommandText = "PRAGMA table_info(ScanLogs)";
+            using var reader = checkCmd.ExecuteReader();
+
+            bool hasIsManual = false;
+            while (reader.Read())
+            {
+                var columnName = reader.GetString(1);
+                if (columnName.Equals("IsManual", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasIsManual = true;
+                    break;
+                }
+            }
+            reader.Close();
+
+            if (!hasIsManual)
+            {
+                using var alterCmd = conn.CreateCommand();
+                alterCmd.CommandText = "ALTER TABLE ScanLogs ADD COLUMN IsManual INTEGER DEFAULT NULL;";
+                alterCmd.ExecuteNonQuery();
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ public class LogSlot : INotifyPropertyChanged
     private int _incrementBy;
     private int _isValue;
     private DateTime _updatedAt;
+    private int? _isManual { get; set; }
 
     public string Barcode
     {
@@ -39,6 +40,12 @@ public class LogSlot : INotifyPropertyChanged
     {
         get => _updatedAt;
         set { _updatedAt = value; OnPropertyChanged(); }
+    }
+
+    public int? IsManual
+    {
+        get => _isManual;
+        set { _isManual = value; OnPropertyChanged(); } // ✅ important
     }
 
     public event PropertyChangedEventHandler PropertyChanged;

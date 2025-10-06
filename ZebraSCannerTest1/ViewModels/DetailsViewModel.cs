@@ -136,13 +136,14 @@ ON CONFLICT(Barcode) DO UPDATE SET
         using (var log = _conn.CreateCommand())
         {
             log.CommandText = @"
-INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt)
-VALUES ($barcode, $was, $inc, $isValue, $updated)";
+                INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual)
+                VALUES ($barcode, $was, $inc, $isValue, $updated, $isManual)";
             log.Parameters.AddWithValue("$barcode", ProductBarcode);
             log.Parameters.AddWithValue("$was", previousQty);
             log.Parameters.AddWithValue("$inc", incrementBy);
             log.Parameters.AddWithValue("$isValue", ScannedQuantity);
             log.Parameters.AddWithValue("$updated", now);
+            log.Parameters.AddWithValue("$isManual", 1);
             log.ExecuteNonQuery();
         }
 
@@ -170,11 +171,11 @@ VALUES ($barcode, $was, $inc, $isValue, $updated)";
 
         using var cmd = _conn.CreateCommand();
         cmd.CommandText = @"
-SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt
-FROM ScanLogs
-WHERE Barcode = $b
-ORDER BY UpdatedAt DESC
-LIMIT 50";
+            SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual
+            FROM ScanLogs
+            WHERE Barcode = $b
+            ORDER BY UpdatedAt DESC
+            LIMIT 50";
         cmd.Parameters.AddWithValue("$b", ProductBarcode);
 
         using var r = cmd.ExecuteReader();
@@ -186,7 +187,8 @@ LIMIT 50";
                 Was = r.GetInt32(1),
                 IncrementBy = r.GetInt32(2),
                 IsValue = r.GetInt32(3),
-                UpdatedAt = DateTime.Parse(r.GetString(4))
+                UpdatedAt = DateTime.Parse(r.GetString(4)),
+                IsManual = r.IsDBNull(5) ? null : r.GetInt32(5)
             });
         }
     }

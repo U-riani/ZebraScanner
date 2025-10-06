@@ -71,7 +71,7 @@ public partial class LogsViewModel : ObservableObject
         if (string.IsNullOrEmpty(_currentFilter))
         {
             cmd.CommandText = @"
-                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt
+                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual
                 FROM ScanLogs
                 ORDER BY UpdatedAt DESC
                 LIMIT $limit OFFSET $offset";
@@ -79,7 +79,7 @@ public partial class LogsViewModel : ObservableObject
         else
         {
             cmd.CommandText = @"
-                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt
+                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual
                 FROM ScanLogs
                 WHERE Barcode LIKE $filter
                 ORDER BY UpdatedAt DESC
@@ -100,7 +100,8 @@ public partial class LogsViewModel : ObservableObject
                 Was = r.GetInt32(1),
                 IncrementBy = r.GetInt32(2),
                 IsValue = r.GetInt32(3),
-                UpdatedAt = DateTime.Parse(r.GetString(4))
+                UpdatedAt = DateTime.Parse(r.GetString(4)),
+                IsManual = !r.IsDBNull(5) ? r.GetInt32(5) : (int?)null
             });
         }
 
@@ -113,6 +114,7 @@ public partial class LogsViewModel : ObservableObject
                 Slots[i].IncrementBy = rows[i].IncrementBy;
                 Slots[i].IsValue = rows[i].IsValue;
                 Slots[i].UpdatedAt = rows[i].UpdatedAt;
+                Slots[i].IsManual = rows[i].IsManual;
             }
             else
             {
@@ -121,6 +123,7 @@ public partial class LogsViewModel : ObservableObject
                 Slots[i].IncrementBy = 0;
                 Slots[i].IsValue = 0;
                 Slots[i].UpdatedAt = DateTime.MinValue;
+                Slots[i].IsManual = null;
             }
         }
     }
