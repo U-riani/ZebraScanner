@@ -14,6 +14,7 @@ namespace ZebraSCannerTest1.Views
             InitializeComponent();
             _vm = vm;
             BindingContext = vm;
+
         }
 
         private async void OnManualFilterClicked(object sender, EventArgs e)

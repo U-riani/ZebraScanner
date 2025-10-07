@@ -28,9 +28,19 @@
                                               CommandParameter="{Binding ProductBarcode}" />
                     </Label.GestureRecognizers>
                 </Label>
-                
-                <!-- Static product info -->
             </HorizontalStackLayout>
+
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="ARTIC CODE" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ProductArticCode}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" 
+                          CommandParameter="{Binding ProductArticCode}" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </HorizontalStackLayout>
+            
             <HorizontalStackLayout VerticalOptions="Center">
                 <Label Text="NAME" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
                 <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
@@ -57,12 +67,6 @@
                       FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             </HorizontalStackLayout>
 
-            <HorizontalStackLayout VerticalOptions="Center">
-                <Label Text="ARTIC CODE" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
-                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
-                <Label Text="{Binding ProductArticCode}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            </HorizontalStackLayout>
-
             <!-- Quantities -->
             <HorizontalStackLayout VerticalOptions="Center">
                 <Label Text="INITIAL QUANTITY" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
@@ -74,8 +78,13 @@
                 <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
                 <Label Text="{Binding ScannedQuantity}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             </HorizontalStackLayout>
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="Difference" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding Difference}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
 
-            
+
             <HorizontalStackLayout Spacing="65" VerticalOptions="Center"
                                    IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}">
                 <Button Text="wrt" Command="{Binding ManualEditCommand}" WidthRequest="62" FontSize="20" />

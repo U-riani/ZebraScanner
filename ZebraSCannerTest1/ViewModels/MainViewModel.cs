@@ -94,31 +94,32 @@ namespace ZebraSCannerTest1.ViewModels
             _logBuffer = logBuffer;
             _dataImportService = new DataImportService(conn);
             
-                // ✅ Ensure required tables exist (especially ScanLogs)
-    using (var cmd = _conn.CreateCommand())
-    {
-        cmd.CommandText = @"
-            CREATE TABLE IF NOT EXISTS ScanLogs (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Barcode TEXT NOT NULL,
-                Quantity INTEGER DEFAULT 1,
-                ScannedAt TEXT NOT NULL
-            );
+    //            // ✅ Ensure required tables exist (especially ScanLogs)
+    //        using (var cmd = _conn.CreateCommand())
+    //{
+    //    cmd.CommandText = @"
+    //        CREATE TABLE IF NOT EXISTS ScanLogs (
+    //            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    //            Barcode TEXT NOT NULL,
+    //            Quantity INTEGER DEFAULT 1,
+    //            ScannedAt TEXT NOT NULL
+                
+    //        );
 
-            CREATE TABLE IF NOT EXISTS Products (
-                Barcode TEXT PRIMARY KEY,
-                InitialQuantity INTEGER NOT NULL DEFAULT 0,
-                ScannedQuantity INTEGER NOT NULL DEFAULT 0,
-                CreatedAt TEXT NOT NULL,
-                UpdatedAt TEXT NOT NULL,
-                Name TEXT,
-                Color TEXT,
-                Size TEXT,
-                Price TEXT,
-                ArticCode TEXT
-            );";
-        cmd.ExecuteNonQuery();
-    }
+    //        CREATE TABLE IF NOT EXISTS Products (
+    //            Barcode TEXT PRIMARY KEY,
+    //            InitialQuantity INTEGER NOT NULL DEFAULT 0,
+    //            ScannedQuantity INTEGER NOT NULL DEFAULT 0,
+    //            CreatedAt TEXT NOT NULL,
+    //            UpdatedAt TEXT NOT NULL,
+    //            Name TEXT,
+    //            Color TEXT,
+    //            Size TEXT,
+    //            Price TEXT,
+    //            ArticCode TEXT
+    //        );";
+    //    cmd.ExecuteNonQuery();
+    //}
 
 
             // SQL command for upserting
@@ -282,9 +283,9 @@ namespace ZebraSCannerTest1.ViewModels
 
                         using var cmd = _conn.CreateCommand();
                         cmd.CommandText = @"
-INSERT OR IGNORE INTO Products 
-(Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-VALUES ($barcode,$initial,$scanned,$created,$updated)";
+                            INSERT OR IGNORE INTO Products 
+                            (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+                            VALUES ($barcode,$initial,$scanned,$created,$updated)";
                         cmd.Parameters.AddWithValue("$barcode", product.Barcode);
                         cmd.Parameters.AddWithValue("$initial", product.InitialQuantity);
                         cmd.Parameters.AddWithValue("$scanned", product.ScannedQuantity);
@@ -310,7 +311,8 @@ VALUES ($barcode,$initial,$scanned,$created,$updated)";
                         Was = product.ScannedQuantity - 1,
                         IncrementBy = 1,
                         IsValue = product.ScannedQuantity,
-                        UpdatedAt = DateTime.UtcNow
+                        UpdatedAt = DateTime.UtcNow,
+                        IsManual = null
                     });
 
 
@@ -365,9 +367,9 @@ VALUES ($barcode,$initial,$scanned,$created,$updated)";
                     using var cmd = _conn.CreateCommand();
                     cmd.Transaction = tx;
                     cmd.CommandText = @"
-INSERT OR REPLACE INTO Products
-(Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
-VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
+                        INSERT OR REPLACE INTO Products
+                        (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+                        VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
                     cmd.Parameters.Add("$b", SqliteType.Text);
                     cmd.Parameters.Add("$i", SqliteType.Integer);
                     cmd.Parameters.Add("$s", SqliteType.Integer);
@@ -400,7 +402,19 @@ VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
                 else if (ext == ".xlsx")
                 {
                     ImportStatusText = "Importing Excel...";
-                    await _dataImportService.ImportExcelAsync(stream);
+
+                    // ✅ Copy to safe local storage before importing (Pixel fix)
+                    var tempFile = Path.Combine(FileSystem.AppDataDirectory, result.FileName);
+
+                    using (var localFile = File.Create(tempFile))
+                        await stream.CopyToAsync(localFile);
+
+                    // close SAF stream
+                    await stream.DisposeAsync();
+
+                    // reopen from local copy as normal FileStream (seekable)
+                    using var localStream = File.OpenRead(tempFile);
+                    await _dataImportService.ImportExcelAsync(localStream, result.FileName);
                 }
                 else if (ext == ".db")
                 {

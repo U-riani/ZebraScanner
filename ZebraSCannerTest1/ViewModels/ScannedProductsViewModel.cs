@@ -106,7 +106,9 @@ public partial class ScannedProductsViewModel : ObservableObject
             "Overstock (Scanned > Initial)",
             "Equal (Scanned = Initial)",
             "Equal And Scanned (Scanned = Initial And Scanned > 0)",
-            "Zero Initial",
+            "Zero Initial (Inital == 0)",
+            "Manual Changed",
+            "Automatic Only",
             "",
             // --- Product attribute filters ---
             "Missing Name",
@@ -161,10 +163,32 @@ public partial class ScannedProductsViewModel : ObservableObject
                 _currentFilter = "ScannedQuantity = InitialQuantity AND ScannedQuantity > 0";
                 CurrentFilterDescription = "Filter: Equal & Scanned";
                 break;
-            case "Zero Initial":
+            case "Zero Initial (Inital == 0)":
                 _currentFilter = "InitialQuantity = 0";
                 CurrentFilterDescription = "Filter: Zero Init";
                 break;
+            case "Manual Changed":
+                _currentFilter = @"
+                    EXISTS (
+                        SELECT 1 FROM ScanLogs sl
+                        WHERE sl.Barcode = Products.Barcode
+                          AND sl.IsManual = 1
+                    )";
+                CurrentFilterDescription = "Filter: Manual Changed";
+                break;
+
+            case "Automatic Only":
+                _currentFilter = @"
+        ScannedQuantity > 0
+        AND NOT EXISTS (
+            SELECT 1 FROM ScanLogs sl
+            WHERE sl.Barcode = Products.Barcode
+              AND sl.IsManual = 1
+        )";
+                CurrentFilterDescription = "Filter: Auto Only";
+                break;
+
+
 
             // --- Product info filters ---
             case "Missing Name":

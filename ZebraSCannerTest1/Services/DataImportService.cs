@@ -19,10 +19,11 @@ namespace ZebraSCannerTest1.Services
         }
 
         // ✅ Import Excel (already uses MiniExcel)
-        public async Task ImportExcelAsync(Stream stream)
+        public async Task ImportExcelAsync(Stream stream, string? fileName = null)
         {
-            await _excelImport.ImportExcelAsync(stream);
+            await _excelImport.ImportExcelAsync(stream, fileName);
         }
+
 
         // ✅ Import SQLite DB (from FilePicker Stream)
         public async Task ImportDbAsync(Stream dbStream)
@@ -68,7 +69,8 @@ CREATE TABLE IF NOT EXISTS ScanLogs (
     Was INTEGER NOT NULL DEFAULT 0,
     IncrementBy INTEGER NOT NULL DEFAULT 1,
     IsValue INTEGER NOT NULL DEFAULT 0,
-    UpdatedAt TEXT NOT NULL
+    UpdatedAt TEXT NOT NULL,
+    IsManual INTEGER NULL
 );
 
 CREATE TABLE IF NOT EXISTS ScannedProducts (
@@ -97,6 +99,7 @@ CREATE TABLE IF NOT EXISTS ScannedProducts (
                 ALTER TABLE ScanLogs ADD COLUMN IncrementBy INTEGER DEFAULT 0;
                 ALTER TABLE ScanLogs ADD COLUMN IsValue INTEGER DEFAULT 0;
                 ALTER TABLE ScanLogs ADD COLUMN UpdatedAt TEXT DEFAULT '';
+                ALTER TABLE ScanLogs ADD COLUMN IsManual INTEGER DEFAULT null;
                 ";
                 alter.ExecuteNonQuery();
             }

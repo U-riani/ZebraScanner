@@ -1,3 +1,5 @@
+using CommunityToolkit.Maui.Views;
+using System.Threading.Tasks;
 using ZebraSCannerTest1.ViewModels;
 
 namespace ZebraSCannerTest1.Views;
@@ -15,6 +17,8 @@ namespace ZebraSCannerTest1.Views;
 public partial class DetailsPage : ContentPage
 {
     private readonly DetailsViewModel _vm;
+    private bool _checkingUnsaved = false;
+
     public bool IsReadOnly
     {
         set => _vm.IsReadOnly = value;
@@ -24,6 +28,7 @@ public partial class DetailsPage : ContentPage
     public string Barcode { set => _vm.ProductBarcode = value; }
     public int Quantity { set => _vm.ScannedQuantity = value; }
     public int InitialQuantity { set => _vm.InitialQuantity = value; }
+
 
     // New static product info
     public string Name { set => _vm.ProductName = value; }
@@ -41,11 +46,42 @@ public partial class DetailsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
         if (BindingContext is DetailsViewModel vm)
         {
-            vm.LoadProductAsync().Wait(); // loads product details
-            vm.LoadLogsCommand.Execute(null); // loads logs
-
+            await vm.LoadProductAsync(); // ? async-safe
+            await vm.LoadLogsCommand.ExecuteAsync(null); // ? same async pattern
         }
     }
+
+
+    protected override bool OnBackButtonPressed()
+    {
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            if (_vm.HasUnsavedChanges)
+            {
+                bool stay = await Shell.Current.DisplayAlert(
+                    "Unsaved Changes",
+                    "You have unsaved changes.\n\nPress 'Save' to keep your edits, or 'Leave' to discard.",
+                    "Stay", "Leave");
+
+                if (!stay)
+                {
+                    _vm.HasUnsavedChanges = false;
+                    await Shell.Current.DisplayAlert("Changes Discarded", "Your edits were not saved.", "OK");
+                }
+
+                // ?? Don’t navigate automatically in any case
+                return;
+            }
+
+            // ? No unsaved changes ? normal back
+            await Shell.Current.GoToAsync("..");
+        });
+
+        return true; // block default back behavior
+    }
+
+
 }

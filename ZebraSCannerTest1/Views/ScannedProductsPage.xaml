@@ -5,7 +5,8 @@
              xmlns:converters="clr-namespace:ZebraSCannerTest1.Converters"
              x:Class="ZebraSCannerTest1.Views.ScannedProductsPage"
              x:DataType="viewmodel:ScannedProductsViewModel"
-             Title="Scanned Products">
+             Title="Scanned Products"
+             >
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -28,41 +29,44 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,50,*">
 
         <!-- Header: Status + Controls -->
-        <VerticalStackLayout Grid.Row="0" Padding="8">
-            <VerticalStackLayout Spacing="0">
+        <VerticalStackLayout Grid.Row="0" Spacing="0">
+            <Label Text="{Binding CurrentFilterDescription}" TextColor="Gray" FontSize="12" />
+        </VerticalStackLayout>
+        <FlexLayout Grid.Row="1" JustifyContent="SpaceBetween" AlignContent="Center" HeightRequest="40">
+            <VerticalStackLayout Spacing="2" Padding="0,2,0,0" HeightRequest="40">
                 <Label Text="{Binding CurrentSortDescription}" TextColor="Gray" FontSize="12" />
-                <Label Text="{Binding CurrentFilterDescription}" TextColor="Gray" FontSize="12" />
+                <Label Text="Rows:" TextColor="Gray" FontSize="12" />
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Spacing="8" HorizontalOptions="End">
+            <HorizontalStackLayout Spacing="8" HeightRequest="40">
                 <Button Text="Sort" Command="{Binding SortCommand}" Padding="8" />
                 <Button Text="Filter" Command="{Binding FilterCommand}" Padding="8" />
                 <Button Text="Clear" Command="{Binding ClearFilterCommand}" Padding="8" />
                 <Button Text="Mnl Fltr" Clicked="OnManualFilterClicked"
                         Padding="8" BackgroundColor="#0078D7" TextColor="White" />
             </HorizontalStackLayout>
-        </VerticalStackLayout>
+        </FlexLayout>
 
         <!-- Horizontal scroll for header + content -->
-        <ScrollView Grid.Row="1" Grid.RowSpan="2" Orientation="Horizontal">
-            <VerticalStackLayout>
+        <ScrollView Grid.Row="2" Grid.RowSpan="2" Orientation="Horizontal">
+            <VerticalStackLayout Padding="0,0,0,100">
 
                 <!-- Header Row -->
                 <Grid Padding="4"
                       BackgroundColor="#EEEEEE"
-                      ColumnDefinitions="130,70,70,70,150,150,80,80,100,30">
-                    <Label Text="Barcode" Grid.Column="0" Style="{StaticResource HeaderStyle}" />
-                    <Label Text="Scanned" Grid.Column="1" Style="{StaticResource HeaderStyle}" />
+                      ColumnDefinitions="110,50,50,50,100,110,140,80,100,30">
+                    <Label Text="Barcode" Grid.Column="0" HorizontalTextAlignment="Start" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Scan" Grid.Column="1" Style="{StaticResource HeaderStyle}" />
                     <Label Text="Initial" Grid.Column="2" Style="{StaticResource HeaderStyle}" />
-                    <Label Text="Diff" Grid.Column="3" Style="{StaticResource HeaderStyle}" />
-                    <Label Text="Name" Grid.Column="4" Style="{StaticResource HeaderStyle}" />
-                    <Label Text="Color" Grid.Column="5" Style="{StaticResource HeaderStyle}" />
-                    <Label Text="Size" Grid.Column="6" Style="{StaticResource HeaderStyle}" />
-                    <Label Text="Price" Grid.Column="7" Style="{StaticResource HeaderStyle}" />
-                    <Label Text="ArticCode" Grid.Column="8" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Diff" Grid.Column="3"  Style="{StaticResource HeaderStyle}" />
+                    <Label Text="ArticCode" Grid.Column="4"  Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Name" Grid.Column="5" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Color" Grid.Column="6" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Size" Grid.Column="7" Style="{StaticResource HeaderStyle}" />
+                    <Label Text="Price" Grid.Column="8" Style="{StaticResource HeaderStyle}" />
                     <Label Text="→" Grid.Column="9" Style="{StaticResource HeaderStyle}" />
                 </Grid>
 
@@ -78,7 +82,7 @@
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:StatsProduct">
                             <Grid Padding="4"
-                                  ColumnDefinitions="130,70,70,70,150,150,80,80,100,30"
+                                  ColumnDefinitions="110,50,50,50,100,110,140,80,100,30"
                                   BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}">
 
                                 <Label Grid.Column="0" Text="{Binding Barcode}" Style="{StaticResource CellStyle}">
@@ -91,11 +95,11 @@
                                 <Label Grid.Column="1" Text="{Binding ScannedQuantity}" Style="{StaticResource CellStyle}" />
                                 <Label Grid.Column="2" Text="{Binding InitialQuantity}" Style="{StaticResource CellStyle}" />
                                 <Label Grid.Column="3" Text="{Binding Difference}" Style="{StaticResource CellStyle}" />
-                                <Label Grid.Column="4" Text="{Binding Name}" Style="{StaticResource CellStyle}" />
-                                <Label Grid.Column="5" Text="{Binding Color}" Style="{StaticResource CellStyle}" />
-                                <Label Grid.Column="6" Text="{Binding Size}" Style="{StaticResource CellStyle}" />
-                                <Label Grid.Column="7" Text="{Binding Price}" Style="{StaticResource CellStyle}" />
-                                <Label Grid.Column="8" Text="{Binding ArticCode}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="4" Text="{Binding ArticCode}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="5" Text="{Binding Name}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="6" Text="{Binding Color}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="7" Text="{Binding Size}" Style="{StaticResource CellStyle}" />
+                                <Label Grid.Column="8" Text="{Binding Price}" Style="{StaticResource CellStyle}" />
                                 <!-- ✅ New Details Button -->
                                 <Button Grid.Column="9"
                                     Text="➡"
@@ -110,6 +114,9 @@
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
+                    <CollectionView.Footer>
+                        <Grid HeightRequest="184"/>
+                    </CollectionView.Footer>
                 </CollectionView>
 
             </VerticalStackLayout>

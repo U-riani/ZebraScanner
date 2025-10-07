@@ -9,8 +9,26 @@ namespace ZebraSCannerTest1.Data
         public static SqliteConnection GetConnection()
         {
             var dbPath = Path.Combine(FileSystem.AppDataDirectory, DbFileName);
+
+
+            ////// 💣 optional reset — deletes old DB
+            //if (File.Exists(dbPath))
+            //{
+            //    try
+            //    {
+            //        File.Delete(dbPath);
+            //        Console.WriteLine($"🧹 Deleted old database at {dbPath}");
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Console.WriteLine($"⚠️ Failed to delete DB: {ex.Message}");
+            //    }
+            //}
+
             var conn = new SqliteConnection($"Data Source={dbPath}");
             conn.Open();
+
+            Console.WriteLine("🧩 DatabaseInitializer.Initialize() called");
 
             Initialize(conn);
 

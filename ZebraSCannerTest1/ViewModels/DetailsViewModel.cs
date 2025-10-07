@@ -13,8 +13,14 @@ public partial class DetailsViewModel : ObservableObject
 {
     private readonly SqliteConnection _conn;
     private readonly ClipboardService _clipboard;
+    private int _originalQuantity;
+
 
     public ObservableCollection<ScanLog> Logs { get; } = new();
+
+    [ObservableProperty]
+    private bool hasUnsavedChanges = false;
+
 
     [ObservableProperty]
     private bool isReadOnly = false; // Default: editable
@@ -27,7 +33,8 @@ public partial class DetailsViewModel : ObservableObject
         SaveCommand = new AsyncRelayCommand(() => SaveUpdatedDetailsAsync(isAutoSave: false, previousValue: null));
         LoadLogsCommand = new AsyncRelayCommand(LoadLogsAsync);
     }
-
+    // ✅ Computed property
+    public int Difference => ScannedQuantity - InitialQuantity;
     // Core product fields
     [ObservableProperty] private string productBarcode;
     [ObservableProperty] private int scannedQuantity;
@@ -48,13 +55,20 @@ public partial class DetailsViewModel : ObservableObject
     private void Increment()
     {
         ScannedQuantity++;
+        UpdateUnsavedState();
+
+
     }
 
     [RelayCommand]
     private void Decrement()
     {
-        if (ScannedQuantity > 0)
+        if(ScannedQuantity > 0)
+        {
             ScannedQuantity--;
+            UpdateUnsavedState();
+
+        }
     }
 
     [RelayCommand]
@@ -68,12 +82,18 @@ public partial class DetailsViewModel : ObservableObject
             keyboard: Keyboard.Numeric,
             initialValue: ScannedQuantity.ToString());
 
-        if (int.TryParse(input, out int newQty) && newQty >= 0)
+        if (int.TryParse(input, out int newQty) && newQty >= 0 && newQty != ScannedQuantity)
+        {
             ScannedQuantity = newQty;
+            UpdateUnsavedState();
+
+        }
     }
 
+
+
     // === Shared logic for saving and logging every quantity change ===
-    
+
     // === Unified save logic (used by Save button + auto logging) ===
     public async Task SaveUpdatedDetailsAsync(bool isAutoSave = false, int? previousValue = null)
     {
@@ -161,7 +181,49 @@ ON CONFLICT(Barcode) DO UPDATE SET
 
         if (!isAutoSave)
             await Shell.Current.DisplayAlert("Saved", "Product updated successfully.", "OK");
+
+        // ✅ Reset baseline
+        _originalQuantity = ScannedQuantity;
+        HasUnsavedChanges = false;
+
     }
+
+    private void UpdateUnsavedState()
+    {
+        HasUnsavedChanges = ScannedQuantity != _originalQuantity;
+    }
+
+
+    [RelayCommand]
+    public async Task<bool> ConfirmLeaveAsync()
+    {
+        if (!HasUnsavedChanges)
+            return true; // safe to leave
+
+        bool stay = await Shell.Current.DisplayAlert(
+            "Unsaved Changes",
+            "You have unsaved changes.\n\nPress 'Save' to keep your changes, or 'Leave' to discard them.",
+            "Stay", "Leave");
+
+        if (!stay)
+        {
+            HasUnsavedChanges = false; // discard
+            return true; // allow navigation
+        }
+
+        return false; // cancel navigation
+    }
+
+    partial void OnScannedQuantityChanged(int oldValue, int newValue)
+    {
+        OnPropertyChanged(nameof(Difference)); // notify UI
+    }
+
+    partial void OnInitialQuantityChanged(int oldValue, int newValue)
+    {
+        OnPropertyChanged(nameof(Difference)); // notify UI
+    }
+
 
     private async Task LoadLogsAsync()
     {
@@ -199,9 +261,9 @@ ON CONFLICT(Barcode) DO UPDATE SET
 
         using var cmd = _conn.CreateCommand();
         cmd.CommandText = @"
-SELECT Name, Color, Size, Price, ArticCode, InitialQuantity, ScannedQuantity
-FROM Products
-WHERE Barcode = $b";
+            SELECT Name, Color, Size, Price, ArticCode, InitialQuantity, ScannedQuantity
+            FROM Products
+            WHERE Barcode = $b";
         cmd.Parameters.AddWithValue("$b", ProductBarcode);
 
         using var r = cmd.ExecuteReader();
@@ -210,11 +272,15 @@ WHERE Barcode = $b";
             ProductName = r.IsDBNull(0) ? "" : r.GetString(0);
             ProductColor = r.IsDBNull(1) ? "" : r.GetString(1);
             ProductSize = r.IsDBNull(2) ? "" : r.GetString(2);
-            ProductPrice = r.IsDBNull(3) ? 0 : Convert.ToDecimal(r.GetString(3));
+            ProductPrice = r.IsDBNull(3) || string.IsNullOrWhiteSpace(r.GetString(3)) ? 0 : Convert.ToDecimal(r.GetString(3));
             ProductArticCode = r.IsDBNull(4) ? "" : r.GetString(4);
             InitialQuantity = r.IsDBNull(5) ? 0 : r.GetInt32(5);
             ScannedQuantity = r.IsDBNull(6) ? 0 : r.GetInt32(6);
         }
+
+        // ✅ Save the starting quantity for later comparison
+        _originalQuantity = ScannedQuantity;
+        HasUnsavedChanges = false;
     }
 
     [RelayCommand]
