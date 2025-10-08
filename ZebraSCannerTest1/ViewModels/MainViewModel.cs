@@ -456,7 +456,7 @@ namespace ZebraSCannerTest1.ViewModels
                     ["Size"] = product.Size ?? "",
                     ["Price"] = decimal.TryParse(product.Price, out var p) ? p : 0,
                     ["ArticCode"] = product.ArticCode ?? "",
-                    ["IsReadOnly"] = true  // 👈 NEW FLAG
+                    ["IsReadOnly"] = false  // 👈 NEW FLAG
                 };
 
 

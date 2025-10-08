@@ -10,6 +10,7 @@
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:ManualToColorConverter x:Key="ManualToColor" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
     
@@ -107,19 +108,19 @@
             <CollectionView ItemsSource="{Binding Logs}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:ScanLog">
-                        <Grid Padding="4" ColumnDefinitions="2*,*,*,*,*"
+                        <Grid Padding="4" Margin="0,0,0,2" ColumnDefinitions="2*,*,*,*,*"
                               BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}" >
-                            <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="Black"/>
-                            <Label Grid.Column="1" Text="{Binding Was}" 
-                       HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
-                            <Label Grid.Column="2" Text="{Binding IncrementBy}" 
-                       HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
-                            <Label Grid.Column="3" Text="{Binding IsValue}" 
-                       HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
-                            <Label Grid.Column="4" 
-                       Text="{Binding UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" 
-                       FontSize="12" TextColor="Gray" 
-                       HorizontalTextAlignment="End"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="1" Text="{Binding Was}" 
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="2" Text="{Binding IncrementBy}" 
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="3" Text="{Binding IsValue}" 
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="4" 
+                               Text="{Binding UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" 
+                               FontSize="12" TextColor="Gray" 
+                               HorizontalTextAlignment="End"/>
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

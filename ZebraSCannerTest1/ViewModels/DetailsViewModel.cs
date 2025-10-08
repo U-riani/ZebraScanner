@@ -233,27 +233,84 @@ ON CONFLICT(Barcode) DO UPDATE SET
 
         using var cmd = _conn.CreateCommand();
         cmd.CommandText = @"
+        SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt
+        FROM ScanLogs
+        WHERE Barcode = $b
+        ORDER BY UpdatedAt DESC
+        LIMIT 50";
+        cmd.Parameters.AddWithValue("$b", ProductBarcode);
+
+        using var r = cmd.ExecuteReader();
+
+        // 👇 detect if IsManual column exists in table
+        bool hasIsManual = false;
+        try
+        {
+            var colCheck = _conn.CreateCommand();
+            colCheck.CommandText = "PRAGMA table_info(ScanLogs)";
+            using var info = colCheck.ExecuteReader();
+            while (info.Read())
+            {
+                if (info.GetString(1).Equals("IsManual", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasIsManual = true;
+                    break;
+                }
+            }
+        }
+        catch { hasIsManual = false; }
+
+        // if column exists, query again including it
+        if (hasIsManual)
+        {
+            r.Close();
+            cmd.CommandText = @"
             SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual
             FROM ScanLogs
             WHERE Barcode = $b
             ORDER BY UpdatedAt DESC
             LIMIT 50";
-        cmd.Parameters.AddWithValue("$b", ProductBarcode);
+            cmd.Parameters.Clear();
+            cmd.Parameters.AddWithValue("$b", ProductBarcode);
+            using var reader = cmd.ExecuteReader();
 
-        using var r = cmd.ExecuteReader();
-        while (r.Read())
-        {
-            Logs.Add(new ScanLog
+            while (reader.Read())
             {
-                Barcode = r.GetString(0),
-                Was = r.GetInt32(1),
-                IncrementBy = r.GetInt32(2),
-                IsValue = r.GetInt32(3),
-                UpdatedAt = DateTime.Parse(r.GetString(4)),
-                IsManual = r.IsDBNull(5) ? null : r.GetInt32(5)
-            });
+                int? isManual = null;
+                if (!reader.IsDBNull(5))
+                {
+                    try { isManual = Convert.ToInt32(reader.GetValue(5)); }
+                    catch { isManual = null; }
+                }
+
+                Logs.Add(new ScanLog
+                {
+                    Barcode = reader.GetString(0),
+                    Was = reader.GetInt32(1),
+                    IncrementBy = reader.GetInt32(2),
+                    IsValue = reader.GetInt32(3),
+                    UpdatedAt = DateTime.Parse(reader.GetString(4)),
+                    IsManual = isManual
+                });
+            }
+        }
+        else
+        {
+            while (r.Read())
+            {
+                Logs.Add(new ScanLog
+                {
+                    Barcode = r.GetString(0),
+                    Was = r.GetInt32(1),
+                    IncrementBy = r.GetInt32(2),
+                    IsValue = r.GetInt32(3),
+                    UpdatedAt = DateTime.Parse(r.GetString(4)),
+                    IsManual = null
+                });
+            }
         }
     }
+
 
     public async Task LoadProductAsync()
     {

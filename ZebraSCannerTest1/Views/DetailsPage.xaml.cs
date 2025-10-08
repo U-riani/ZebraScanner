@@ -39,7 +39,15 @@ public partial class DetailsPage : ContentPage
 
     public DetailsPage(DetailsViewModel vm)
     {
-        InitializeComponent();
+        try
+        {
+            InitializeComponent();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("? XAML load error: " + ex);
+            Shell.Current.DisplayAlert("XAML Error", ex.Message, "OK");
+        }
         BindingContext = _vm = vm;
     }
 
@@ -47,10 +55,18 @@ public partial class DetailsPage : ContentPage
     {
         base.OnAppearing();
 
-        if (BindingContext is DetailsViewModel vm)
+        try
         {
-            await vm.LoadProductAsync(); // ? async-safe
-            await vm.LoadLogsCommand.ExecuteAsync(null); // ? same async pattern
+            await Task.Delay(50);
+            if (!string.IsNullOrEmpty(_vm.ProductBarcode))
+            {
+                await _vm.LoadProductAsync();
+                await _vm.LoadLogsCommand.ExecuteAsync(null);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
         }
     }
 

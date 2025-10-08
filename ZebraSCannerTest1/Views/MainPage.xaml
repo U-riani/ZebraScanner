@@ -20,7 +20,7 @@
         <HorizontalStackLayout Spacing="8" Padding="3" HorizontalOptions="CenterAndExpand">
             <Button Text="Imprt" Command="{Binding ImportDataCommand}" />
             <Button Text="Exprt" Command="{Binding ExportExcelCommand}" />
-            <Button Text="Stts" Command="{Binding GoToScannedProductsCommand}" />
+            <Button Text="Stats" Command="{Binding GoToScannedProductsCommand}" />
             <Button Text="Logs" Command="{Binding GoToLogsCommand}" />
             <Button Text="Rslt" Command="{Binding ShowResultsCommand}"/> 
 
@@ -29,6 +29,7 @@
         <!-- Current scanned barcode big and obvious -->
         <Label Text="{Binding ShowCurrentBarcode}"
                FontSize="24"
+               TextColor="{AppThemeBinding Dark=white, Light=black, Default=black}"
                FontAttributes="Bold"
                HorizontalTextAlignment="Center" />
 

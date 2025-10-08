@@ -74,6 +74,7 @@
 		<PublishTrimmed>false</PublishTrimmed>
 		<MauiTrimMode>none</MauiTrimMode>
 		<RunAOTCompilation>false</RunAOTCompilation>
+		<DebugSymbols>True</DebugSymbols>
 	</PropertyGroup>
 
 

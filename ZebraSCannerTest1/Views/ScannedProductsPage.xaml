@@ -32,16 +32,21 @@
     <Grid RowDefinitions="Auto,50,*">
 
         <!-- Header: Status + Controls -->
-        <VerticalStackLayout Grid.Row="0" Spacing="0">
+        <VerticalStackLayout Grid.Row="0" Spacing="0" Padding="1,5,0,0">
             <Label Text="{Binding CurrentFilterDescription}" TextColor="Gray" FontSize="12" />
         </VerticalStackLayout>
         <FlexLayout Grid.Row="1" JustifyContent="SpaceBetween" AlignContent="Center" HeightRequest="40">
-            <VerticalStackLayout Spacing="2" Padding="0,2,0,0" HeightRequest="40">
+            <VerticalStackLayout Spacing="2" Padding="1,0,0,0" HeightRequest="40">
                 <Label Text="{Binding CurrentSortDescription}" TextColor="Gray" FontSize="12" />
-                <Label Text="Rows:" TextColor="Gray" FontSize="12" />
+                <HorizontalStackLayout Padding="0,2,0,0">
+                    
+                <Label Text="Rows: " TextColor="Gray" FontSize="12" />
+                <Label Text="{Binding RowCount, StringFormat='{0:N0}'}" 
+                    TextColor="Gray" FontSize="12" /> 
+                </HorizontalStackLayout>
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Spacing="8" HeightRequest="40">
+            <HorizontalStackLayout Spacing="8" HeightRequest="40" Padding="0,0,5,0">
                 <Button Text="Sort" Command="{Binding SortCommand}" Padding="8" />
                 <Button Text="Filter" Command="{Binding FilterCommand}" Padding="8" />
                 <Button Text="Clear" Command="{Binding ClearFilterCommand}" Padding="8" />
@@ -57,7 +62,7 @@
                 <!-- Header Row -->
                 <Grid Padding="4"
                       BackgroundColor="#EEEEEE"
-                      ColumnDefinitions="110,50,50,50,100,110,140,80,100,30">
+                      ColumnDefinitions="110,50,50,50,100,110,140,80,80,30">
                     <Label Text="Barcode" Grid.Column="0" HorizontalTextAlignment="Start" Style="{StaticResource HeaderStyle}" />
                     <Label Text="Scan" Grid.Column="1" Style="{StaticResource HeaderStyle}" />
                     <Label Text="Initial" Grid.Column="2" Style="{StaticResource HeaderStyle}" />
@@ -82,7 +87,7 @@
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:StatsProduct">
                             <Grid Padding="4"
-                                  ColumnDefinitions="110,50,50,50,100,110,140,80,100,30"
+                                  ColumnDefinitions="110,50,50,50,100,110,140,80,80,30"
                                   BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}">
 
                                 <Label Grid.Column="0" Text="{Binding Barcode}" Style="{StaticResource CellStyle}">
@@ -103,7 +108,7 @@
                                 <!-- ✅ New Details Button -->
                                 <Button Grid.Column="9"
                                     Text="➡"
-                                    BackgroundColor="#0078D7"
+                                    BackgroundColor="#a9d5a5"
                                     TextColor="White"
                                     FontSize="14"
                                     WidthRequest="30"

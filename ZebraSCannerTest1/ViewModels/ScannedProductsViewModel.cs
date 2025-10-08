@@ -20,6 +20,8 @@ public partial class ScannedProductsViewModel : ObservableObject
 
     [ObservableProperty] private string currentSortDescription = "Sort: Updated ↓";
     [ObservableProperty] private string currentFilterDescription = "Filter: Scanned";
+    [ObservableProperty] private int rowCount;
+   
 
     public ObservableCollection<StatsProduct> ScannedProductsStats { get; private set; } = new();
 
@@ -63,6 +65,7 @@ public partial class ScannedProductsViewModel : ObservableObject
         }
 
         ScannedProductsStats = new ObservableCollection<StatsProduct>(temp);
+        RowCount = ScannedProductsStats.Count;
         OnPropertyChanged(nameof(ScannedProductsStats));
     }
 
@@ -70,7 +73,7 @@ public partial class ScannedProductsViewModel : ObservableObject
     [RelayCommand]
     private async Task Sort()
     {
-        string[] fields = new[] { "Barcode", "ScannedQuantity", "InitialQuantity", "Difference", "UpdatedAt", "CreatedAt" };
+        string[] fields = new[] { "Barcode", "ScannedQuantity", "InitialQuantity", "Difference", "UpdatedAt", "ArticCode", "Name", "Color", "Size", "Price", "CreatedAt" };
         string fieldChoice = await Shell.Current.DisplayActionSheet("Sort by:", "Cancel", null, fields);
         if (string.IsNullOrEmpty(fieldChoice) || fieldChoice == "Cancel")
             return;
@@ -126,8 +129,7 @@ public partial class ScannedProductsViewModel : ObservableObject
             // --- Search filters ---
             "Search by Barcode",
             "Search by Name",
-            "Search by ArticCode",
-            "Manual Filter(Custom Builder)"
+            "Search by ArticCode"
         );
 
         if (string.IsNullOrEmpty(fieldChoice) || fieldChoice == "Cancel") return;
@@ -303,7 +305,7 @@ public partial class ScannedProductsViewModel : ObservableObject
             ["Size"] = product.Size ?? "",
             ["Price"] = decimal.TryParse(product.Price, out var p) ? p : 0,
             ["ArticCode"] = product.ArticCode ?? "",
-            ["IsReadOnly"] = false  // 👈 NEW FLAG
+            ["IsReadOnly"] = true  // 👈 NEW FLAG
         };
 
 
