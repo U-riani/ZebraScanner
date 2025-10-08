@@ -48,11 +48,11 @@ CREATE TABLE IF NOT EXISTS Products (
     ScannedQuantity INTEGER NOT NULL DEFAULT 0,
     CreatedAt TEXT NOT NULL,
     UpdatedAt TEXT NOT NULL,
-    Name TEXT,
-    Color TEXT,
-    Size TEXT,
-    Price TEXT,        -- stored as TEXT (Excel string values)
-    ArticCode TEXT
+    Name TEXT NOCASE,
+    Color TEXT NOCASE,
+    Size TEXT NOCASE,
+    Price TEXT NOCASE,        -- stored as TEXT (Excel string values)
+    ArticCode TEXT NOCASE
 );
 
 -- ✅ Logs of scans
@@ -76,11 +76,11 @@ CREATE TABLE IF NOT EXISTS ScannedProducts (
     InitialQuantity INTEGER NOT NULL DEFAULT 0,
     CreatedAt TEXT NOT NULL,
     UpdatedAt TEXT NOT NULL,
-    Name TEXT,
-    Color TEXT,
-    Size TEXT,
-    Price TEXT,
-    ArticCode TEXT
+    Name TEXT NOCASE,
+    Color TEXT NOCASE,
+    Size TEXT NOCASE,
+    Price TEXT NOCASE,
+    ArticCode TEXT NOCASE
 );
 ";
             cmd.ExecuteNonQuery();
