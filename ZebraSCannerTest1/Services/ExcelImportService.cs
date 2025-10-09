@@ -1,6 +1,9 @@
 ﻿using Microsoft.Data.Sqlite;
 using MiniExcelLibs;
+using System.Diagnostics;
 using ZebraSCannerTest1.Dtos;
+using System.Diagnostics;
+
 
 namespace ZebraSCannerTest1.Services
 {
@@ -24,10 +27,20 @@ namespace ZebraSCannerTest1.Services
 
             try
             {
-                using (var localFile = File.Create(tempPath))
-                    await stream.CopyToAsync(localFile);
+                // ✅ Detach from SAF and write to local sandbox
+                byte[] buffer;
+                using (var ms = new MemoryStream())
+                {
+                    await stream.CopyToAsync(ms);
+                    buffer = ms.ToArray();
+                }
 
-                await stream.DisposeAsync(); // close the SAF stream
+                await stream.DisposeAsync();
+
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                await File.WriteAllBytesAsync(tempPath, buffer);
             }
             catch (Exception ex)
             {
@@ -50,12 +63,11 @@ namespace ZebraSCannerTest1.Services
         private async Task ImportExcelInternalAsync(Stream stream)
         {
             int processed = 0;
-            int batchSize = 5000;
             var now = DateTime.UtcNow.ToString("o");
 
             using var tx = _conn.BeginTransaction();
 
-            // Clear old data safely
+            // 🔹 Clear old data safely
             using (var clear = _conn.CreateCommand())
             {
                 clear.Transaction = tx;
@@ -69,7 +81,7 @@ namespace ZebraSCannerTest1.Services
                 clear.ExecuteNonQuery();
             }
 
-            // Prepare upsert command
+            // 🔹 Prepare upsert command
             using var upsert = _conn.CreateCommand();
             upsert.Transaction = tx;
             upsert.CommandText = @"
@@ -97,11 +109,15 @@ namespace ZebraSCannerTest1.Services
             upsert.Parameters.Add("$price", SqliteType.Text);
             upsert.Parameters.Add("$artic", SqliteType.Text);
 
-            // 🔹 Read Excel rows
+            // 🔹 Read and insert Excel rows
             foreach (var r in MiniExcel.Query<ExcelProductDto>(stream))
             {
                 if (r == null || string.IsNullOrWhiteSpace(r.Barcode))
                     continue;
+
+#if DEBUG
+                Console.WriteLine($"[ROW] {r.Id} | {r.Barcode} | {r.Quantity} | {r.Name}");
+#endif
 
                 upsert.Parameters["$barcode"].Value = r.Barcode.Trim();
                 upsert.Parameters["$initial"].Value = r.Quantity;
@@ -115,18 +131,11 @@ namespace ZebraSCannerTest1.Services
 
                 upsert.ExecuteNonQuery();
                 processed++;
-
-                if (processed % batchSize == 0)
-                {
-                    tx.Commit();
-                    Console.WriteLine($"[DOTNET] Imported {processed} rows (batch commit).");
-                    var newTx = _conn.BeginTransaction();
-                    upsert.Transaction = newTx;
-                }
             }
 
             tx.Commit();
-            Console.WriteLine($"[DOTNET] ✅ Excel import complete. Rows = {processed}");
+            Debug.WriteLine($"[DOTNET] ✅ Excel import complete. Rows = {processed}");
+
         }
     }
 }

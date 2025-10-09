@@ -133,7 +133,7 @@
 
                         <!-- ✅ Footer to replace hidden bottom layout -->
                         <CollectionView.Footer>
-                            <VerticalStackLayout Padding="0,10,0,35" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
+                            <VerticalStackLayout Padding="0,10,0,175" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
                                 <!-- Spinner -->
                                 <ActivityIndicator IsVisible="{Binding IsLoadingMore}"
                                IsRunning="{Binding IsLoadingMore}"
@@ -143,15 +143,7 @@
                                HorizontalOptions="Center" />
 
                                 <!-- Load More Button -->
-                                <Button Text="⬇ Load More"
-                    Command="{Binding LoadMoreCommand}"
-                    IsVisible="{Binding HasMoreRows}"
-                    BackgroundColor="#0078D7"
-                    TextColor="White"
-                    WidthRequest="160"
-                    HeightRequest="40"
-                    FontAttributes="Bold"
-                    CornerRadius="8" />
+                               
                             </VerticalStackLayout>
                         </CollectionView.Footer>
                     </CollectionView>

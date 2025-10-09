@@ -39,7 +39,22 @@ namespace ZebraSCannerTest1.Services
                 // Reopen connection to new DB
                 _conn.Close();
                 _conn.ConnectionString = $"Data Source={targetPath}";
-                _conn.Open();
+
+                int retries = 3;
+                while (retries-- > 0)
+                {
+                    try
+                    {
+                        _conn.Open();
+                        break;
+                    }
+                    catch (SqliteException)
+                    {
+                        if (retries == 0) throw;
+                        await Task.Delay(200); // wait before retry
+                    }
+                }
+
             }
             catch (Exception ex)
             {
@@ -50,43 +65,43 @@ namespace ZebraSCannerTest1.Services
             using (var cmd = _conn.CreateCommand())
             {
                 cmd.CommandText = @"
-CREATE TABLE IF NOT EXISTS Products (
-    Barcode TEXT PRIMARY KEY,
-    InitialQuantity INTEGER NOT NULL DEFAULT 0,
-    ScannedQuantity INTEGER NOT NULL DEFAULT 0,
-    CreatedAt TEXT NOT NULL,
-    UpdatedAt TEXT NOT NULL,
-    Name TEXT,
-    Color TEXT,
-    Size TEXT,
-    Price TEXT,
-    ArticCode TEXT
-);
+                    CREATE TABLE IF NOT EXISTS Products (
+                        Barcode TEXT PRIMARY KEY,
+                        InitialQuantity INTEGER NOT NULL DEFAULT 0,
+                        ScannedQuantity INTEGER NOT NULL DEFAULT 0,
+                        CreatedAt TEXT NOT NULL,
+                        UpdatedAt TEXT NOT NULL,
+                        Name TEXT,
+                        Color TEXT,
+                        Size TEXT,
+                        Price TEXT,
+                        ArticCode TEXT
+                    );
 
-CREATE TABLE IF NOT EXISTS ScanLogs (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    Barcode TEXT NOT NULL,
-    Was INTEGER NOT NULL DEFAULT 0,
-    IncrementBy INTEGER NOT NULL DEFAULT 1,
-    IsValue INTEGER NOT NULL DEFAULT 0,
-    UpdatedAt TEXT NOT NULL,
-    IsManual INTEGER NULL
-);
+                    CREATE TABLE IF NOT EXISTS ScanLogs (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Barcode TEXT NOT NULL,
+                        Was INTEGER NOT NULL DEFAULT 0,
+                        IncrementBy INTEGER NOT NULL DEFAULT 1,
+                        IsValue INTEGER NOT NULL DEFAULT 0,
+                        UpdatedAt TEXT NOT NULL,
+                        IsManual INTEGER NULL
+                    );
 
-CREATE TABLE IF NOT EXISTS ScannedProducts (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    Barcode TEXT NOT NULL,
-    Quantity INTEGER NOT NULL,
-    InitialQuantity INTEGER NOT NULL DEFAULT 0,
-    CreatedAt TEXT NOT NULL,
-    UpdatedAt TEXT NOT NULL,
-    Name TEXT,
-    Color TEXT,
-    Size TEXT,
-    Price TEXT,
-    ArticCode TEXT
-);
-";
+                    CREATE TABLE IF NOT EXISTS ScannedProducts (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Barcode TEXT NOT NULL,
+                        Quantity INTEGER NOT NULL,
+                        InitialQuantity INTEGER NOT NULL DEFAULT 0,
+                        CreatedAt TEXT NOT NULL,
+                        UpdatedAt TEXT NOT NULL,
+                        Name TEXT,
+                        Color TEXT,
+                        Size TEXT,
+                        Price TEXT,
+                        ArticCode TEXT
+                    );
+                    ";
                 cmd.ExecuteNonQuery();
             }
 
@@ -116,7 +131,7 @@ CREATE TABLE IF NOT EXISTS ScannedProducts (
             var json = await reader.ReadToEndAsync();
 
             // Deserialize JSON to list of DTOs
-            var items = JsonSerializer.Deserialize<List<JsonProduct>>(json,
+            var items = JsonSerializer.Deserialize<List<JsonDto>>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             if (items == null || items.Count == 0)
@@ -126,9 +141,9 @@ CREATE TABLE IF NOT EXISTS ScannedProducts (
             using var insert = _conn.CreateCommand();
             insert.Transaction = tx;
             insert.CommandText = @"
-INSERT OR REPLACE INTO Products
-(Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
-VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);";
+                INSERT OR REPLACE INTO Products
+                (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+                VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);";
 
             insert.Parameters.Add("$barcode", SqliteType.Text);
             insert.Parameters.Add("$initial", SqliteType.Integer);
@@ -152,8 +167,8 @@ VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, 
                 insert.Parameters["$barcode"].Value = p.Barcode.Trim();
                 insert.Parameters["$initial"].Value = p.InitialQuantity;
                 insert.Parameters["$scanned"].Value = p.ScannedQuantity;
-                insert.Parameters["$created"].Value = p.CreatedAt ?? now;
-                insert.Parameters["$updated"].Value = p.UpdatedAt ?? now;
+                insert.Parameters["$created"].Value = string.IsNullOrWhiteSpace(p.CreatedAt) ? now : p.CreatedAt;
+                insert.Parameters["$updated"].Value = string.IsNullOrWhiteSpace(p.UpdatedAt) ? now : p.UpdatedAt;
                 insert.Parameters["$name"].Value = p.Name ?? "";
                 insert.Parameters["$color"].Value = p.Color ?? "";
                 insert.Parameters["$size"].Value = p.Size ?? "";
@@ -171,18 +186,4 @@ VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, 
         }
     }
 
-    // 🟣 DTO for JSON import
-    public class JsonProduct
-    {
-        public string Barcode { get; set; }
-        public int InitialQuantity { get; set; }
-        public int ScannedQuantity { get; set; }
-        public string CreatedAt { get; set; }
-        public string UpdatedAt { get; set; }
-        public string Name { get; set; }
-        public string Color { get; set; }
-        public string Size { get; set; }
-        public string Price { get; set; }
-        public string ArticCode { get; set; }
-    }
 }

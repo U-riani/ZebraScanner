@@ -5,9 +5,18 @@ namespace ZebraSCannerTest1.Helpers;
 public static class ShowingLongPopup
 {
     private static ContentPage _loadingPage;
+    private static Label _messageLabel;
 
     public static async Task ShowAsync(string message)
     {
+        _messageLabel = new Label
+        {
+            Text = message,
+            TextColor = Colors.White,
+            FontSize = 18,
+            HorizontalOptions = LayoutOptions.Center
+        };
+
         _loadingPage = new ContentPage
         {
             BackgroundColor = Color.FromArgb("#80000000"),
@@ -26,20 +35,34 @@ public static class ShowingLongPopup
                         WidthRequest = 60,
                         HeightRequest = 60
                     },
-                    new Label
-                    {
-                        Text = message,
-                        TextColor = Colors.White,
-                        FontSize = 18,
-                        HorizontalOptions = LayoutOptions.Center
-                    }
+                    _messageLabel
                 }
             }
         };
 
         await MainThread.InvokeOnMainThreadAsync(async () =>
         {
-            await Shell.Current.Navigation.PushModalAsync(_loadingPage);
+            try
+            {
+                await Shell.Current.Navigation.PushModalAsync(_loadingPage);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Popup] Failed to show: {ex.Message}");
+            }
+
+        });
+    }
+
+    // ✅ Dynamically update the popup text
+    public static async Task UpdateMessageAsync(string newMessage)
+    {
+        if (_messageLabel == null)
+            return; // popup not currently shown
+
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            _messageLabel.Text = newMessage;
         });
     }
 
@@ -49,8 +72,15 @@ public static class ShowingLongPopup
         {
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                await Shell.Current.Navigation.PopModalAsync();
-                _loadingPage = null;
+                try
+                {
+                    await Shell.Current.Navigation.PopModalAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Popup] Failed to close: {ex.Message}");
+                }
+
             });
         }
     }

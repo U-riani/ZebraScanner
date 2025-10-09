@@ -19,7 +19,7 @@ using Android.Media;
 
 namespace ZebraSCannerTest1.ViewModels
 {
-    public partial class MainViewModel : INotifyPropertyChanged
+    public partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly SqliteConnection _conn;
         private readonly ExcelExportService _exportService;
@@ -93,33 +93,6 @@ namespace ZebraSCannerTest1.ViewModels
             _exportService = exportService;
             _logBuffer = logBuffer;
             _dataImportService = new DataImportService(conn);
-            
-    //            // ✅ Ensure required tables exist (especially ScanLogs)
-    //        using (var cmd = _conn.CreateCommand())
-    //{
-    //    cmd.CommandText = @"
-    //        CREATE TABLE IF NOT EXISTS ScanLogs (
-    //            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    //            Barcode TEXT NOT NULL,
-    //            Quantity INTEGER DEFAULT 1,
-    //            ScannedAt TEXT NOT NULL
-                
-    //        );
-
-    //        CREATE TABLE IF NOT EXISTS Products (
-    //            Barcode TEXT PRIMARY KEY,
-    //            InitialQuantity INTEGER NOT NULL DEFAULT 0,
-    //            ScannedQuantity INTEGER NOT NULL DEFAULT 0,
-    //            CreatedAt TEXT NOT NULL,
-    //            UpdatedAt TEXT NOT NULL,
-    //            Name TEXT,
-    //            Color TEXT,
-    //            Size TEXT,
-    //            Price TEXT,
-    //            ArticCode TEXT
-    //        );";
-    //    cmd.ExecuteNonQuery();
-    //}
 
 
             // SQL command for upserting
@@ -344,91 +317,61 @@ namespace ZebraSCannerTest1.ViewModels
                 if (result == null) return;
 
                 // ✅ Show popup before import begins
-                await ShowingLongPopup.ShowAsync("Importing data...");
+                await ShowingLongPopup.ShowAsync("Preparing data...");
+                try
+                {
 
-
-                string ext = Path.GetExtension(result.FileName).ToLowerInvariant();
+                    string ext = Path.GetExtension(result.FileName).ToLowerInvariant();
                 using var stream = await result.OpenReadAsync();
-                if (ext != ".xlsx" && ext != ".json" && ext != ".db")
+                await Task.Run(async () =>
                 {
-                    await Shell.Current.DisplayAlert("Invalid File", "Select .xlsx, .json, or .db file.", "OK");
-                    return;
-                }
-
-
-                if (ext == ".json")
-                {
-                    using var reader = new StreamReader(stream);
-                    var json = await reader.ReadToEndAsync();
-                    var items = JsonSerializer.Deserialize<List<JsonProduct>>(json) ?? new();
-                    int total = items.Count;
-
-                    using var tx = _conn.BeginTransaction();
-                    using var cmd = _conn.CreateCommand();
-                    cmd.Transaction = tx;
-                    cmd.CommandText = @"
-                        INSERT OR REPLACE INTO Products
-                        (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
-                        VALUES ($b,$i,$s,$c,$u,$n,$co,$si,$p,$a)";
-                    cmd.Parameters.Add("$b", SqliteType.Text);
-                    cmd.Parameters.Add("$i", SqliteType.Integer);
-                    cmd.Parameters.Add("$s", SqliteType.Integer);
-                    cmd.Parameters.Add("$c", SqliteType.Text);
-                    cmd.Parameters.Add("$u", SqliteType.Text);
-                    cmd.Parameters.Add("$n", SqliteType.Text);
-                    cmd.Parameters.Add("$co", SqliteType.Text);
-                    cmd.Parameters.Add("$si", SqliteType.Text);
-                    cmd.Parameters.Add("$p", SqliteType.Text);
-                    cmd.Parameters.Add("$a", SqliteType.Text);
-
-                    foreach (var p in items)
+                    if (ext == ".json")
                     {
-                        cmd.Parameters["$b"].Value = p.Barcode ?? "";
-                        cmd.Parameters["$i"].Value = p.InitialQuantity;
-                        cmd.Parameters["$s"].Value = p.ScannedQuantity;
-                        cmd.Parameters["$c"].Value = p.CreatedAt ?? DateTime.UtcNow.ToString("o");
-                        cmd.Parameters["$u"].Value = p.UpdatedAt ?? DateTime.UtcNow.ToString("o");
-                        cmd.Parameters["$n"].Value = p.Name ?? "";
-                        cmd.Parameters["$co"].Value = p.Color ?? "";
-                        cmd.Parameters["$si"].Value = p.Size ?? "";
-                        cmd.Parameters["$p"].Value = p.Price ?? "";
-                        cmd.Parameters["$a"].Value = p.ArticCode ?? "";
-                        cmd.ExecuteNonQuery();
+                        await MainThread.InvokeOnMainThreadAsync(async () =>
+                            await ShowingLongPopup.UpdateMessageAsync("Importing JSON data..."));
 
+                       
+                        await _dataImportService.ImportJsonAsync(stream);
+                   
+
+                        ImportStatusText = "✅ JSON import complete";
                     }
+                    else if (ext == ".xlsx")
+                    {
+                        await MainThread.InvokeOnMainThreadAsync(async () =>
+                            await ShowingLongPopup.UpdateMessageAsync("Importing Excel data..."));
 
-                    tx.Commit();
-                }
-                else if (ext == ".xlsx")
-                {
-                    ImportStatusText = "Importing Excel...";
+                        await _dataImportService.ImportExcelAsync(stream, result.FileName);
 
-                    // ✅ Copy to safe local storage before importing (Pixel fix)
-                    var tempFile = Path.Combine(FileSystem.AppDataDirectory, result.FileName);
 
-                    using (var localFile = File.Create(tempFile))
-                        await stream.CopyToAsync(localFile);
+                        ImportStatusText = "✅ Excel import complete";
+                    }
+                    else if (ext == ".db")
+                    {
+                        await MainThread.InvokeOnMainThreadAsync(async () =>
+                            await ShowingLongPopup.UpdateMessageAsync("Importing database..."));
 
-                    // close SAF stream
-                    await stream.DisposeAsync();
+                        
+                            await _dataImportService.ImportDbAsync(stream);
+                        
 
-                    // reopen from local copy as normal FileStream (seekable)
-                    using var localStream = File.OpenRead(tempFile);
-                    await _dataImportService.ImportExcelAsync(localStream, result.FileName);
-                }
-                else if (ext == ".db")
-                {
-                    ImportStatusText = "Importing DB file...";
-                    await _dataImportService.ImportDbAsync(stream);
-                }
+                        ImportStatusText = "✅ Database import complete";
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Select a valid .xlsx, .json, or .db file.");
+                    }
+                });
 
                 ResetAndReload();
 
-                ImportStatusText = "✅ Import Complete";
 
-                // ✅ Close popup
-                await ShowingLongPopup.CloseAsync();
-
+                }
+                finally
+                {
+                    // ✅ Close popup
+                    await ShowingLongPopup.CloseAsync();
+                }
                 await Shell.Current.DisplayAlert("✅ Success", "Import finished successfully!", "OK");
             }
             catch (Exception ex)
@@ -487,10 +430,17 @@ namespace ZebraSCannerTest1.ViewModels
 #endif
                 var name = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
                 var fullPath = Path.Combine(path, name);
+                var progress = new Progress<double>(p =>
+                {
+                    // optional UI feedback (you can plug into a progress popup later)
+                    ImportStatusText = $"Exporting... {(int)(p * 100)}%";
+                });
 
-                // 🧠 Perform export
-                await _exportService.ExportProductsAsync(fullPath);
-
+                // 🧠 Run the export off the main thread
+                await Task.Run(async () =>
+                {
+                    await _exportService.ExportProductsAsync(fullPath, progress);
+                });
                 // ✅ Dismiss popup
                 await ShowingLongPopup.CloseAsync();
 
@@ -575,19 +525,14 @@ namespace ZebraSCannerTest1.ViewModels
 
         private void OnPropertyChanged([CallerMemberName] string n = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+
+
+        public void Dispose()
+        {
+            _upsertProductCmd?.Dispose();
+            _conn?.Dispose();
+        }
+
     }
 
-    public class JsonProduct
-    {
-        public string Barcode { get; set; }
-        public int InitialQuantity { get; set; }
-        public int ScannedQuantity { get; set; }
-        public string CreatedAt { get; set; }
-        public string UpdatedAt { get; set; }
-        public string Name { get; set; }
-        public string Color { get; set; }
-        public string Size { get; set; }
-        public string Price { get; set; }
-        public string ArticCode { get; set; }
-    }
 }
