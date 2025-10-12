@@ -14,10 +14,12 @@ namespace ZebraSCannerTest1.Views;
 [QueryProperty(nameof(ArticCode), "ArticCode")]
 [QueryProperty(nameof(IsReadOnly), "IsReadOnly")]
 
+
 public partial class DetailsPage : ContentPage
 {
     private readonly DetailsViewModel _vm;
     private bool _checkingUnsaved = false;
+    private CancellationTokenSource? _loadCts;
 
     public bool IsReadOnly
     {
@@ -51,24 +53,6 @@ public partial class DetailsPage : ContentPage
         BindingContext = _vm = vm;
     }
 
-    protected override async void OnAppearing()
-    {
-        base.OnAppearing();
-
-        try
-        {
-            await Task.Delay(50);
-            if (!string.IsNullOrEmpty(_vm.ProductBarcode))
-            {
-                await _vm.LoadProductAsync();
-                await _vm.LoadLogsCommand.ExecuteAsync(null);
-            }
-        }
-        catch (Exception ex)
-        {
-            await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
-        }
-    }
 
 
     protected override bool OnBackButtonPressed()
@@ -97,6 +81,61 @@ public partial class DetailsPage : ContentPage
         });
 
         return true; // block default back behavior
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        _vm.IsLoading = true;
+
+        _loadCts = new CancellationTokenSource();
+        var token = _loadCts.Token;
+
+        // ? Fire and forget background task
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(120, token); // let page animation finish
+                if (token.IsCancellationRequested) return;
+
+                if (!string.IsNullOrEmpty(_vm.ProductBarcode))
+                {
+                    // Heavy DB call
+                    await _vm.LoadProductAsync();
+                    if (token.IsCancellationRequested) return;
+
+                    // Light UI update (load logs)
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await _vm.LoadLogsCommand.ExecuteAsync(null);
+                    });
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore — user navigated back early
+            }
+            catch (Exception ex)
+            {
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                    Shell.Current.DisplayAlert("Error", ex.Message, "OK"));
+            }
+            finally
+            {
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    _vm.IsLoading = false;
+                });
+            }
+        }, token);
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        _loadCts?.Cancel(); // ? cancels cleanly when navigating back
     }
 
 

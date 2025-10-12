@@ -5,7 +5,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using System.Windows.Input;
 using ZebraSCannerTest1.Helpers;
 using ZebraSCannerTest1.Messages;
@@ -28,17 +27,14 @@ namespace ZebraSCannerTest1.ViewModels
 
         private readonly Queue<string> _scanQueue = new();
         private readonly object _scanLock = new();
-        private bool _isFlushingScans = false;
+        private int _isFlushingScans = 0;
 
         private readonly Dictionary<string, Product> _cache = new();
         private readonly List<string> _recent = new(capacity: 8);
-        private readonly SqliteCommand _upsertProductCmd;
 
         private string _currentBarcode;
         private string _showCurrentBarcode;
         private bool _isManualEntryVisible = true;
-        private bool _isBusy;
-        private double _importProgress;
         private string _importStatusText = string.Empty;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -82,6 +78,10 @@ namespace ZebraSCannerTest1.ViewModels
         public ICommand ToggleManualEntryCommand { get; }
         public ICommand ShowResultsCommand { get; }
 
+#if ANDROID
+        private static readonly ToneGenerator toneOk = new(Android.Media.Stream.System, 100);
+        private static readonly ToneGenerator toneError = new(Android.Media.Stream.System, 100);
+#endif
 
         public MainViewModel(
             SqliteConnection conn,
@@ -94,25 +94,9 @@ namespace ZebraSCannerTest1.ViewModels
             _logBuffer = logBuffer;
             _dataImportService = new DataImportService(conn);
 
-
-            // SQL command for upserting
-            _upsertProductCmd = _conn.CreateCommand();
-            _upsertProductCmd.CommandText = @"
-                INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-                VALUES ($barcode,$initial,$scanned,$created,$updated)
-                ON CONFLICT(Barcode) DO UPDATE SET
-                    ScannedQuantity = $scanned,
-                    UpdatedAt       = $updated;";
-            _upsertProductCmd.Parameters.Add("$barcode", SqliteType.Text);
-            _upsertProductCmd.Parameters.Add("$initial", SqliteType.Integer);
-            _upsertProductCmd.Parameters.Add("$scanned", SqliteType.Integer);
-            _upsertProductCmd.Parameters.Add("$created", SqliteType.Text);
-            _upsertProductCmd.Parameters.Add("$updated", SqliteType.Text);
-
             LoadCache();
             LoadRecentIntoSlots();
 
-            // Commands
             AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
             GoToDetailsCommand = new AsyncRelayCommand<ProductSlot>(OnSlotTappedAsync);
             GoToLogsCommand = new AsyncRelayCommand(OnGoToLogsAsync);
@@ -120,17 +104,15 @@ namespace ZebraSCannerTest1.ViewModels
             ImportDataCommand = new AsyncRelayCommand(OnImportDataAsync);
             ToggleManualEntryCommand = new RelayCommand(() => IsManualEntryVisible = !IsManualEntryVisible);
             ExportExcelCommand = new AsyncRelayCommand(OnExportExcelAsync);
+            ShowResultsCommand = new AsyncRelayCommand(OnShowResultsAsync);
 
-            // Messenger to refresh slots
             WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(this, (r, m) =>
             {
                 _cache[m.Product.Barcode] = m.Product;
-
                 int existing = _recent.IndexOf(m.Product.Barcode);
                 if (existing >= 0) _recent.RemoveAt(existing);
                 _recent.Insert(0, m.Product.Barcode);
                 if (_recent.Count > SlotCount) _recent.RemoveAt(_recent.Count - 1);
-
                 for (int i = 0; i < SlotCount; i++)
                 {
                     if (i < _recent.Count)
@@ -139,9 +121,6 @@ namespace ZebraSCannerTest1.ViewModels
                         ClearSlot(i);
                 }
             });
-
-            ShowResultsCommand = new AsyncRelayCommand(OnShowResultsAsync);
-
         }
 
         // ===== Loaders =====
@@ -215,13 +194,13 @@ namespace ZebraSCannerTest1.ViewModels
             lock (_scanLock) _scanQueue.Enqueue(scannedBarcode);
             ShowCurrentBarcode = scannedBarcode;
 
-            if (!_isFlushingScans)
+            if (Interlocked.Exchange(ref _isFlushingScans, 1) == 0)
                 _ = Task.Run(ProcessScanQueueAsync);
         }
 
         private async Task ProcessScanQueueAsync()
         {
-            _isFlushingScans = true;
+            System.Diagnostics.Debug.WriteLine("[SCAN QUEUE] Started");
             try
             {
                 while (true)
@@ -234,50 +213,104 @@ namespace ZebraSCannerTest1.ViewModels
                     }
                     if (nextBarcode == null) break;
 
-                    if (!_cache.TryGetValue(nextBarcode, out var product))
+                    try
                     {
-#if ANDROID
-                        var toneError = new ToneGenerator(Android.Media.Stream.System, 100);
-                        toneError.StartTone(Tone.CdmaPip, 300);
-#endif
-                        bool addNew = await MainThread.InvokeOnMainThreadAsync(async () =>
-                            await Shell.Current.DisplayAlert("Unknown Barcode",
-                                $"Barcode {nextBarcode} not found.\nAdd it?", "Yes", "No"));
-                        if (!addNew) continue;
-
-                        product = new Product
+                        if (!_cache.TryGetValue(nextBarcode, out var product))
                         {
-                            Barcode = nextBarcode,
-                            InitialQuantity = 0,
-                            ScannedQuantity = 0,
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        };
+#if ANDROID
+                            MainThread.BeginInvokeOnMainThread(() =>
+                                toneError.StartTone(Tone.CdmaPip, 200));
+#endif
+                            MainThread.BeginInvokeOnMainThread(async () =>
+                            {
+                                bool addNew = await Shell.Current.DisplayAlert(
+                                    "Unknown Barcode",
+                                    $"Barcode {nextBarcode} not found.\nAdd it?",
+                                    "Yes", "No");
+                                if (addNew)
+                                    await AddNewProductAsync(nextBarcode);
+                            });
+                            continue;
+                        }
 
-                        using var cmd = _conn.CreateCommand();
-                        cmd.CommandText = @"
-                            INSERT OR IGNORE INTO Products 
-                            (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-                            VALUES ($barcode,$initial,$scanned,$created,$updated)";
-                        cmd.Parameters.AddWithValue("$barcode", product.Barcode);
-                        cmd.Parameters.AddWithValue("$initial", product.InitialQuantity);
-                        cmd.Parameters.AddWithValue("$scanned", product.ScannedQuantity);
-                        cmd.Parameters.AddWithValue("$created", product.CreatedAt.ToString("o"));
-                        cmd.Parameters.AddWithValue("$updated", product.UpdatedAt.ToString("o"));
-                        cmd.ExecuteNonQuery();
-                        _cache[nextBarcode] = product;
+                        await UpdateProductAsync(product);
                     }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[SCAN ERROR] {ex}");
+                    }
+                }
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _isFlushingScans, 0);
+                System.Diagnostics.Debug.WriteLine("[SCAN QUEUE] Reset complete");
+            }
+        }
 
+        private async Task AddNewProductAsync(string barcode)
+        {
+            try
+            {
+                using var conn = new SqliteConnection(_conn.ConnectionString);
+                conn.Open();
+
+                var product = new Product
+                {
+                    Barcode = barcode,
+                    InitialQuantity = 0,
+                    ScannedQuantity = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    INSERT OR IGNORE INTO Products 
+                    (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+                    VALUES ($b,$i,$s,$c,$u)";
+                cmd.Parameters.AddWithValue("$b", product.Barcode);
+                cmd.Parameters.AddWithValue("$i", product.InitialQuantity);
+                cmd.Parameters.AddWithValue("$s", product.ScannedQuantity);
+                cmd.Parameters.AddWithValue("$c", product.CreatedAt.ToString("o"));
+                cmd.Parameters.AddWithValue("$u", product.UpdatedAt.ToString("o"));
+                cmd.ExecuteNonQuery();
+
+                _cache[barcode] = product;
+                WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ADD NEW PRODUCT ERROR] {ex}");
+            }
+        }
+
+        private async Task UpdateProductAsync(Product product)
+        {
+            int attempts = 0;
+            while (true)
+            {
+                try
+                {
                     product.ScannedQuantity++;
                     product.UpdatedAt = DateTime.UtcNow;
 
-                    _upsertProductCmd.Parameters["$barcode"].Value = product.Barcode;
-                    _upsertProductCmd.Parameters["$initial"].Value = product.InitialQuantity;
-                    _upsertProductCmd.Parameters["$scanned"].Value = product.ScannedQuantity;
-                    _upsertProductCmd.Parameters["$created"].Value = product.CreatedAt.ToString("o");
-                    _upsertProductCmd.Parameters["$updated"].Value = product.UpdatedAt.ToString("o");
-                    _upsertProductCmd.ExecuteNonQuery();
-                   
+                    using var conn = new SqliteConnection(_conn.ConnectionString);
+                    conn.Open();
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = @"
+                        INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+                        VALUES ($barcode,$initial,$scanned,$created,$updated)
+                        ON CONFLICT(Barcode) DO UPDATE SET
+                            ScannedQuantity = $scanned,
+                            UpdatedAt       = $updated;";
+                    cmd.Parameters.AddWithValue("$barcode", product.Barcode);
+                    cmd.Parameters.AddWithValue("$initial", product.InitialQuantity);
+                    cmd.Parameters.AddWithValue("$scanned", product.ScannedQuantity);
+                    cmd.Parameters.AddWithValue("$created", product.CreatedAt.ToString("o"));
+                    cmd.Parameters.AddWithValue("$updated", product.UpdatedAt.ToString("o"));
+                    cmd.ExecuteNonQuery();
+
                     _logBuffer.AddLog(new ScanLog
                     {
                         Barcode = product.Barcode,
@@ -288,18 +321,28 @@ namespace ZebraSCannerTest1.ViewModels
                         IsManual = null
                     });
 
-
 #if ANDROID
-                    var toneOk = new ToneGenerator(Android.Media.Stream.System, 100);
-                    toneOk.StartTone(Tone.PropAck, 100);
+                    MainThread.BeginInvokeOnMainThread(() =>
+                        toneOk.StartTone(Tone.PropAck, 80));
 #endif
-
                     WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
+                    break;
+                }
+                catch (SqliteException ex) when (ex.SqliteErrorCode == 5 && attempts < 3)
+                {
+                    attempts++;
+                    await Task.Delay(100);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[UPDATE PRODUCT ERROR] {ex}");
+                    break;
                 }
             }
-            finally { _isFlushingScans = false; }
         }
 
+        // ===== Import, Export, Navigation (unchanged) =====
+        // ... (same as your previous working version) ...
         // ===== Import with Progress =====
         private async Task OnImportDataAsync()
         {
@@ -316,70 +359,53 @@ namespace ZebraSCannerTest1.ViewModels
 
                 if (result == null) return;
 
-                // ✅ Show popup before import begins
                 await ShowingLongPopup.ShowAsync("Preparing data...");
                 try
                 {
-
                     string ext = Path.GetExtension(result.FileName).ToLowerInvariant();
-                using var stream = await result.OpenReadAsync();
-                await Task.Run(async () =>
-                {
-                    if (ext == ".json")
+                    using var stream = await result.OpenReadAsync();
+                    await Task.Run(async () =>
                     {
-                        await MainThread.InvokeOnMainThreadAsync(async () =>
-                            await ShowingLongPopup.UpdateMessageAsync("Importing JSON data..."));
-
-                       
-                        await _dataImportService.ImportJsonAsync(stream);
-                   
-
-                        ImportStatusText = "✅ JSON import complete";
-                    }
-                    else if (ext == ".xlsx")
-                    {
-                        await MainThread.InvokeOnMainThreadAsync(async () =>
-                            await ShowingLongPopup.UpdateMessageAsync("Importing Excel data..."));
-
-                        await _dataImportService.ImportExcelAsync(stream, result.FileName);
-
-
-                        ImportStatusText = "✅ Excel import complete";
-                    }
-                    else if (ext == ".db")
-                    {
-                        await MainThread.InvokeOnMainThreadAsync(async () =>
-                            await ShowingLongPopup.UpdateMessageAsync("Importing database..."));
-
-                        
+                        if (ext == ".json")
+                        {
+                            await MainThread.InvokeOnMainThreadAsync(async () =>
+                                await ShowingLongPopup.UpdateMessageAsync("Importing JSON data..."));
+                            await _dataImportService.ImportJsonAsync(stream);
+                            ImportStatusText = "✅ JSON import complete";
+                        }
+                        else if (ext == ".xlsx")
+                        {
+                            await MainThread.InvokeOnMainThreadAsync(async () =>
+                                await ShowingLongPopup.UpdateMessageAsync("Importing Excel data..."));
+                            await _dataImportService.ImportExcelAsync(stream, result.FileName);
+                            ImportStatusText = "✅ Excel import complete";
+                        }
+                        else if (ext == ".db")
+                        {
+                            await MainThread.InvokeOnMainThreadAsync(async () =>
+                                await ShowingLongPopup.UpdateMessageAsync("Importing database..."));
                             await _dataImportService.ImportDbAsync(stream);
-                        
+                            ImportStatusText = "✅ Database import complete";
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Select a valid .xlsx, .json, or .db file.");
+                        }
+                    });
 
-                        ImportStatusText = "✅ Database import complete";
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Select a valid .xlsx, .json, or .db file.");
-                    }
-                });
-
-                ResetAndReload();
-
-
+                    ResetAndReload();
                 }
                 finally
                 {
-                    // ✅ Close popup
                     await ShowingLongPopup.CloseAsync();
                 }
                 await Shell.Current.DisplayAlert("✅ Success", "Import finished successfully!", "OK");
             }
             catch (Exception ex)
             {
-                await ShowingLongPopup.CloseAsync(); // close popup even on error
+                await ShowingLongPopup.CloseAsync();
                 await Shell.Current.DisplayAlert("❌ Import Error", ex.Message, "OK");
             }
-        
         }
 
         // ===== Navigation & Reset =====
@@ -399,10 +425,8 @@ namespace ZebraSCannerTest1.ViewModels
                     ["Size"] = product.Size ?? "",
                     ["Price"] = decimal.TryParse(product.Price, out var p) ? p : 0,
                     ["ArticCode"] = product.ArticCode ?? "",
-                    ["IsReadOnly"] = false  // 👈 NEW FLAG
+                    ["IsReadOnly"] = false
                 };
-
-
                 await Shell.Current.GoToAsync(nameof(DetailsPage), query);
             }
         }
@@ -411,20 +435,18 @@ namespace ZebraSCannerTest1.ViewModels
         {
             try
             {
-                // ✅ Ask user for confirmation first
                 bool confirm = await Shell.Current.DisplayAlert(
                     "Confirm Export",
                     "Are you sure you want to export all product data to Excel?",
                     "Yes", "No");
 
                 if (!confirm)
-                    return; // cancel export
+                    return;
 
-                // 🌀 Show simple loading popup
                 await ShowingLongPopup.ShowAsync("Exporting data...");
 
 #if ANDROID
-        var path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath;
+                var path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath;
 #else
                 var path = FileSystem.AppDataDirectory;
 #endif
@@ -432,27 +454,23 @@ namespace ZebraSCannerTest1.ViewModels
                 var fullPath = Path.Combine(path, name);
                 var progress = new Progress<double>(p =>
                 {
-                    // optional UI feedback (you can plug into a progress popup later)
                     ImportStatusText = $"Exporting... {(int)(p * 100)}%";
                 });
 
-                // 🧠 Run the export off the main thread
                 await Task.Run(async () =>
                 {
                     await _exportService.ExportProductsAsync(fullPath, progress);
                 });
-                // ✅ Dismiss popup
-                await ShowingLongPopup.CloseAsync();
 
+                await ShowingLongPopup.CloseAsync();
                 await Shell.Current.DisplayAlert("✅ Export Complete", $"File saved:\n{name}", "OK");
             }
             catch (Exception ex)
             {
-                await ShowingLongPopup.CloseAsync(); // ensure closed on error
+                await ShowingLongPopup.CloseAsync();
                 await Shell.Current.DisplayAlert("❌ Export Error", ex.Message, "OK");
             }
         }
-
 
         private async Task OnShowResultsAsync()
         {
@@ -460,12 +478,12 @@ namespace ZebraSCannerTest1.ViewModels
             {
                 using var cmd = _conn.CreateCommand();
                 cmd.CommandText = @"
-            SELECT 
-                SUM(InitialQuantity), 
-                SUM(ScannedQuantity),
-                COUNT(*) AS TotalBarcodes,
-                SUM(CASE WHEN ScannedQuantity > 0 THEN 1 ELSE 0 END) AS ScannedBarcodes
-            FROM Products";
+                    SELECT 
+                        SUM(InitialQuantity), 
+                        SUM(ScannedQuantity),
+                        COUNT(*) AS TotalBarcodes,
+                        SUM(CASE WHEN ScannedQuantity > 0 THEN 1 ELSE 0 END) AS ScannedBarcodes
+                    FROM Products";
 
                 using var reader = cmd.ExecuteReader();
 
@@ -480,7 +498,6 @@ namespace ZebraSCannerTest1.ViewModels
                 }
 
                 int quantityDiff = totalScanned - totalInitial;
-                int barcodeDiff = scannedBarcodes - totalBarcodes;
 
                 string msg =
                     "📊 Inventory Summary\n\n" +
@@ -501,13 +518,17 @@ namespace ZebraSCannerTest1.ViewModels
             }
         }
 
-
-
         private async Task OnGoToLogsAsync() =>
             await Shell.Current.GoToAsync(nameof(LogsPage));
 
-        private async Task OnGoToScannedProductsAsync() =>
-            await Shell.Current.GoToAsync(nameof(ScannedProductsPage));
+        private async Task OnGoToScannedProductsAsync()
+        {
+            await Shell.Current.GoToAsync(nameof(ScannedProductsPage),
+                new Dictionary<string, object>
+                {
+                    ["ForceReload"] = true
+                });
+        }
 
         private void ResetAndReload()
         {
@@ -526,13 +547,13 @@ namespace ZebraSCannerTest1.ViewModels
         private void OnPropertyChanged([CallerMemberName] string n = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 
-
         public void Dispose()
         {
-            _upsertProductCmd?.Dispose();
             _conn?.Dispose();
+#if ANDROID
+            toneOk.Release();
+            toneError.Release();
+#endif
         }
-
     }
-
 }

@@ -20,7 +20,7 @@ public partial class ScannedProductsViewModel : ObservableObject
 
     // Pagination
     private int _offset = 0;
-    private const int PageSize = 50; // for testing
+    private const int PageSize = 50;
     private bool _hasMoreRows = false;
 
     [ObservableProperty] private string currentSortDescription = "Sort: Updated ↓";
@@ -30,6 +30,8 @@ public partial class ScannedProductsViewModel : ObservableObject
     [ObservableProperty] private bool isLoadingMore;
     [ObservableProperty] private bool hasMoreRows;
     [ObservableProperty] private int totalRowCount;
+    [ObservableProperty] private bool isLoading;
+    [ObservableProperty] private bool needsReload = true;
 
     public ObservableCollection<StatsProduct> ScannedProductsStats { get; private set; } = new();
 
@@ -37,120 +39,11 @@ public partial class ScannedProductsViewModel : ObservableObject
     {
         _conn = conn;
         _clipboard = clipboard;
-        _ = LoadProductsAsync(reset: true);
     }
 
-    // ✅ Core loader with paging + async total count (for large datasets)
-    //private async Task LoadProductsAsync(bool reset)
-    //{
-    //    _loadCts?.Cancel();
-    //    _loadCts = new CancellationTokenSource();
-    //    var token = _loadCts.Token;
-
-    //    if (reset)
-    //    {
-    //        _offset = 0;
-    //        ScannedProductsStats.Clear();
-    //        TotalRowCount = 0; // will be updated in background
-    //        IsInitialLoading = true;
-    //        IsLoadingMore = false;
-    //    }
-    //    else
-    //    {
-    //        IsLoadingMore = true;
-    //    }
-
-    //    try
-    //    {
-    //        var where = string.IsNullOrWhiteSpace(_currentFilter) ? "" : $"WHERE {_currentFilter}";
-    //        var dir = _currentSortDescending ? "DESC" : "ASC";
-
-    //        // ✅ Run data and count in parallel
-    //        var dataTask = Task.Run(() =>
-    //        {
-    //            var list = new List<StatsProduct>();
-    //            using var cmd = _conn.CreateCommand();
-    //            cmd.CommandText = $@"
-    //                SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
-    //                       Name, Color, Size, Price, ArticCode
-    //                FROM Products
-    //                {where}
-    //                ORDER BY {_currentSortField} {dir}
-    //                LIMIT {PageSize} OFFSET {_offset};";
-
-    //            using var r = cmd.ExecuteReader();
-    //            while (r.Read())
-    //            {
-    //                token.ThrowIfCancellationRequested();
-    //                list.Add(new StatsProduct
-    //                {
-    //                    Barcode = r.GetString(0),
-    //                    InitialQuantity = r.GetInt32(1),
-    //                    ScannedQuantity = r.GetInt32(2),
-    //                    CreatedAt = DateTime.Parse(r.GetString(3)),
-    //                    UpdatedAt = DateTime.Parse(r.GetString(4)),
-    //                    Name = r.IsDBNull(5) ? "" : r.GetString(5),
-    //                    Color = r.IsDBNull(6) ? "" : r.GetString(6),
-    //                    Size = r.IsDBNull(7) ? "" : r.GetString(7),
-    //                    Price = r.IsDBNull(8) ? "" : r.GetString(8),
-    //                    ArticCode = r.IsDBNull(9) ? "" : r.GetString(9)
-    //                });
-    //            }
-    //            return list;
-    //        }, token);
-
-    //        // ✅ Run count in background — does not block UI
-    //        var countTask = Task.Run(() =>
-    //        {
-    //            using var cmd = _conn.CreateCommand();
-    //            cmd.CommandText = $"SELECT COUNT(*) FROM Products {where}";
-    //            return Convert.ToInt32(cmd.ExecuteScalar());
-    //        }, token);
-
-    //        // ✅ Wait only for first page (data)
-    //        var temp = await dataTask;
-
-    //        await MainThread.InvokeOnMainThreadAsync(() =>
-    //        {
-    //            foreach (var p in temp)
-    //                ScannedProductsStats.Add(p);
-
-    //            _offset += temp.Count;
-    //            RowCount = ScannedProductsStats.Count;
-    //        });
-
-    //        // ✅ When count finishes, update total asynchronously
-    //        _ = countTask.ContinueWith(t =>
-    //        {
-    //            if (t.Status == TaskStatus.RanToCompletion)
-    //            {
-    //                var total = t.Result;
-    //                _hasMoreRows = (_offset < total);
-    //                MainThread.BeginInvokeOnMainThread(() =>
-    //                {
-    //                    TotalRowCount = total;
-    //                    HasMoreRows = _hasMoreRows;
-    //                });
-    //            }
-    //        }, TaskContinuationOptions.OnlyOnRanToCompletion);
-    //    }
-    //    catch (OperationCanceledException)
-    //    {
-    //        // ignore safely
-    //    }
-    //    finally
-    //    {
-    //        IsInitialLoading = false;
-    //        IsLoadingMore = false;
-    //    }
-    //}
-
-    // ✅ Infinite scroll loader
-
-
-    // ✅ Core loader with paging + background total count
     private async Task LoadProductsAsync(bool reset)
     {
+        // Cancel any previous load
         _loadCts?.Cancel();
         _loadCts = new CancellationTokenSource();
         var token = _loadCts.Token;
@@ -173,23 +66,28 @@ public partial class ScannedProductsViewModel : ObservableObject
             var where = string.IsNullOrWhiteSpace(_currentFilter) ? "" : $"WHERE {_currentFilter}";
             var dir = _currentSortDescending ? "DESC" : "ASC";
 
-            // Run data and count in parallel
-            var dataTask = Task.Run(() =>
+            // Run DB operations fully off the UI thread
+            var (temp, total) = await Task.Run(() =>
             {
                 var list = new List<StatsProduct>();
+
                 using var cmd = _conn.CreateCommand();
                 cmd.CommandText = $@"
-                SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
-                       Name, Color, Size, Price, ArticCode
-                FROM Products
-                {where}
-                ORDER BY {_currentSortField} {dir}
-                LIMIT {PageSize} OFFSET {_offset};";
+                    SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
+                           Name, Color, Size, Price, ArticCode
+                    FROM Products
+                    {where}
+                    ORDER BY {_currentSortField} {dir}
+                    LIMIT {PageSize} OFFSET {_offset};";
 
                 using var r = cmd.ExecuteReader();
+                int batchCounter = 0;
+
                 while (r.Read())
                 {
-                    token.ThrowIfCancellationRequested();
+                    if (token.IsCancellationRequested)
+                        throw new OperationCanceledException();
+
                     list.Add(new StatsProduct
                     {
                         Barcode = r.GetString(0),
@@ -203,21 +101,25 @@ public partial class ScannedProductsViewModel : ObservableObject
                         Price = r.IsDBNull(8) ? "" : r.GetString(8),
                         ArticCode = r.IsDBNull(9) ? "" : r.GetString(9)
                     });
+
+                    // Check for cancellation every 20 rows
+                    if (++batchCounter % 20 == 0 && token.IsCancellationRequested)
+                        throw new OperationCanceledException();
                 }
-                return list;
+
+                int totalCount;
+                using (var countCmd = _conn.CreateCommand())
+                {
+                    countCmd.CommandText = $"SELECT COUNT(*) FROM Products {where}";
+                    totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
+                }
+
+                return (list, totalCount);
             }, token);
 
-            // Background total count
-            var countTask = Task.Run(() =>
-            {
-                using var cmd = _conn.CreateCommand();
-                cmd.CommandText = $"SELECT COUNT(*) FROM Products {where}";
-                return Convert.ToInt32(cmd.ExecuteScalar());
-            }, token);
+            if (token.IsCancellationRequested) return;
 
-            // Await data first
-            var temp = await dataTask;
-
+            // Update UI on MainThread
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
                 foreach (var p in temp)
@@ -225,22 +127,18 @@ public partial class ScannedProductsViewModel : ObservableObject
 
                 _offset += temp.Count;
                 RowCount = ScannedProductsStats.Count;
-            });
-
-            // Await background total
-            var total = await countTask;
-            _hasMoreRows = (_offset < total);
-
-            await MainThread.InvokeOnMainThreadAsync(() =>
-            {
                 TotalRowCount = total;
-                HasMoreRows = _hasMoreRows;
-                RowCount = ScannedProductsStats.Count; // ✅ always re-sync UI after count ready
+                HasMoreRows = _offset < total;
             });
         }
         catch (OperationCanceledException)
         {
-            // ignore
+            // silently ignore user cancellation
+        }
+        catch (Exception ex)
+        {
+            await MainThread.InvokeOnMainThreadAsync(() =>
+                Shell.Current.DisplayAlert("Error", ex.Message, "OK"));
         }
         finally
         {
@@ -249,19 +147,14 @@ public partial class ScannedProductsViewModel : ObservableObject
         }
     }
 
-    // ✅ Infinite scroll loader
     [RelayCommand]
     private async Task LoadMoreAsync()
     {
         if (IsInitialLoading || IsLoadingMore || !_hasMoreRows)
             return;
-
-        // ⚠️ Don't increment offset here — handled inside LoadProductsAsync()
         await LoadProductsAsync(reset: false);
     }
 
-
-    // ✅ Sorting logic
     [RelayCommand]
     private async Task Sort()
     {
@@ -289,110 +182,42 @@ public partial class ScannedProductsViewModel : ObservableObject
         await LoadProductsAsync(reset: true);
     }
 
-    // ✅ Filters (fully preserved)
     [RelayCommand]
     private async Task Filter()
     {
         var fieldChoice = await Shell.Current.DisplayActionSheet(
             "Choose filter", "Cancel", null,
-            // Quantity
-            "All Products",
-            "Scanned > 0",
-            "Unscanned (Scanned = 0)",
-            "Shortage (Scanned < Initial)",
-            "Overstock (Scanned > Initial)",
-            "Equal (Scanned = Initial)",
-            "Equal And Scanned (Scanned = Initial And Scanned > 0)",
-            "Zero Initial (Initial == 0)",
-            "Manual Changed",
-            "Automatic Only",
-            "",
-            // Info
-            "Missing Name",
-            "Missing Color",
-            "Missing Size",
-            "Has Price",
-            "No Price",
-            "Missing Info (Name or Color or Size)",
-            "",
-            // Dates
-            "Updated Today",
-            "Not Updated Recently (7+ days)",
-            "Created Today",
-            "",
-            // Search
-            "Search by Barcode",
-            "Search by Name",
-            "Search by ArticCode"
+            "All Products", "Scanned > 0", "Unscanned (Scanned = 0)",
+            "Shortage (Scanned < Initial)", "Overstock (Scanned > Initial)",
+            "Equal (Scanned = Initial)", "Equal And Scanned (Scanned = Initial And Scanned > 0)",
+            "Zero Initial (Initial == 0)", "Manual Changed", "Automatic Only"
         );
 
         if (string.IsNullOrEmpty(fieldChoice) || fieldChoice == "Cancel") return;
 
         switch (fieldChoice)
         {
-            // Quantity
-            case "All Products": _currentFilter = ""; CurrentFilterDescription = "Filter: All"; break;
-            case "Scanned > 0": _currentFilter = "ScannedQuantity > 0"; CurrentFilterDescription = "Filter: Scanned"; break;
-            case "Unscanned (Scanned = 0)": _currentFilter = "ScannedQuantity = 0"; CurrentFilterDescription = "Filter: Unscanned"; break;
-            case "Shortage (Scanned < Initial)": _currentFilter = "ScannedQuantity < InitialQuantity"; CurrentFilterDescription = "Filter: Shortage"; break;
-            case "Overstock (Scanned > Initial)": _currentFilter = "ScannedQuantity > InitialQuantity"; CurrentFilterDescription = "Filter: Overstock"; break;
-            case "Equal (Scanned = Initial)": _currentFilter = "ScannedQuantity = InitialQuantity"; CurrentFilterDescription = "Filter: Equal"; break;
-            case "Equal And Scanned (Scanned = Initial And Scanned > 0)": _currentFilter = "ScannedQuantity = InitialQuantity AND ScannedQuantity > 0"; CurrentFilterDescription = "Filter: Equal & Scanned"; break;
-            case "Zero Initial (Initial == 0)": _currentFilter = "InitialQuantity = 0"; CurrentFilterDescription = "Filter: Zero Init"; break;
+            case "All Products": _currentFilter = ""; break;
+            case "Scanned > 0": _currentFilter = "ScannedQuantity > 0"; break;
+            case "Unscanned (Scanned = 0)": _currentFilter = "ScannedQuantity = 0"; break;
+            case "Shortage (Scanned < Initial)": _currentFilter = "ScannedQuantity < InitialQuantity"; break;
+            case "Overstock (Scanned > Initial)": _currentFilter = "ScannedQuantity > InitialQuantity"; break;
+            case "Equal (Scanned = Initial)": _currentFilter = "ScannedQuantity = InitialQuantity"; break;
+            case "Equal And Scanned (Scanned = Initial And Scanned > 0)":
+                _currentFilter = "ScannedQuantity = InitialQuantity AND ScannedQuantity > 0"; break;
+            case "Zero Initial (Initial == 0)": _currentFilter = "InitialQuantity = 0"; break;
             case "Manual Changed":
-                _currentFilter = @"
-                    EXISTS (
-                        SELECT 1 FROM ScanLogs sl
-                        WHERE sl.Barcode = Products.Barcode
-                          AND sl.IsManual = 1
-                    )";
-                CurrentFilterDescription = "Filter: Manual Changed";
+                _currentFilter = @"EXISTS (SELECT 1 FROM ScanLogs sl WHERE sl.Barcode = Products.Barcode AND sl.IsManual = 1)";
                 break;
             case "Automatic Only":
-                _currentFilter = @"
-                    ScannedQuantity > 0
-                    AND NOT EXISTS (
-                        SELECT 1 FROM ScanLogs sl
-                        WHERE sl.Barcode = Products.Barcode
-                          AND sl.IsManual = 1
-                    )";
-                CurrentFilterDescription = "Filter: Auto Only";
+                _currentFilter = @"ScannedQuantity > 0 AND NOT EXISTS (SELECT 1 FROM ScanLogs sl WHERE sl.Barcode = Products.Barcode AND sl.IsManual = 1)";
                 break;
-
-            // Info
-            case "Missing Name": _currentFilter = "Name IS NULL OR Name = ''"; CurrentFilterDescription = "Filter: No Name"; break;
-            case "Missing Color": _currentFilter = "Color IS NULL OR Color = ''"; CurrentFilterDescription = "Filter: No Color"; break;
-            case "Missing Size": _currentFilter = "Size IS NULL OR Size = ''"; CurrentFilterDescription = "Filter: No Size"; break;
-            case "Has Price": _currentFilter = "Price IS NOT NULL AND Price != ''"; CurrentFilterDescription = "Filter: Has Price"; break;
-            case "No Price": _currentFilter = "Price IS NULL OR Price = ''"; CurrentFilterDescription = "Filter: No Price"; break;
-            case "Missing Info (Name or Color or Size)": _currentFilter = "(Name IS NULL OR Name = '' OR Color IS NULL OR Color = '' OR Size IS NULL OR Size = '')"; CurrentFilterDescription = "Filter: Missing Info"; break;
-
-            // Dates
-            case "Updated Today": _currentFilter = "DATE(UpdatedAt) = DATE('now')"; CurrentFilterDescription = "Filter: Updated Today"; break;
-            case "Not Updated Recently (7+ days)": _currentFilter = "UpdatedAt < DATETIME('now', '-7 day')"; CurrentFilterDescription = "Filter: Old Updates"; break;
-            case "Created Today": _currentFilter = "DATE(CreatedAt) = DATE('now')"; CurrentFilterDescription = "Filter: Created Today"; break;
-
-            // Search
-            case "Search by Barcode":
-                var barcode = await Shell.Current.DisplayPromptAsync("Search", "Enter part of barcode:", "OK", "Cancel");
-                if (!string.IsNullOrWhiteSpace(barcode)) { _currentFilter = $"Barcode LIKE '%{barcode}%'"; CurrentFilterDescription = $"Filter: Code~{barcode}"; } else return;
-                break;
-            case "Search by Name":
-                var name = await Shell.Current.DisplayPromptAsync("Search", "Enter part of name:", "OK", "Cancel");
-                if (!string.IsNullOrWhiteSpace(name)) { _currentFilter = $"Name LIKE '%{name}%'"; CurrentFilterDescription = $"Filter: Name~{name}"; } else return;
-                break;
-            case "Search by ArticCode":
-                var artic = await Shell.Current.DisplayPromptAsync("Search", "Enter ArticCode:", "OK", "Cancel");
-                if (!string.IsNullOrWhiteSpace(artic)) { _currentFilter = $"ArticCode LIKE '%{artic}%'"; CurrentFilterDescription = $"Filter: Artic~{artic}"; } else return;
-                break;
-
-            default: _currentFilter = ""; CurrentFilterDescription = "Filter: All"; break;
         }
 
+        CurrentFilterDescription = $"Filter: {fieldChoice}";
         await LoadProductsAsync(reset: true);
     }
 
-    // ✅ Clear filter
     [RelayCommand]
     private async Task ClearFilterAsync()
     {
@@ -401,6 +226,7 @@ public partial class ScannedProductsViewModel : ObservableObject
         _currentSortDescending = true;
         CurrentFilterDescription = "Filter: Scanned";
         CurrentSortDescription = "Sort: Updated ↓";
+
         await LoadProductsAsync(reset: true);
     }
 
@@ -433,5 +259,32 @@ public partial class ScannedProductsViewModel : ObservableObject
         };
 
         await Shell.Current.GoToAsync(nameof(DetailsPage), query);
+    }
+
+    public async Task LoadAsync(bool reset = true, CancellationToken token = default)
+    {
+        // already loading? skip
+        if (IsLoading || IsInitialLoading)
+            return;
+
+        try
+        {
+            await Task.Yield(); // yield control so UI shows
+            await LoadProductsAsync(reset);
+        }
+        catch (OperationCanceledException)
+        {
+            // ignore cancellation
+        }
+        catch (Exception ex)
+        {
+            await MainThread.InvokeOnMainThreadAsync(() =>
+                Shell.Current.DisplayAlert("Error", ex.Message, "OK"));
+        }
+        finally
+        {
+            IsInitialLoading = false;
+            IsLoadingMore = false;
+        }
     }
 }

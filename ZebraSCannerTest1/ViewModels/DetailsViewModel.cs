@@ -14,6 +14,9 @@ public partial class DetailsViewModel : ObservableObject
     private readonly SqliteConnection _conn;
     private readonly ClipboardService _clipboard;
     private int _originalQuantity;
+    [ObservableProperty]
+    private bool isLoading;
+
 
 
     public ObservableCollection<ScanLog> Logs { get; } = new();

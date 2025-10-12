@@ -17,6 +17,13 @@
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="12">
 
+            <ActivityIndicator 
+                IsRunning="{Binding IsLoading}" 
+                IsVisible="{Binding IsLoading}"
+                Color="Gray"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
             <!-- Barcode -->
             <HorizontalStackLayout VerticalOptions="Center">
 

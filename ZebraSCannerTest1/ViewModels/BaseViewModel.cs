@@ -2,11 +2,13 @@
 
 namespace ZebraSCannerTest1.ViewModels;
 
-public partial class BaseViewModel : ObservableObject
+public abstract partial class BaseViewModel : ObservableObject
 {
     [ObservableProperty]
-    private bool isBusy;
+    private bool isLoading;
 
-    [ObservableProperty]
-    private string title;
+    public virtual Task LoadAsync(Object? parameter = null)
+    {
+        return Task.CompletedTask;
+    }
 }

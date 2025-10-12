@@ -2,7 +2,6 @@
 using MiniExcelLibs;
 using System.Diagnostics;
 using ZebraSCannerTest1.Dtos;
-using System.Diagnostics;
 
 
 namespace ZebraSCannerTest1.Services

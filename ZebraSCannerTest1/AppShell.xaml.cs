@@ -13,39 +13,23 @@ namespace ZebraSCannerTest1
             Routing.RegisterRoute(nameof(LogsPage), typeof(LogsPage));
             Routing.RegisterRoute(nameof(ScannedProductsPage), typeof(ScannedProductsPage));
 
-            Navigating += OnShellNavigating;
+            //Navigating += OnShellNavigating;
         }
 
-        private void OnShellNavigating(object sender, ShellNavigatingEventArgs e)
-        {
-            // Ignore forward navigations
-            if (e.Source == ShellNavigationSource.Push)
-                return;
+        //private void OnShellNavigating(object sender, ShellNavigatingEventArgs e)
+        //{
+        //    if (e.Source == ShellNavigationSource.Pop && e.Current?.Location.OriginalString.Contains(nameof(DetailsPage)) == true)
+        //    {
+        //        // 🚫 We're navigating back from DetailsPage → mark flag
+        //        if (Application.Current?.MainPage is AppShell shell)
+        //        {
+        //            var page = shell.CurrentPage as ScannedProductsPage;
+        //            if (page != null)
+        //                page.IsReturningFromDetails = true;
+        //        }
+        //    }
 
-            if (CurrentPage is DetailsPage detailsPage)
-            {
-                if (detailsPage.BindingContext is DetailsViewModel vm && vm.HasUnsavedChanges)
-                {
-                    // 🛑 Cancel navigation FIRST, before any await
-                    e.Cancel();
-
-                    // Then show popup after a tiny delay to ensure cancel is registered
-                    MainThread.BeginInvokeOnMainThread(async () =>
-                    {
-                        bool stay = await Shell.Current.DisplayAlert(
-                            "Unsaved Changes",
-                            "You have unsaved changes.\n\nPress 'Save' to keep your edits, or 'Leave' to discard.",
-                            "Stay", "Leave");
-
-                        if (!stay)
-                        {
-                            vm.HasUnsavedChanges = false;
-                            await Shell.Current.GoToAsync("..");
-                        }
-                    });
-                }
-            }
-        }
+        //}
 
     }
 }

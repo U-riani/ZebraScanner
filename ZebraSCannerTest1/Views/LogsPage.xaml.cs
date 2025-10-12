@@ -12,4 +12,21 @@ public partial class LogsPage : ContentPage
         BindingContext = _viewModel = vm;
     }
 
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+
+        if (BindingContext is BaseViewModel vm)
+        {
+            vm.IsLoading = true;
+            try
+            {
+                await vm.LoadAsync();
+            }
+            finally
+            {
+                vm.IsLoading = false;
+            }
+        }
+    }
 }
