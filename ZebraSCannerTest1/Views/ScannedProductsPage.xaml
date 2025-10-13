@@ -118,15 +118,14 @@
                                     <Label Grid.Column="8" Text="{Binding Price}" Style="{StaticResource CellStyle}" />
 
                                     <Button Grid.Column="9"
-                        Text="➡"
-                        BackgroundColor="#a9d5a5"
-                        TextColor="White"
-                        FontSize="14"
-                        WidthRequest="30"
-                        HeightRequest="25"
-                        Padding="0"
-                        Command="{Binding BindingContext.OpenDetailsCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
-                        CommandParameter="{Binding .}" />
+                                        Text="➡"
+                                        BackgroundColor="#a9d5a5"
+                                        TextColor="White"
+                                        FontSize="14"
+                                        WidthRequest="30"
+                                        HeightRequest="25"
+                                        Padding="0"
+                                        Clicked="OnDetailsClicked" />
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>

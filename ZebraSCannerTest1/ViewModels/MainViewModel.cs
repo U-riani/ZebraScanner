@@ -241,6 +241,11 @@ namespace ZebraSCannerTest1.ViewModels
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SCAN QUEUE FATAL] {ex}");
+            }
+
             finally
             {
                 Interlocked.Exchange(ref _isFlushingScans, 0);

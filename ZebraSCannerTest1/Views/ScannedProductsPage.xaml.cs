@@ -3,12 +3,16 @@ using ZebraSCannerTest1.ViewModels;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ZebraSCannerTest1.Models;
 
 namespace ZebraSCannerTest1.Views;
 
 public partial class ScannedProductsPage : ContentPage
 {
     private readonly ScannedProductsViewModel _vm;
+    private bool _navigatingToDetails = false;
+    private bool _manualFilterOpen = false; // ✅ new guard flag
+
 
     public ScannedProductsPage(ScannedProductsViewModel vm)
     {
@@ -19,62 +23,103 @@ public partial class ScannedProductsPage : ContentPage
 
     private async void OnManualFilterClicked(object sender, EventArgs e)
     {
-        var popup = new ManualFilterPopup();
-        await Navigation.PushModalAsync(popup);
-
-        var result = await popup.Result;
-
-        if (!string.IsNullOrWhiteSpace(result))
+        try
         {
+            // mark page as busy while modal is open
+            _vm.IsLoading = true;
+            _manualFilterOpen = true; // ✅ mark as active
+
+            // open popup
+            var popup = new ManualFilterPopup();
+            await Navigation.PushModalAsync(popup);
+
+            var result = await popup.Result;
+
+            // if user canceled — just exit quietly
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                return;
+            }
+
+            // apply filter normally
             _vm.ApplyManualFilter(result);
             await DisplayAlert("✅ Manual Filter Applied", result, "OK");
         }
-        else
+        catch (Exception ex)
         {
-            await DisplayAlert("❌ Cancelled", "No filter applied.", "OK");
+            await DisplayAlert("Error", ex.Message, "OK");
+        }
+        finally
+        {
+            _vm.IsLoading = false;
         }
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        // ✅ skip reload if manual filter just closed
+        if (_manualFilterOpen)
+            return;
 
         if (BindingContext is not ScannedProductsViewModel vm)
             return;
 
-        // show immediately, start spinner
-        vm.IsInitialLoading = true;
-
+        // Only reload when it's actually needed
         if (!vm.NeedsReload)
             return;
 
-        vm.NeedsReload = false;
+        vm.IsInitialLoading = true;
 
-        // start background task after slight delay (so UI renders first)
-        await Task.Delay(200);
-
-        var cts = new CancellationTokenSource();
-        vm.GetType().GetField("_loadCts",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            ?.SetValue(vm, cts);
-
-        var token = cts.Token;
-
-        // run in background, never block UI
-        _ = Task.Run(async () =>
+        // small delay to let the navigation animation complete fully
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(800), async () =>
         {
             try
             {
-                await vm.LoadAsync(true, token);
+                vm.NeedsReload = false;
+                await vm.LoadAsync(reset: true);
             }
-            catch (OperationCanceledException) { /* ignore */ }
             catch (Exception ex)
             {
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                    Shell.Current.DisplayAlert("Error", ex.Message, "OK"));
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
             }
-        }, token);
+            finally
+            {
+                vm.IsInitialLoading = false;
+            }
+        });
+
+        // make sure UI has settled before triggering DB load
+        //await MainThread.InvokeOnMainThreadAsync(async () =>
+        //{
+        //    try
+        //    {
+        //        vm.NeedsReload = false;
+        //        await vm.LoadAsync(reset: true);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
+        //    }
+        //    finally
+        //    {
+        //        vm.IsInitialLoading = false;
+        //    }
+        //});
     }
+
+    private async void OnDetailsClicked(object sender, EventArgs e)
+    {
+        if (BindingContext is not ScannedProductsViewModel vm)
+            return;
+
+        if ((sender as Button)?.BindingContext is StatsProduct product)
+        {
+            _navigatingToDetails = true;
+            await vm.OpenDetailsAsync(product);
+        }
+    }
+
 
     protected override void OnDisappearing()
     {
@@ -82,14 +127,17 @@ public partial class ScannedProductsPage : ContentPage
 
         if (BindingContext is ScannedProductsViewModel vm)
         {
-            var field = vm.GetType().GetField("_loadCts",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            if (field?.GetValue(vm) is CancellationTokenSource cts)
+            // Only mark for reload if truly leaving the page (not going to details)
+            if (_navigatingToDetails || _manualFilterOpen)
             {
-                cts.Cancel();
-                cts.Dispose();
+                _navigatingToDetails = false; // reset
+            }
+            else
+            {
+                vm.NeedsReload = true; // mark for next time
             }
         }
     }
+
+
 }
