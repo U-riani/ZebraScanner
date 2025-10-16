@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
@@ -41,6 +42,7 @@ namespace ZebraSCannerTest1.ViewModels
         public event Action<Product> NewProductAdded;
 
         public const int SlotCount = 8;
+        private bool _isNavigating;
 
         public string ImportStatusText
         {
@@ -66,6 +68,25 @@ namespace ZebraSCannerTest1.ViewModels
             set { _isManualEntryVisible = value; OnPropertyChanged(); }
         }
 
+        private string _currentSection;
+
+        public string CurrentSection
+        {
+            get => _currentSection;
+            set
+            {
+                if (_currentSection != value)
+                {
+                    _currentSection = value;
+                    Preferences.Set("CurrentSection", value); // Save it persistently
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+
+
+
         public ObservableCollection<ProductSlot> Slots { get; } =
             new(Enumerable.Range(0, SlotCount).Select(_ => new ProductSlot()));
 
@@ -77,6 +98,8 @@ namespace ZebraSCannerTest1.ViewModels
         public ICommand GoToScannedProductsCommand { get; }
         public ICommand ToggleManualEntryCommand { get; }
         public ICommand ShowResultsCommand { get; }
+        public ICommand ChangeSectionCommand { get; }
+
 
 #if ANDROID
         private static readonly ToneGenerator toneOk = new(Android.Media.Stream.System, 100);
@@ -93,6 +116,8 @@ namespace ZebraSCannerTest1.ViewModels
             _exportService = exportService;
             _logBuffer = logBuffer;
             _dataImportService = new DataImportService(conn);
+            _currentSection = Preferences.Get("CurrentSection", null);
+
 
             LoadCache();
             LoadRecentIntoSlots();
@@ -105,6 +130,8 @@ namespace ZebraSCannerTest1.ViewModels
             ToggleManualEntryCommand = new RelayCommand(() => IsManualEntryVisible = !IsManualEntryVisible);
             ExportExcelCommand = new AsyncRelayCommand(OnExportExcelAsync);
             ShowResultsCommand = new AsyncRelayCommand(OnShowResultsAsync);
+            ChangeSectionCommand = new AsyncRelayCommand(OnChangeSectionAsync);
+
 
             WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(this, (r, m) =>
             {
@@ -323,7 +350,8 @@ namespace ZebraSCannerTest1.ViewModels
                         IncrementBy = 1,
                         IsValue = product.ScannedQuantity,
                         UpdatedAt = DateTime.UtcNow,
-                        IsManual = null
+                        IsManual = null,
+                        Section = CurrentSection
                     });
 
 #if ANDROID
@@ -345,6 +373,22 @@ namespace ZebraSCannerTest1.ViewModels
                 }
             }
         }
+
+        private async Task OnChangeSectionAsync()
+        {
+            string result = await Shell.Current.DisplayPromptAsync(
+                "Set Section",
+                "Enter section name (e.g. Warehouse A, Floor 2, Shelf 5):",
+                "OK", "Cancel",
+                initialValue: CurrentSection);
+
+            if (!string.IsNullOrWhiteSpace(result))
+            {
+                CurrentSection = result.Trim();
+                await Shell.Current.DisplayAlert("✅ Section Updated", $"Current section: {CurrentSection}", "OK");
+            }
+        }
+
 
         // ===== Import, Export, Navigation (unchanged) =====
         // ... (same as your previous working version) ...
@@ -440,32 +484,49 @@ namespace ZebraSCannerTest1.ViewModels
         {
             try
             {
-                bool confirm = await Shell.Current.DisplayAlert(
-                    "Confirm Export",
-                    "Are you sure you want to export all product data to Excel?",
-                    "Yes", "No");
+                var exportChoice = await Shell.Current.DisplayActionSheet(
+                    "Export Type",
+                    "Cancel", null,
+                    "Export Products",
+                    "Export Logs");
 
-                if (!confirm)
+                if (string.IsNullOrEmpty(exportChoice) || exportChoice == "Cancel")
                     return;
 
-                await ShowingLongPopup.ShowAsync("Exporting data...");
+                await ShowingLongPopup.ShowAsync("Preparing export...");
 
 #if ANDROID
-                var path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath;
+        var path = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath;
 #else
                 var path = FileSystem.AppDataDirectory;
 #endif
-                var name = $"export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
-                var fullPath = Path.Combine(path, name);
+
+                string name;
+                string fullPath;
                 var progress = new Progress<double>(p =>
                 {
                     ImportStatusText = $"Exporting... {(int)(p * 100)}%";
                 });
 
-                await Task.Run(async () =>
+                if (exportChoice == "Export Products")
                 {
-                    await _exportService.ExportProductsAsync(fullPath, progress);
-                });
+                    name = $"ProductsExport_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+                    fullPath = Path.Combine(path, name);
+                    await Task.Run(async () =>
+                    {
+                        await _exportService.ExportProductsAsync(fullPath, progress);
+                    });
+                }
+                else // Export Logs
+                {
+                    name = $"LogsExport_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+                    fullPath = Path.Combine(path, name);
+                    var logExport = new ExcelExportLogsService(_conn);
+                    await Task.Run(async () =>
+                    {
+                        await logExport.ExportLogsAsync(fullPath, progress);
+                    });
+                }
 
                 await ShowingLongPopup.CloseAsync();
                 await Shell.Current.DisplayAlert("✅ Export Complete", $"File saved:\n{name}", "OK");
@@ -523,16 +584,35 @@ namespace ZebraSCannerTest1.ViewModels
             }
         }
 
-        private async Task OnGoToLogsAsync() =>
-            await Shell.Current.GoToAsync(nameof(LogsPage));
+        private async Task OnGoToLogsAsync()
+        {
+            if (_isNavigating) return;
+            _isNavigating = true;
+
+            try
+            {
+                await Shell.Current.GoToAsync(nameof(LogsPage));
+            }
+            finally
+            {
+                _isNavigating = false;
+            }
+        }
 
         private async Task OnGoToScannedProductsAsync()
         {
-            await Shell.Current.GoToAsync(nameof(ScannedProductsPage),
-                new Dictionary<string, object>
-                {
-                    ["ForceReload"] = true
-                });
+            if (_isNavigating) return;
+            _isNavigating = true;
+
+            try
+            {
+                await Shell.Current.GoToAsync(nameof(ScannedProductsPage),
+                    new Dictionary<string, object> { ["ForceReload"] = true });
+            }
+            finally
+            {
+                _isNavigating = false;
+            }
         }
 
         private void ResetAndReload()

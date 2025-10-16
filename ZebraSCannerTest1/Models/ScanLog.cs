@@ -12,6 +12,7 @@ public class ScanLog
     public int IsValue { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int? IsManual { get; set; } // null = scanned, 1 = manual
+    public string? Section { get; set; }
 
 }
 

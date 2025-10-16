@@ -13,26 +13,17 @@ namespace ZebraSCannerTest1.Views;
 [QueryProperty(nameof(Price), "Price")]
 [QueryProperty(nameof(ArticCode), "ArticCode")]
 [QueryProperty(nameof(IsReadOnly), "IsReadOnly")]
-
-
 public partial class DetailsPage : ContentPage
 {
     private readonly DetailsViewModel _vm;
-    private bool _checkingUnsaved = false;
     private CancellationTokenSource? _loadCts;
 
-    public bool IsReadOnly
-    {
-        set => _vm.IsReadOnly = value;
-    }
+    public bool IsReadOnly { set => _vm.IsReadOnly = value; }
 
-    // Required fields
     public string Barcode { set => _vm.ProductBarcode = value; }
     public int Quantity { set => _vm.ScannedQuantity = value; }
     public int InitialQuantity { set => _vm.InitialQuantity = value; }
 
-
-    // New static product info
     public string Name { set => _vm.ProductName = value; }
     public string Color { set => _vm.ProductColor = value; }
     public string Size { set => _vm.ProductSize = value; }
@@ -41,82 +32,63 @@ public partial class DetailsPage : ContentPage
 
     public DetailsPage(DetailsViewModel vm)
     {
-        try
-        {
-            InitializeComponent();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("? XAML load error: " + ex);
-            Shell.Current.DisplayAlert("XAML Error", ex.Message, "OK");
-        }
+        InitializeComponent();
         BindingContext = _vm = vm;
     }
 
-
-
+    // --- Handle Android hardware back ---
     protected override bool OnBackButtonPressed()
     {
-        MainThread.BeginInvokeOnMainThread(async () =>
+        if (_vm.HasUnsavedChanges)
         {
-            if (_vm.HasUnsavedChanges)
+            MainThread.BeginInvokeOnMainThread(async () =>
             {
-                bool stay = await Shell.Current.DisplayAlert(
+                bool leave = await Shell.Current.DisplayAlert(
                     "Unsaved Changes",
-                    "You have unsaved changes.\n\nPress 'Save' to keep your edits, or 'Leave' to discard.",
-                    "Stay", "Leave");
+                    "You have unsaved changes.\n\nDo you want to leave without saving?",
+                    "Leave", "Stay");
 
-                if (!stay)
+                if (leave)
                 {
                     _vm.HasUnsavedChanges = false;
-                    await Shell.Current.DisplayAlert("Changes Discarded", "Your edits were not saved.", "OK");
+                    await Shell.Current.GoToAsync("..");
                 }
+            });
 
-                // ?? Don’t navigate automatically in any case
-                return;
-            }
+            return true; // Block until user decides
+        }
 
-            // ? No unsaved changes ? normal back
-            await Shell.Current.GoToAsync("..");
-        });
-
-        return true; // block default back behavior
+        return base.OnBackButtonPressed();
     }
 
+    // --- Catch Shell navigation (toolbar / swipe) ---
     protected override void OnAppearing()
     {
         base.OnAppearing();
 
-        _vm.IsLoading = true;
+        Shell.Current.Navigating += OnShellNavigating;
 
+        _vm.IsLoading = true;
         _loadCts = new CancellationTokenSource();
         var token = _loadCts.Token;
 
-        // ? Fire and forget background task
         _ = Task.Run(async () =>
         {
             try
             {
-                await Task.Delay(120, token); // let page animation finish
+                await Task.Delay(120, token);
                 if (token.IsCancellationRequested) return;
 
                 if (!string.IsNullOrEmpty(_vm.ProductBarcode))
                 {
-                    // Heavy DB call
                     await _vm.LoadProductAsync();
                     if (token.IsCancellationRequested) return;
 
-                    // Light UI update (load logs)
                     await MainThread.InvokeOnMainThreadAsync(async () =>
-                    {
-                        await _vm.LoadLogsCommand.ExecuteAsync(null);
-                    });
+                        await _vm.LoadLogsCommand.ExecuteAsync(null));
                 }
             }
-            catch (OperationCanceledException)
-            {
-                // ignore — user navigated back early
-            }
+            catch (OperationCanceledException) { }
             catch (Exception ex)
             {
                 await MainThread.InvokeOnMainThreadAsync(() =>
@@ -124,10 +96,7 @@ public partial class DetailsPage : ContentPage
             }
             finally
             {
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    _vm.IsLoading = false;
-                });
+                await MainThread.InvokeOnMainThreadAsync(() => _vm.IsLoading = false);
             }
         }, token);
     }
@@ -135,8 +104,29 @@ public partial class DetailsPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        _loadCts?.Cancel(); // ? cancels cleanly when navigating back
+        Shell.Current.Navigating -= OnShellNavigating;
+        _loadCts?.Cancel();
     }
 
+    private void OnShellNavigating(object sender, ShellNavigatingEventArgs e)
+    {
+        if (_vm.HasUnsavedChanges)
+        {
+            e.Cancel(); // Block Shell navigation
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                bool leave = await Shell.Current.DisplayAlert(
+                    "Unsaved Changes",
+                    "You have unsaved changes.\n\nDo you want to leave without saving?",
+                    "Leave", "Stay");
 
+                if (leave)
+                {
+                    _vm.HasUnsavedChanges = false;
+                    Shell.Current.Navigating -= OnShellNavigating;
+                    await Shell.Current.GoToAsync("..");
+                }
+            });
+        }
+    }
 }

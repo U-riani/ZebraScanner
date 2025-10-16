@@ -38,13 +38,14 @@ namespace ZebraSCannerTest1.Services
             using var cmd = _conn.CreateCommand();
             cmd.Transaction = tx;
             cmd.CommandText = @"
-INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt)
-VALUES ($b, $w, $i, $s, $t);";
+                INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section)
+                VALUES ($b, $w, $i, $s, $t, $sec);";
             cmd.Parameters.Add("$b", SqliteType.Text);
             cmd.Parameters.Add("$w", SqliteType.Integer);
             cmd.Parameters.Add("$i", SqliteType.Integer);
             cmd.Parameters.Add("$s", SqliteType.Integer);
             cmd.Parameters.Add("$t", SqliteType.Text);
+            cmd.Parameters.Add("$sec", SqliteType.Text);
 
             foreach (var log in toWrite)
             {
@@ -53,6 +54,7 @@ VALUES ($b, $w, $i, $s, $t);";
                 cmd.Parameters["$i"].Value = log.IncrementBy;
                 cmd.Parameters["$s"].Value = log.IsValue;
                 cmd.Parameters["$t"].Value = log.UpdatedAt.ToString("o");
+                cmd.Parameters["$sec"].Value = log.Section ?? (object)DBNull.Value;
                 cmd.ExecuteNonQuery();
             }
 

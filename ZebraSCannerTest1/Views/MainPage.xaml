@@ -23,15 +23,29 @@
             <Button Text="Stats" Command="{Binding GoToScannedProductsCommand}" />
             <Button Text="Logs" Command="{Binding GoToLogsCommand}" />
             <Button Text="Rslt" Command="{Binding ShowResultsCommand}"/> 
-
+            
         </HorizontalStackLayout>
 
         <!-- Current scanned barcode big and obvious -->
-        <Label Text="{Binding ShowCurrentBarcode}"
-               FontSize="24"
-               TextColor="{AppThemeBinding Dark=white, Light=black, Default=black}"
-               FontAttributes="Bold"
-               HorizontalTextAlignment="Center" />
+        <HorizontalStackLayout >
+            
+            <Label Text="{Binding ShowCurrentBarcode}"
+                   FontSize="24"
+                   TextColor="{AppThemeBinding Dark=white, Light=black, Default=black}"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center"
+                   MinimumWidthRequest="200"
+                   MaximumWidthRequest="300"/>
+            <Button
+                Text="{Binding CurrentSection, StringFormat='Section: {0}'}"
+                Command="{Binding ChangeSectionCommand}"
+                BackgroundColor="LightGray"
+                TextColor="Black"
+                CornerRadius="8"
+                Padding="8,4"
+                HorizontalOptions="End" 
+                />
+        </HorizontalStackLayout>
 
         <!-- Manual entry toggle -->
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">

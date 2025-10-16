@@ -16,17 +16,24 @@ public partial class LogsPage : ContentPage
     {
         base.OnAppearing();
 
-        if (BindingContext is BaseViewModel vm)
+        if (_viewModel == null || _viewModel.IsLoading)
+            return;
+
+        _viewModel.IsLoading = true;
+
+        try
         {
-            vm.IsLoading = true;
-            try
-            {
-                await vm.LoadAsync();
-            }
-            finally
-            {
-                vm.IsLoading = false;
-            }
+            await Task.Delay(300);
+            await _viewModel.InitializeAsync();
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
+        }
+        finally
+        {
+            _viewModel.IsLoading = false;
         }
     }
+
 }

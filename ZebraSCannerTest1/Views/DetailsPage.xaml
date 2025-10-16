@@ -104,18 +104,19 @@
                     IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"/>
 
             <!-- Logs -->
-            <Grid ColumnDefinitions="2*,*,*,*,*" Padding="6,4">
+            <Grid ColumnDefinitions="2*,*,*,*,*,*" Padding="6,4">
                 <Label Text="Barcode" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                 <Label Text="was" Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                 <Label Text="IncBy" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                 <Label Text="Is" Grid.Column="3" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-                <Label Text="Time" Grid.Column="4" HorizontalTextAlignment="End" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                <Label Text="Sctn" Grid.Column="4" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                <Label Text="Time" Grid.Column="5" HorizontalTextAlignment="End" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             </Grid>
             
             <CollectionView ItemsSource="{Binding Logs}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:ScanLog">
-                        <Grid Padding="4" Margin="0,0,0,2" ColumnDefinitions="2*,*,*,*,*"
+                        <Grid Padding="4" Margin="0,0,0,2" ColumnDefinitions="2*,*,*,*,*,*"
                               BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}" >
                             <Label VerticalTextAlignment="Center" Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="Black"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="1" Text="{Binding Was}" 
@@ -124,7 +125,9 @@
                                 HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="3" Text="{Binding IsValue}" 
                                 HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
-                            <Label VerticalTextAlignment="Center" Grid.Column="4" 
+                            <Label VerticalTextAlignment="Center" Grid.Column="4" Text="{Binding Section, FallbackValue='(none)'}"
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="5" 
                                Text="{Binding UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" 
                                FontSize="12" TextColor="Gray" 
                                HorizontalTextAlignment="End"/>

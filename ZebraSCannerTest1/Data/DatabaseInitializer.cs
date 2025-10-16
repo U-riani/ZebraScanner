@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS ScanLogs (
     IncrementBy INTEGER NOT NULL DEFAULT 1,
     IsValue INTEGER NOT NULL DEFAULT 0,
     UpdatedAt TEXT NOT NULL,
-    IsManual INTEGER DEFAULT NULL
+    IsManual INTEGER DEFAULT NULL,
+    Section Text DEFAULT NULL
 );
 
 
@@ -90,23 +91,27 @@ CREATE TABLE IF NOT EXISTS ScannedProducts (
             checkCmd.CommandText = "PRAGMA table_info(ScanLogs)";
             using var reader = checkCmd.ExecuteReader();
 
-            bool hasIsManual = false;
+            var existingCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             while (reader.Read())
-            {
-                var columnName = reader.GetString(1);
-                if (columnName.Equals("IsManual", StringComparison.OrdinalIgnoreCase))
-                {
-                    hasIsManual = true;
-                    break;
-                }
-            }
+                existingCols.Add(reader.GetString(1));
             reader.Close();
 
-            if (!hasIsManual)
+            if (!existingCols.Contains("IsManual"))
             {
                 using var alterCmd = conn.CreateCommand();
                 alterCmd.CommandText = "ALTER TABLE ScanLogs ADD COLUMN IsManual INTEGER DEFAULT NULL;";
                 alterCmd.ExecuteNonQuery();
+                Console.WriteLine("🩹 Added missing column: IsManual");
+            }
+
+            // Add Section if missing
+            if (!existingCols.Contains("Section"))
+            {
+                using var alterCmd = conn.CreateCommand();
+                alterCmd.CommandText = "ALTER TABLE ScanLogs ADD COLUMN Section TEXT DEFAULT NULL;";
+                alterCmd.ExecuteNonQuery();
+                Console.WriteLine("🩹 Added missing column: Section");
             }
         }
     }

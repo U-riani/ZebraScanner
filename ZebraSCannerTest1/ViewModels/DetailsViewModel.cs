@@ -16,6 +16,7 @@ public partial class DetailsViewModel : ObservableObject
     private int _originalQuantity;
     [ObservableProperty]
     private bool isLoading;
+    private readonly string _currentSection;
 
 
 
@@ -32,6 +33,7 @@ public partial class DetailsViewModel : ObservableObject
     {
         _conn = conn;
         _clipboard = clipboard;
+        _currentSection = Preferences.Get("CurrentSection", null);
 
         SaveCommand = new AsyncRelayCommand(() => SaveUpdatedDetailsAsync(isAutoSave: false, previousValue: null));
         LoadLogsCommand = new AsyncRelayCommand(LoadLogsAsync);
@@ -159,14 +161,15 @@ ON CONFLICT(Barcode) DO UPDATE SET
         using (var log = _conn.CreateCommand())
         {
             log.CommandText = @"
-                INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual)
-                VALUES ($barcode, $was, $inc, $isValue, $updated, $isManual)";
+                INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section)
+                VALUES ($barcode, $was, $inc, $isValue, $updated, $isManual, $section)";
             log.Parameters.AddWithValue("$barcode", ProductBarcode);
             log.Parameters.AddWithValue("$was", previousQty);
             log.Parameters.AddWithValue("$inc", incrementBy);
             log.Parameters.AddWithValue("$isValue", ScannedQuantity);
             log.Parameters.AddWithValue("$updated", now);
             log.Parameters.AddWithValue("$isManual", 1);
+            log.Parameters.AddWithValue("$section", _currentSection);
             log.ExecuteNonQuery();
         }
 
@@ -236,7 +239,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
 
         using var cmd = _conn.CreateCommand();
         cmd.CommandText = @"
-        SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt
+        SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section
         FROM ScanLogs
         WHERE Barcode = $b
         ORDER BY UpdatedAt DESC
@@ -247,6 +250,8 @@ ON CONFLICT(Barcode) DO UPDATE SET
 
         // 👇 detect if IsManual column exists in table
         bool hasIsManual = false;
+        bool hasSection = false;
+
         try
         {
             var colCheck = _conn.CreateCommand();
@@ -254,21 +259,24 @@ ON CONFLICT(Barcode) DO UPDATE SET
             using var info = colCheck.ExecuteReader();
             while (info.Read())
             {
-                if (info.GetString(1).Equals("IsManual", StringComparison.OrdinalIgnoreCase))
-                {
+                var colName = info.GetString(1);
+                if (colName.Equals("IsManual", StringComparison.OrdinalIgnoreCase))
                     hasIsManual = true;
-                    break;
-                }
+                if (colName.Equals("Section", StringComparison.OrdinalIgnoreCase))
+                    hasSection = true;
             }
         }
-        catch { hasIsManual = false; }
+        catch {
+            hasIsManual = false;
+            hasSection = false;
+        }
 
         // if column exists, query again including it
         if (hasIsManual)
         {
             r.Close();
             cmd.CommandText = @"
-            SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual
+            SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section
             FROM ScanLogs
             WHERE Barcode = $b
             ORDER BY UpdatedAt DESC
@@ -286,6 +294,12 @@ ON CONFLICT(Barcode) DO UPDATE SET
                     catch { isManual = null; }
                 }
 
+                string sectionValue = null;
+                if (hasSection && !reader.IsDBNull(6))
+                {
+                    sectionValue = reader.GetString(6);
+                }
+
                 Logs.Add(new ScanLog
                 {
                     Barcode = reader.GetString(0),
@@ -293,7 +307,8 @@ ON CONFLICT(Barcode) DO UPDATE SET
                     IncrementBy = reader.GetInt32(2),
                     IsValue = reader.GetInt32(3),
                     UpdatedAt = DateTime.Parse(reader.GetString(4)),
-                    IsManual = isManual
+                    IsManual = isManual,
+                    Section = sectionValue
                 });
             }
         }

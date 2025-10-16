@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using ZebraSCannerTest1.Models;
 using ZebraSCannerTest1.Services;
 
@@ -12,6 +13,9 @@ public partial class LogsViewModel : ObservableObject
     private readonly SqliteConnection _conn;
     private readonly LogBufferService _logBuffer;
     private readonly ClipboardService _clipboard;
+
+    [ObservableProperty]
+    private bool isLoading;
 
     public const int PageSize = 10;
 
@@ -39,131 +43,254 @@ public partial class LogsViewModel : ObservableObject
         _conn = conn;
         _logBuffer = logBuffer;
         _clipboard = clipboard;
-
-        LoadPage(CurrentPage);
     }
 
-    private int GetTotalCount()
+    // ✅ Filter by time (1, 2, 3, 5, 10, 15, or custom)
+    [RelayCommand]
+    private async Task FilterTime()
     {
-        using var cmd = _conn.CreateCommand();
-        if (string.IsNullOrEmpty(_currentFilter))
-            cmd.CommandText = "SELECT COUNT(*) FROM ScanLogs";
-        else
+        var choice = await Shell.Current.DisplayActionSheet(
+            "Filter by Time", "Cancel", null,
+            "Last 1 Minute",
+            "Last 2 Minutes",
+            "Last 3 Minutes",
+            "Last 5 Minutes",
+            "Last 10 Minutes",
+            "Last 15 Minutes",
+            "Custom (Enter Minutes)",
+            "Filter by Section",
+            "Manual Only",
+            "Scanned Only"
+        );
+
+        if (string.IsNullOrEmpty(choice) || choice == "Cancel")
+            return;
+
+        switch (choice)
         {
-            cmd.CommandText = "SELECT COUNT(*) FROM ScanLogs WHERE Barcode LIKE $filter";
-            cmd.Parameters.AddWithValue("$filter", $"%{_currentFilter}%");
+            case "Last 1 Minute": _currentFilter = "TIME:1"; break;
+            case "Last 2 Minutes": _currentFilter = "TIME:2"; break;
+            case "Last 3 Minutes": _currentFilter = "TIME:3"; break;
+            case "Last 5 Minutes": _currentFilter = "TIME:5"; break;
+            case "Last 10 Minutes": _currentFilter = "TIME:10"; break;
+            case "Last 15 Minutes": _currentFilter = "TIME:15"; break;
+
+            case "Custom (Enter Minutes)":
+                var input = await Shell.Current.DisplayPromptAsync(
+                    "Custom Filter", "Enter number of minutes:",
+                    "OK", "Cancel", keyboard: Keyboard.Numeric);
+                if (int.TryParse(input, out int mins) && mins > 0)
+                    _currentFilter = $"TIME:{mins}";
+                else
+                    return;
+                break;
+            // Manual filters
+            case "Manual Only":
+                _currentFilter = "MANUAL";
+                break;
+            case "Scanned Only":
+                _currentFilter = "SCANNED";
+                break;
+            // 🧭 NEW SECTION FILTER
+            case "Filter by Section":
+                var sections = new List<string>();
+
+                using (var cmd = _conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT DISTINCT Section FROM ScanLogs ORDER BY Section ASC";
+                    using var reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        if (!reader.IsDBNull(0))
+                        {
+                            var value = reader.GetString(0).Trim();
+                            if (!string.IsNullOrEmpty(value))
+                                sections.Add(value);
+                        }
+                    }
+                }
+
+                // 🧠 Add "No Section" option at top
+                sections.Insert(0, "(No Section)");
+
+                var chosenSection = await Shell.Current.DisplayActionSheet(
+                    "Select Section", "Cancel", null, sections.ToArray());
+
+                if (string.IsNullOrEmpty(chosenSection) || chosenSection == "Cancel")
+                    return;
+
+                if (chosenSection == "(No Section)")
+                    _currentFilter = "SECTION_NULL";
+                else
+                    _currentFilter = $"SECTION:{chosenSection}";
+
+                break;
+
+            default: return;
         }
-        return Convert.ToInt32(cmd.ExecuteScalar());
+
+        await LoadPage(1);
     }
 
-    private void LoadPage(int page)
+    // ✅ Filter by barcode
+    [RelayCommand]
+    private async Task FilterByBarcode()
     {
-        var totalCount = GetTotalCount();
-        TotalPages = (int)Math.Ceiling(totalCount / (double)PageSize);
+        var barcode = await Shell.Current.DisplayPromptAsync(
+            "Search Logs", "Enter part of barcode:",
+            "OK", "Cancel");
 
-        if (TotalPages == 0) TotalPages = 1;
-        if (page < 1) page = 1;
-        if (page > TotalPages) page = TotalPages;
+        if (string.IsNullOrWhiteSpace(barcode))
+            return;
 
-        CurrentPage = page;
+        _currentFilter = barcode.Trim();
+        await LoadPage(1);
+    }
 
-        using var cmd = _conn.CreateCommand();
-        if (string.IsNullOrEmpty(_currentFilter))
+    // ✅ Load page with filters
+    private async Task LoadPage(int page)
+    {
+        string whereClause = "";
+        var cmd = _conn.CreateCommand();
+
+        // --- FILTER HANDLING ---
+        if (_currentFilter == "MANUAL")
         {
-            cmd.CommandText = @"
-                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual
-                FROM ScanLogs
-                ORDER BY UpdatedAt DESC
-                LIMIT $limit OFFSET $offset";
+            whereClause = "WHERE IsManual = 1";
         }
-        else
+        else if (_currentFilter == "SCANNED")
         {
-            cmd.CommandText = @"
-                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual
-                FROM ScanLogs
-                WHERE Barcode LIKE $filter
-                ORDER BY UpdatedAt DESC
-                LIMIT $limit OFFSET $offset";
+            whereClause = "WHERE IsManual IS NULL";
+        }
+        else if (_currentFilter.StartsWith("TIME:"))
+        {
+            if (int.TryParse(_currentFilter.Split(':')[1], out int minutes))
+            {
+                DateTime cutoff = DateTime.UtcNow.AddMinutes(-minutes);
+                whereClause = "WHERE UpdatedAt >= $cutoff";
+                cmd.Parameters.AddWithValue("$cutoff", cutoff.ToString("o"));
+            }
+        }
+        else if (_currentFilter.StartsWith("SECTION:"))
+        {
+            string sectionName = _currentFilter.Substring("SECTION:".Length);
+            whereClause = "WHERE Section = $section";
+            cmd.Parameters.AddWithValue("$section", sectionName);
+        }
+        else if (_currentFilter == "SECTION_NULL")
+        {
+            whereClause = "WHERE Section IS NULL OR TRIM(Section) = ''";
+        }
+        else if (!string.IsNullOrEmpty(_currentFilter))
+        {
+            whereClause = "WHERE Barcode LIKE $filter";
             cmd.Parameters.AddWithValue("$filter", $"%{_currentFilter}%");
         }
+
+
+        // --- COUNT TOTAL RECORDS ---
+        int totalCount = 0;
+        using (var countCmd = _conn.CreateCommand())
+        {
+            countCmd.CommandText = $"SELECT COUNT(*) FROM ScanLogs {whereClause}";
+            foreach (SqliteParameter p in cmd.Parameters)
+                countCmd.Parameters.AddWithValue(p.ParameterName, p.Value);
+            totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
+        }
+
+        TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PageSize));
+        CurrentPage = Math.Clamp(page, 1, TotalPages);
+
+        // --- FETCH PAGE DATA ---
+        cmd.CommandText = $@"
+            SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section
+            FROM ScanLogs
+            {whereClause}
+            ORDER BY UpdatedAt DESC
+            LIMIT $limit OFFSET $offset";
 
         cmd.Parameters.AddWithValue("$limit", PageSize);
-        cmd.Parameters.AddWithValue("$offset", (page - 1) * PageSize);
+        cmd.Parameters.AddWithValue("$offset", (CurrentPage - 1) * PageSize);
 
-        using var r = cmd.ExecuteReader();
         var rows = new List<ScanLog>();
-        while (r.Read())
+        using (var r = cmd.ExecuteReader())
         {
-            rows.Add(new ScanLog
+            while (r.Read())
             {
-                Barcode = r.GetString(0),
-                Was = r.GetInt32(1),
-                IncrementBy = r.GetInt32(2),
-                IsValue = r.GetInt32(3),
-                UpdatedAt = DateTime.Parse(r.GetString(4)),
-                IsManual = !r.IsDBNull(5) ? r.GetInt32(5) : (int?)null
-            });
+                rows.Add(new ScanLog
+                {
+                    Barcode = r.GetString(0),
+                    Was = r.GetInt32(1),
+                    IncrementBy = r.GetInt32(2),
+                    IsValue = r.GetInt32(3),
+                    UpdatedAt = DateTime.Parse(r.GetString(4)),
+                    IsManual = !r.IsDBNull(5) ? r.GetInt32(5) : (int?)null,
+                    Section = !r.IsDBNull(6) ? r.GetString(6) : null
+                });
+            }
         }
 
-        for (int i = 0; i < PageSize; i++)
+        // --- UPDATE UI ---
+        await MainThread.InvokeOnMainThreadAsync(() =>
         {
-            if (i < rows.Count)
+            for (int i = 0; i < PageSize; i++)
             {
-                Slots[i].Barcode = rows[i].Barcode;
-                Slots[i].Was = rows[i].Was;
-                Slots[i].IncrementBy = rows[i].IncrementBy;
-                Slots[i].IsValue = rows[i].IsValue;
-                Slots[i].UpdatedAt = rows[i].UpdatedAt;
-                Slots[i].IsManual = rows[i].IsManual;
+                if (i < rows.Count)
+                {
+                    var src = rows[i];
+                    var dst = Slots[i];
+                    dst.Barcode = src.Barcode;
+                    dst.Was = src.Was;
+                    dst.IncrementBy = src.IncrementBy;
+                    dst.IsValue = src.IsValue;
+                    dst.UpdatedAt = src.UpdatedAt;
+                    dst.IsManual = src.IsManual;
+                    dst.Section = src.Section;
+                }
+                else
+                {
+                    var dst = Slots[i];
+                    dst.Barcode = string.Empty;
+                    dst.Was = 0;
+                    dst.IncrementBy = 0;
+                    dst.IsValue = 0;
+                    dst.UpdatedAt = DateTime.MinValue;
+                    dst.IsManual = null;
+                    dst.Section = string.Empty;
+                }
             }
-            else
-            {
-                Slots[i].Barcode = string.Empty;
-                Slots[i].Was = 0;
-                Slots[i].IncrementBy = 0;
-                Slots[i].IsValue = 0;
-                Slots[i].UpdatedAt = DateTime.MinValue;
-                Slots[i].IsManual = null;
-            }
-        }
+        });
     }
 
     [RelayCommand]
-    private void NextPage()
+    private async Task NextPage()
     {
         if (CurrentPage < TotalPages)
-            LoadPage(CurrentPage + 1);
+            await LoadPage(CurrentPage + 1);
     }
 
     [RelayCommand]
-    private void PrevPage()
+    private async Task PrevPage()
     {
         if (CurrentPage > 1)
-            LoadPage(CurrentPage - 1);
+            await LoadPage(CurrentPage - 1);
     }
 
     [RelayCommand]
-    private async Task Filter()
-    {
-        var input = await Shell.Current.DisplayPromptAsync(
-            "Filter Logs", "Enter barcode (partial allowed):",
-            "OK", "Cancel", "Barcode...", maxLength: 50);
-
-        if (input == null) return;
-        _currentFilter = input.Trim();
-        LoadPage(1);
-    }
-
-    [RelayCommand]
-    private void ClearFilter()
+    private async Task ClearFilter()
     {
         _currentFilter = "";
-        LoadPage(1);
+        await LoadPage(1);
     }
 
     [RelayCommand]
     private async Task CopyBarcode(string barcode)
     {
         await _clipboard.CopyAsync(barcode);
+    }
+
+    public async Task InitializeAsync()
+    {
+        await LoadPage(CurrentPage);
     }
 }
