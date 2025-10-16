@@ -85,6 +85,8 @@ CREATE TABLE IF NOT EXISTS ScannedProducts (
 );
 ";
             cmd.ExecuteNonQuery();
+            Console.WriteLine("-------- Tables created");
+
 
             // 🔹 Upgrade check for IsManual column (for existing databases)
             using var checkCmd = conn.CreateCommand();

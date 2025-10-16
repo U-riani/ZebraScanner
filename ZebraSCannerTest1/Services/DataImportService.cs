@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using System.Text.Json;
+using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Dtos;
 
 namespace ZebraSCannerTest1.Services
@@ -54,6 +55,7 @@ namespace ZebraSCannerTest1.Services
                         await Task.Delay(200); // wait before retry
                     }
                 }
+                DatabaseInitializer.Initialize(_conn); // ← THIS FIXES THE 'NO COLUMN NAMED SECTION' ERROR
 
             }
             catch (Exception ex)
@@ -85,7 +87,8 @@ namespace ZebraSCannerTest1.Services
                         IncrementBy INTEGER NOT NULL DEFAULT 1,
                         IsValue INTEGER NOT NULL DEFAULT 0,
                         UpdatedAt TEXT NOT NULL,
-                        IsManual INTEGER NULL
+                        IsManual INTEGER NULL,
+                        Section TEXT NULL
                     );
 
                     CREATE TABLE IF NOT EXISTS ScannedProducts (

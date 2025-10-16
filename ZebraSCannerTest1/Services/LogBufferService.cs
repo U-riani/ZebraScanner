@@ -54,7 +54,9 @@ namespace ZebraSCannerTest1.Services
                 cmd.Parameters["$i"].Value = log.IncrementBy;
                 cmd.Parameters["$s"].Value = log.IsValue;
                 cmd.Parameters["$t"].Value = log.UpdatedAt.ToString("o");
-                cmd.Parameters["$sec"].Value = log.Section ?? (object)DBNull.Value;
+                cmd.Parameters["$sec"].Value =
+                    string.IsNullOrEmpty(log.Section) ? (object)DBNull.Value : log.Section;
+
                 cmd.ExecuteNonQuery();
             }
 

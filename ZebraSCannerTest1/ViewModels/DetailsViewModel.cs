@@ -169,7 +169,9 @@ ON CONFLICT(Barcode) DO UPDATE SET
             log.Parameters.AddWithValue("$isValue", ScannedQuantity);
             log.Parameters.AddWithValue("$updated", now);
             log.Parameters.AddWithValue("$isManual", 1);
-            log.Parameters.AddWithValue("$section", _currentSection);
+            log.Parameters.AddWithValue("$section",
+                string.IsNullOrEmpty(_currentSection) ? (object)DBNull.Value : _currentSection);
+
             log.ExecuteNonQuery();
         }
 
