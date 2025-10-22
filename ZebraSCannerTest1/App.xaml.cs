@@ -1,4 +1,4 @@
-﻿using ZebraSCannerTest1.ViewModels;
+﻿using ZebraSCannerTest1.UI.ViewModels;
 
 namespace ZebraSCannerTest1
 {

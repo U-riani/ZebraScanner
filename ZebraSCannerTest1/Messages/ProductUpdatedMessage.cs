@@ -1,4 +1,4 @@
-﻿using ZebraSCannerTest1.Models;
+﻿using ZebraSCannerTest1.Core.Models;
 
 namespace ZebraSCannerTest1.Messages
 {

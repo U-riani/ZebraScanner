@@ -107,21 +107,31 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiXaml Update="Views\DetailsPage.xaml">
+	  <MauiXaml Update="UI\Views\DetailsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\ExportProgressPopup.xaml">
+	  <MauiXaml Update="UI\Views\Popups\ExportProgressPopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\LogsPage.xaml">
+	  <MauiXaml Update="UI\Views\LogsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\ManualFilterPopup.xaml">
+	  <MauiXaml Update="UI\Views\Popups\ManualFilterPopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\ScannedProductsPage.xaml">
+	  <MauiXaml Update="UI\Views\Popups\ProgressPopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="UI\Views\ScannedProductsPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Features\Inventory\" />
+	  <Folder Include="Features\ImportExport\" />
+	  <Folder Include="Features\Scanning\" />
+	  <Folder Include="Database\" />
 	</ItemGroup>
 
 </Project>

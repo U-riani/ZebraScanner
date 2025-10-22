@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ZebraSCannerTest1.UI.Views.MainPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="clr-namespace:ZebraSCannerTest1.UI.Converters"
+    mc:Ignorable="d"
+    Title="Fast Scanner">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:DifferenceToColorConverter x:Key="DiffToColor" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <VerticalStackLayout Padding="0" Spacing="12">
+
+        <HorizontalStackLayout Spacing="8" Padding="3" HorizontalOptions="CenterAndExpand">
+            <Button Text="Imprt" Command="{Binding ImportDataCommand}" />
+            <Button Text="Exprt" Command="{Binding ExportDataCommand}" />
+            <Button Text="Stats" Command="{Binding GoToScannedProductsCommand}" />
+            <Button Text="Logs" Command="{Binding GoToLogsCommand}" />
+            <Button Text="Rslt" Command="{Binding ShowResultsCommand}"/> 
+            
+        </HorizontalStackLayout>
+
+        <!-- Current scanned barcode big and obvious -->
+        <HorizontalStackLayout >
+            
+            <Label Text="{Binding ShowCurrentBarcode}"
+                   FontSize="24"
+                   TextColor="{AppThemeBinding Dark=white, Light=black, Default=black}"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center"
+                   MinimumWidthRequest="200"
+                   MaximumWidthRequest="300"/>
+            <Button
+                Text="{Binding CurrentSection, StringFormat='Section: {0}'}"
+                Command="{Binding ChangeSectionCommand}"
+                BackgroundColor="LightGray"
+                TextColor="Black"
+                CornerRadius="8"
+                Padding="8,4"
+                HorizontalOptions="End" 
+                />
+        </HorizontalStackLayout>
+
+        <!-- Manual entry toggle -->
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
+            <Entry x:Name="barcodeEntry"
+                   Grid.Column="0"
+                   IsVisible="{Binding IsManualEntryVisible}"
+                   Placeholder="Scan or type barcode…"
+                   ReturnType="Done"
+                   ClearButtonVisibility="WhileEditing"
+                   Text="{Binding CurrentBarcode}" 
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+
+
+        </Grid>
+
+        <!-- Header -->
+        <Grid ColumnDefinitions="2*,*,*,*" RowDefinitions="Auto" Padding="6,4">
+            <Label Text="Barcode" TextColor="{AppThemeBinding Light=Black, Dark=White}" FontAttributes="Bold" />
+            <Label Text="Scanned"  Grid.Column="1" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}"  FontAttributes="Bold" />
+            <Label Text="Initial" Grid.Column="2" TextColor="{AppThemeBinding Light=Black, Dark=White}"  HorizontalTextAlignment="End" FontAttributes="Bold" />
+            <Label Text="Diff" Grid.Column="3" TextColor="{AppThemeBinding Light=Black, Dark=White}"  HorizontalTextAlignment="End" FontAttributes="Bold" />
+
+        </Grid>
+
+        <!-- 8 STATIC SLOTS: rows never move; we only overwrite values -->
+        <Grid ColumnDefinitions="2*,*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Padding="6" RowSpacing="6">
+
+            <!-- Row 0 -->
+            <Grid Grid.Row="0" Grid.ColumnSpan="3" ColumnDefinitions="2*,*,*,*" Padding="5"
+                  BackgroundColor="{Binding Slots[0].Difference, Converter={StaticResource DiffToColor}}">
+                <Label Grid.Column="0" Text="{Binding Slots[0].Barcode}" FontSize="16" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="1" Text="{Binding Slots[0].ScannedQuantity}" FontSize="16" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="2" Text="{Binding Slots[0].InitialQuantity}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="3" Text="{Binding Slots[0].Difference}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToDetailsCommand}" CommandParameter="{Binding Slots[0]}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <!-- Row 1 -->
+            <Grid Grid.Row="1" Grid.ColumnSpan="3" ColumnDefinitions="2*,*,*,*" Padding="5"
+                  BackgroundColor="{Binding Slots[1].Difference, Converter={StaticResource DiffToColor}}">
+                <Label Grid.Column="0" Text="{Binding Slots[1].Barcode}" FontSize="16" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="1" Text="{Binding Slots[1].ScannedQuantity}" FontSize="16" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="2" Text="{Binding Slots[1].InitialQuantity}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="3" Text="{Binding Slots[1].Difference}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToDetailsCommand}" CommandParameter="{Binding Slots[1]}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <!-- Row 2 -->
+            <Grid Grid.Row="2" Grid.ColumnSpan="3" ColumnDefinitions="2*,*,*,*" Padding="5"
+                  BackgroundColor="{Binding Slots[2].Difference, Converter={StaticResource DiffToColor}}">
+                <Label Grid.Column="0" Text="{Binding Slots[2].Barcode}" FontSize="16" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="1" Text="{Binding Slots[2].ScannedQuantity}" FontSize="16" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="2" Text="{Binding Slots[2].InitialQuantity}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="3" Text="{Binding Slots[2].Difference}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToDetailsCommand}" CommandParameter="{Binding Slots[2]}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <!-- Row 3 -->
+            <Grid Grid.Row="3" Grid.ColumnSpan="3" ColumnDefinitions="2*,*,*,*" Padding="5"
+                  BackgroundColor="{Binding Slots[3].Difference, Converter={StaticResource DiffToColor}}">
+                <Label Grid.Column="0" Text="{Binding Slots[3].Barcode}" FontSize="16" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="1" Text="{Binding Slots[3].ScannedQuantity}" FontSize="16" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="2" Text="{Binding Slots[3].InitialQuantity}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="3" Text="{Binding Slots[3].Difference}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToDetailsCommand}" CommandParameter="{Binding Slots[3]}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <!-- Row 4 -->
+            <Grid Grid.Row="4" Grid.ColumnSpan="3" ColumnDefinitions="2*,*,*,*" Padding="5"
+                  BackgroundColor="{Binding Slots[4].Difference, Converter={StaticResource DiffToColor}}">
+                <Label Grid.Column="0" Text="{Binding Slots[4].Barcode}" FontSize="16" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="1" Text="{Binding Slots[4].ScannedQuantity}" FontSize="16" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="2" Text="{Binding Slots[4].InitialQuantity}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="3" Text="{Binding Slots[4].Difference}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToDetailsCommand}" CommandParameter="{Binding Slots[4]}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <!-- Row 5 -->
+            <Grid Grid.Row="5" Grid.ColumnSpan="3" ColumnDefinitions="2*,*,*,*" Padding="5"
+                  BackgroundColor="{Binding Slots[5].Difference, Converter={StaticResource DiffToColor}}">
+                <Label Grid.Column="0" Text="{Binding Slots[5].Barcode}" FontSize="16" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="1" Text="{Binding Slots[5].ScannedQuantity}" FontSize="16" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="2" Text="{Binding Slots[5].InitialQuantity}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="3" Text="{Binding Slots[5].Difference}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToDetailsCommand}" CommandParameter="{Binding Slots[5]}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <!-- Row 6 -->
+            <Grid Grid.Row="6" Grid.ColumnSpan="3" ColumnDefinitions="2*,*,*,*" Padding="5"
+                  BackgroundColor="{Binding Slots[6].Difference, Converter={StaticResource DiffToColor}}">
+                <Label Grid.Column="0" Text="{Binding Slots[6].Barcode}" FontSize="16" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="1" Text="{Binding Slots[6].ScannedQuantity}" FontSize="16" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="2" Text="{Binding Slots[6].InitialQuantity}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="3" Text="{Binding Slots[6].Difference}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToDetailsCommand}" CommandParameter="{Binding Slots[6]}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+            <!-- Row 7 -->
+            <Grid Grid.Row="7" Grid.ColumnSpan="3" ColumnDefinitions="2*,*,*,*" Padding="5"
+                  BackgroundColor="{Binding Slots[7].Difference, Converter={StaticResource DiffToColor}}">
+                <Label Grid.Column="0" Text="{Binding Slots[7].Barcode}" FontSize="16" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="1" Text="{Binding Slots[7].ScannedQuantity}" FontSize="16" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="2" Text="{Binding Slots[7].InitialQuantity}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Label Grid.Column="3" Text="{Binding Slots[7].Difference}" FontSize="16" HorizontalTextAlignment="End" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding GoToDetailsCommand}" CommandParameter="{Binding Slots[7]}" />
+                </Grid.GestureRecognizers>
+            </Grid>
+
+        </Grid>
+
+    </VerticalStackLayout>
+</ContentPage>

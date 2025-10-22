@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ZebraSCannerTest1.Views.Popups.ManualFilterPopup"
+             Title="Manual Filter"
+             BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#1E1E1E}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="12">
+
+            <!-- Title -->
+            <Label Text="Manual Filter Builder"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+            <!-- Step 1: Select Field -->
+            <Label Text="Select Field:" 
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Picker x:Name="FieldPicker"
+                    Title="Choose column"
+                    BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}">
+                <Picker.ItemsSource>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>Barcode</x:String>
+                        <x:String>Name</x:String>
+                        <x:String>Color</x:String>
+                        <x:String>Size</x:String>
+                        <x:String>Price</x:String>
+                        <x:String>InitialQuantity</x:String>
+                        <x:String>ScannedQuantity</x:String>
+                        <x:String>UpdatedAt</x:String>
+                    </x:Array>
+                </Picker.ItemsSource>
+            </Picker>
+
+            <!-- Step 2: Select Operator -->
+            <Label Text="Select Operator:" 
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Picker x:Name="OperatorPicker"
+                    Title="Choose condition"
+                    BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}">
+                <Picker.ItemsSource>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>=</x:String>
+                        <x:String>&gt;</x:String>
+                        <x:String>&lt;</x:String>
+                        <x:String>&gt;=</x:String>
+                        <x:String>&lt;=</x:String>
+                        <x:String>!=</x:String>
+                        <x:String>LIKE</x:String>
+                    </x:Array>
+                </Picker.ItemsSource>
+            </Picker>
+
+            <!-- Step 3: Enter Value -->
+            <Label Text="Enter or select value:" 
+               FontAttributes="Bold"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            <Entry x:Name="ValueEntry"
+               Placeholder="e.g. BLUE or 10"
+               BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+
+
+            <!-- Add Condition Button -->
+            <Button Text="➕ Add Condition"
+                    Clicked="OnAddConditionClicked"
+                    BackgroundColor="#0078D7"
+                    TextColor="White"
+                    CornerRadius="8"
+                    FontAttributes="Bold"
+                    HeightRequest="45"/>
+
+            <!-- Display added conditions -->
+            <Frame Padding="8"
+       BackgroundColor="{AppThemeBinding Light=#E6E6E6, Dark=#333}"
+       CornerRadius="10">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Added Conditions:"
+               FontAttributes="Bold"
+               TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                    <CollectionView x:Name="ConditionsList"
+                        HeightRequest="120">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="4">
+                                    <Label Text="{Binding}"
+                               TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                               FontSize="14"/>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            
+
+            <!-- Action Buttons -->
+            <HorizontalStackLayout Spacing="10" Padding="0,10,0,0" HorizontalOptions="Center">
+                <Button Text="✅ Apply Filter"
+                        Clicked="OnApplyFilterClicked"
+                        BackgroundColor="#28A745"
+                        TextColor="White"
+                        CornerRadius="8"
+                        WidthRequest="150"/>
+                <Button Text="❌ Cancel"
+                        Clicked="OnCancelClicked"
+                        BackgroundColor="#DC3545"
+                        TextColor="White"
+                        CornerRadius="8"
+                        WidthRequest="120"/>
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

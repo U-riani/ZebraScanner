@@ -1,0 +1,142 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             xmlns:models="clr-namespace:ZebraSCannerTest1.Core.Models"
+             xmlns:converters="clr-namespace:ZebraSCannerTest1.UI.Converters"
+             x:Class="ZebraSCannerTest1.UI.Views.DetailsPage"
+             x:DataType="viewmodel:DetailsViewModel"
+             Title="Details">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:ManualToColorConverter x:Key="ManualToColor" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="12">
+
+            <ActivityIndicator 
+                IsRunning="{Binding IsLoading}" 
+                IsVisible="{Binding IsLoading}"
+                Color="Gray"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
+            <!-- Barcode -->
+            <HorizontalStackLayout VerticalOptions="Center">
+
+                <Label Text="BARCODE" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ProductBarcode}" VerticalTextAlignment="Center"
+                       TextColor="Black" FontSize="20" >
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" 
+                                              CommandParameter="{Binding ProductBarcode}" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="ARTIC CODE" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ProductArticCode}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" 
+                          CommandParameter="{Binding ProductArticCode}" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </HorizontalStackLayout>
+            
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="NAME" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ProductName}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="COLOR" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ProductColor}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+
+
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="SIZE" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ProductSize}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="PRICE" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ProductPrice, StringFormat='{}{0:C}'}" 
+                      FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+
+            <!-- Quantities -->
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="INITIAL QUANTITY" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding InitialQuantity}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="SCANNED QUANTIY" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ScannedQuantity}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="Difference" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding Difference}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+
+
+            <HorizontalStackLayout Spacing="65" VerticalOptions="Center"
+                                   IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}">
+                <Button Text="wrt" Command="{Binding ManualEditCommand}" WidthRequest="62" FontSize="20" />
+                <Button Text="-" Command="{Binding DecrementCommand}" WidthRequest="60" FontSize="20" />
+                <Button Text="+" Command="{Binding IncrementCommand}" WidthRequest="60" FontSize="20" />
+            </HorizontalStackLayout>
+
+            <Button Text="Save" Command="{Binding SaveCommand}" Margin="0,10,0,20"
+                    IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"/>
+
+            <!-- Logs -->
+            <Grid ColumnDefinitions="2*,*,*,*,*,*" Padding="6,4">
+                <Label Text="Barcode" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                <Label Text="was" Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                <Label Text="IncBy" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                <Label Text="Is" Grid.Column="3" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                <Label Text="Sctn" Grid.Column="4" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                <Label Text="Time" Grid.Column="5" HorizontalTextAlignment="End" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </Grid>
+            
+            <CollectionView ItemsSource="{Binding Logs}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:ScanLog">
+                        <Grid Padding="4" Margin="0,0,0,2" ColumnDefinitions="2*,*,*,*,*,*"
+                              BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}" >
+                            <Label VerticalTextAlignment="Center" Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="1" Text="{Binding Was}" 
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="2" Text="{Binding IncrementBy}" 
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="3" Text="{Binding IsValue}" 
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="4" Text="{Binding Section, FallbackValue='(none)'}"
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="5" 
+                               Text="{Binding UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" 
+                               FontSize="12" TextColor="Gray" 
+                               HorizontalTextAlignment="End"/>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

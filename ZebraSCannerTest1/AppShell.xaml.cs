@@ -1,5 +1,5 @@
-﻿using ZebraSCannerTest1.Views;
-using ZebraSCannerTest1.ViewModels;
+﻿using ZebraSCannerTest1.UI.Views;
+using ZebraSCannerTest1.UI.ViewModels;
 
 namespace ZebraSCannerTest1
 {
