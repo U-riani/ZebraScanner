@@ -21,7 +21,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>ZebraSCannerTest1</ApplicationTitle>
+		<ApplicationTitle>ScanMate</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.zebrascannertest1</ApplicationId>

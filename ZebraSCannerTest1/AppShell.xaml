@@ -5,7 +5,28 @@
     xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views"
     x:Class="ZebraSCannerTest1.AppShell"
     Shell.FlyoutBehavior="Disabled">
+    
+    <ShellContent 
+        Title="SCANMATE" 
+        ContentTemplate="{DataTemplate views:MainPage}" >
+        <Shell.TitleView>
+            <FlexLayout JustifyContent="Center" AlignContent="Center">
+                <Image
+                    Source="logo2.svg"
+                    HeightRequest="50"
+                    WidthRequest="50"
+                    VerticalOptions="Center"/>
 
-    <ShellContent Title="Scan" ContentTemplate="{DataTemplate views:MainPage}" />
+                <Label
+                    Text="SCANMATE"
+                    FontAttributes="Bold"
+                    FontSize="18"
+                    VerticalOptions="Center"
+                    Margin="8,0,0,0"
+                    TextColor="{AppThemeBinding Light=white, Dark=black}"/>
+            </FlexLayout>
+        </Shell.TitleView>
+
+    </ShellContent>
 
 </Shell>

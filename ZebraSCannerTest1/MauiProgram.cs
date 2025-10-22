@@ -37,6 +37,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<LogBufferService>();
         builder.Services.AddSingleton<ClipboardService>();
         builder.Services.AddSingleton<IScanningService, ScanningService>();
+        builder.Services.AddSingleton<IProductService, ProductService>();
 
 
 

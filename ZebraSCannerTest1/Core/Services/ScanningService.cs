@@ -2,6 +2,10 @@
 using System.Threading.Tasks;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
+using CommunityToolkit.Mvvm.Messaging;
+using ZebraSCannerTest1.Messages;
+
+
 #if ANDROID
 using Android.Media;
 #endif
@@ -91,6 +95,9 @@ namespace ZebraSCannerTest1.Core.Services
             });
 
             _logger.Info($"New product added: {barcode}");
+
+            WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
+
         }
 
         private async Task UpdateProductAsync(Product product)
@@ -110,6 +117,9 @@ namespace ZebraSCannerTest1.Core.Services
             });
 
             _logger.Info($"Product scanned: {product.Barcode}");
+
+            WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
+
         }
     }
 }

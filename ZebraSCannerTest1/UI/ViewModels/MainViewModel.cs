@@ -10,17 +10,13 @@ using ZebraSCannerTest1.Helpers;
 using ZebraSCannerTest1.Messages;
 using ZebraSCannerTest1.UI.Services;
 using ZebraSCannerTest1.UI.Views;
-#if ANDROID
-using Android.Media;
-#endif
+
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
 public partial class MainViewModel : ObservableObject, IDisposable
 {
-
-    private readonly IProductRepository _products;
-    private readonly IScanLogRepository _logs;
+    private readonly IProductService _productService;
     private readonly IDataImportService _importer;
     private readonly IExcelExportService _exporter;
     private readonly IExcelExportLogsService _logExporter;
@@ -57,19 +53,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand<ProductSlot> GoToDetailsCommand { get; }
 
     public MainViewModel(
-        IProductRepository products,
-        IScanLogRepository logs,
-        IDataImportService importer,
-        IExcelExportService exporter,
-        IExcelExportLogsService logExporter,
-        IDialogService dialogs,
-        INavigationService navigation,
-        ILoggerService<MainViewModel> logger,
-        ZebraSCannerTest1.UI.Services.PopupService popup,
-        IScanningService scanningService)
+            IProductService productService,
+            IDataImportService importer,
+            IExcelExportService exporter,
+            IExcelExportLogsService logExporter,
+            IDialogService dialogs,
+            INavigationService navigation,
+            ILoggerService<MainViewModel> logger,
+            ZebraSCannerTest1.UI.Services.PopupService popup,
+            IScanningService scanningService)
     {
-        _products = products;
-        _logs = logs;
+        _productService = productService;
         _importer = importer;
         _exporter = exporter;
         _logExporter = logExporter;
@@ -99,6 +93,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         GoToDetailsCommand = new AsyncRelayCommand<ProductSlot>(OnSlotTappedAsync);
 
         _ = LoadRecentAsync();
+
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(this, async (r, msg) =>
         {
             await LoadRecentAsync();
@@ -108,22 +103,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // === Loaders ===
     private async Task LoadRecentAsync()
     {
-        try
+        var recent = await _productService.GetRecentAsync(SlotCount);
+        int i = 0;
+        foreach (var p in recent)
         {
-            var recent = await _products.GetRecentAsync(SlotCount);
-            int i = 0;
-            foreach (var p in recent)
+            if (i < Slots.Count)
             {
-                if (i < Slots.Count)
-                {
-                    Slots[i].Set(p.Barcode, p.ScannedQuantity, p.InitialQuantity);
-                    i++;
-                }
+                Slots[i].Set(p.Barcode, p.ScannedQuantity, p.InitialQuantity);
+                i++;
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.Error("Failed to load recent products", ex);
         }
     }
 
@@ -143,10 +131,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             foreach (var barcode in _scanQueue.GetConsumingEnumerable(_scanCts.Token))
             {
                 await _scanningService.ProcessAsync(barcode);
-                await LoadRecentAsync();
             }
         });
     }
+
 
 
     // === Import with Progress Popup ===
@@ -303,7 +291,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (slot == null || string.IsNullOrEmpty(slot.Barcode))
             return;
 
-        var product = await _products.FindAsync(slot.Barcode);
+        var product = await _productService.GetByBarcodeAsync(slot.Barcode);
         if (product == null)
             return;
 
@@ -331,7 +319,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             await _popup.ShowProgressAsync("Calculating totals...");
             popupShown = true;
 
-            var (totalInitial, totalScanned, totalBarcodes, scannedBarcodes) = _products.GetInventoryStats();
+            var (totalInitial, totalScanned, totalBarcodes, scannedBarcodes) = _productService.GetInventoryStats();
 
             _popup.Close();
             popupShown = false;
