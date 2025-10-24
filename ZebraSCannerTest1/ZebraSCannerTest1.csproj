@@ -107,7 +107,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <MauiXaml Update="UI\Views\Controls\HeaderBar.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="UI\Views\DetailsPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="UI\Views\HomePage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="UI\Views\InventoryMenyPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="UI\Views\Popups\ExportProgressPopup.xaml">
@@ -132,6 +141,12 @@
 	  <Folder Include="Features\ImportExport\" />
 	  <Folder Include="Features\Scanning\" />
 	  <Folder Include="Database\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="UI\Views\InventorizationPage.xaml.cs">
+	    <DependentUpon>InventorizationPage.xaml</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 
 </Project>

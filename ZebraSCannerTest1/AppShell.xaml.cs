@@ -1,35 +1,31 @@
-﻿using ZebraSCannerTest1.UI.Views;
+﻿using System.Windows.Input;
 using ZebraSCannerTest1.UI.ViewModels;
+using ZebraSCannerTest1.UI.Views;
 
 namespace ZebraSCannerTest1
 {
     public partial class AppShell : Shell
     {
-        public AppShell()
+        public AppShell(ShellViewModel vm)
         {
+            FlyoutBehavior = FlyoutBehavior.Disabled;
             InitializeComponent();
 
-            Routing.RegisterRoute(nameof(DetailsPage), typeof(DetailsPage));
-            Routing.RegisterRoute(nameof(LogsPage), typeof(LogsPage));
+
+            Routing.RegisterRoute(nameof(HomePage), typeof(HomePage));
+            Routing.RegisterRoute(nameof(InventoryMenuPage), typeof(InventoryMenuPage));
+            Routing.RegisterRoute(nameof(InventorizationPage), typeof(InventorizationPage));
             Routing.RegisterRoute(nameof(ScannedProductsPage), typeof(ScannedProductsPage));
+            Routing.RegisterRoute(nameof(LogsPage), typeof(LogsPage));
+            Routing.RegisterRoute(nameof(DetailsPage), typeof(DetailsPage));
 
-            //Navigating += OnShellNavigating;
+            BindingContext = vm;
         }
+        public ICommand ToggleFlyoutCommand => new Command(() =>
+        {
+            Shell.Current.FlyoutIsPresented = !Shell.Current.FlyoutIsPresented;
+        });
 
-        //private void OnShellNavigating(object sender, ShellNavigatingEventArgs e)
-        //{
-        //    if (e.Source == ShellNavigationSource.Pop && e.Current?.Location.OriginalString.Contains(nameof(DetailsPage)) == true)
-        //    {
-        //        // 🚫 We're navigating back from DetailsPage → mark flag
-        //        if (Application.Current?.MainPage is AppShell shell)
-        //        {
-        //            var page = shell.CurrentPage as ScannedProductsPage;
-        //            if (page != null)
-        //                page.IsReturningFromDetails = true;
-        //        }
-        //    }
-
-        //}
 
     }
 }

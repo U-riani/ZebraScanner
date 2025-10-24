@@ -14,7 +14,7 @@ using ZebraSCannerTest1.UI.Views;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
-public partial class MainViewModel : ObservableObject, IDisposable
+public partial class InventorizationViewModel : ObservableObject, IDisposable
 {
     private readonly IProductService _productService;
     private readonly IDataImportService _importer;
@@ -22,14 +22,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly IExcelExportLogsService _logExporter;
     private readonly IDialogService _dialogs;
     private readonly INavigationService _navigation;
-    private readonly ILoggerService<MainViewModel> _logger;
+    private readonly ILoggerService<InventorizationViewModel> _logger;
     private readonly ZebraSCannerTest1.UI.Services.PopupService _popup;
     private readonly IScanningService _scanningService;
 
-
-    private string _currentSection = Preferences.Get("CurrentSection", string.Empty);
-    private readonly BlockingCollection<string> _scanQueue = new();
-    private readonly CancellationTokenSource _scanCts = new();
+    [ObservableProperty]
+    private string currentSection = Preferences.Get("CurrentSection", string.Empty);
 
 
     public const int SlotCount = 8;
@@ -52,14 +50,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand GoToScannedProductsCommand { get; }
     public IAsyncRelayCommand<ProductSlot> GoToDetailsCommand { get; }
 
-    public MainViewModel(
+    public InventorizationViewModel(
             IProductService productService,
             IDataImportService importer,
             IExcelExportService exporter,
             IExcelExportLogsService logExporter,
             IDialogService dialogs,
             INavigationService navigation,
-            ILoggerService<MainViewModel> logger,
+            ILoggerService<InventorizationViewModel> logger,
             ZebraSCannerTest1.UI.Services.PopupService popup,
             IScanningService scanningService)
     {
@@ -73,16 +71,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _popup = popup;
         _scanningService = scanningService;
 
-        Task.Run(ProcessScanQueueAsync);
+        _scanningService.StartAsync();
 
 
         AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
         ImportDataCommand = new AsyncRelayCommand(OnImportDataAsync);
         ExportDataCommand = new AsyncRelayCommand(ExportDataAsync);
         ChangeSectionCommand = new AsyncRelayCommand(ChangeSectionAsync);
-
         ShowResultsCommand = new AsyncRelayCommand(ShowResultsAsync);
-
 
         GoToLogsCommand = new AsyncRelayCommand(() =>
             NavigateSafelyAsync(() => _navigation.NavigateToAsync(nameof(LogsPage)))); GoToScannedProductsCommand = new AsyncRelayCommand(() => _navigation.NavigateToAsync(nameof(ScannedProductsPage)));
@@ -115,24 +111,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task AddProductAsync(string? scannedBarcode)
-    {
-        if (string.IsNullOrWhiteSpace(scannedBarcode)) return;
-
-        _scanQueue.Add(scannedBarcode.Trim());
-        CurrentBarcode = scannedBarcode.Trim();
-    }
-
     // === Scanning ===
-    private async Task ProcessScanQueueAsync()
+    private Task AddProductAsync(string? scannedBarcode)
     {
-        await Task.Run(async () =>
-        {
-            foreach (var barcode in _scanQueue.GetConsumingEnumerable(_scanCts.Token))
-            {
-                await _scanningService.ProcessAsync(barcode);
-            }
-        });
+        if (string.IsNullOrWhiteSpace(scannedBarcode))
+            return Task.CompletedTask;
+
+        _scanningService.Enqueue(scannedBarcode.Trim());
+        CurrentBarcode = scannedBarcode.Trim();
+        return Task.CompletedTask;
     }
 
 
@@ -357,13 +344,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             "Set Section",
             "Enter section name:",
             "OK", "Cancel",
-            initialValue: _currentSection);
+            initialValue: CurrentSection);
 
         if (!string.IsNullOrWhiteSpace(newSection))
         {
-            _currentSection = newSection.Trim();
-            Preferences.Set("CurrentSection", _currentSection);
-            await _dialogs.ShowMessageAsync("Section Updated", $"Now working in {_currentSection}");
+            CurrentSection = newSection.Trim();
+            Preferences.Set("CurrentSection", CurrentSection);
+            await _dialogs.ShowMessageAsync("Section Updated", $"Now working in {CurrentSection}");
         }
     }
 
@@ -397,11 +384,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        _scanCts.Cancel();
-        _scanQueue.CompleteAdding();
+        _scanningService.Stop();
         WeakReferenceMessenger.Default.UnregisterAll(this);
-
         GC.SuppressFinalize(this);
     }
+
 
 }

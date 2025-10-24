@@ -4,29 +4,41 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views"
     x:Class="ZebraSCannerTest1.AppShell"
-    Shell.FlyoutBehavior="Disabled">
+    Shell.FlyoutBehavior="Disabled"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="#0026B7"
+    Shell.TitleColor="White"
+    Shell.NavBarHasShadow="False">
+
     
-    <ShellContent 
-        Title="SCANMATE" 
-        ContentTemplate="{DataTemplate views:MainPage}" >
-        <Shell.TitleView>
-            <FlexLayout JustifyContent="Center" AlignContent="Center">
-                <Image
-                    Source="logo2.svg"
-                    HeightRequest="50"
-                    WidthRequest="50"
-                    VerticalOptions="Center"/>
+    <!-- Global Toolbar Item (hamburger menu) -->
+    <Shell.ToolbarItems>
+        <ToolbarItem IconImageSource="menu.png"
+                 Order="Primary"
+                 Priority="0"
+                 Command="{Binding ToggleFlyoutCommand}" />
+    </Shell.ToolbarItems>
 
-                <Label
-                    Text="SCANMATE"
-                    FontAttributes="Bold"
-                    FontSize="18"
-                    VerticalOptions="Center"
-                    Margin="8,0,0,0"
-                    TextColor="{AppThemeBinding Light=white, Dark=black}"/>
-            </FlexLayout>
-        </Shell.TitleView>
 
-    </ShellContent>
+    <!-- Global TitleView with logo + title -->
+    <Shell.TitleView>
+        <HorizontalStackLayout Spacing="8" VerticalOptions="Center" HorizontalOptions="Center">
+            <Image Source="logo2.png" HeightRequest="28" WidthRequest="28" />
+            <Label 
+                Text="ScanMate"
+                FontAttributes="Bold"
+                FontSize="18"
+                VerticalOptions="Center"
+                TextColor="White" />
+        </HorizontalStackLayout>
+    </Shell.TitleView>
+
+    <!-- Main navigation area -->
+    <TabBar>
+        <ShellContent
+            Title="Home"
+            Icon="home.svg"
+            ContentTemplate="{DataTemplate views:HomePage}" />
+    </TabBar>
 
 </Shell>

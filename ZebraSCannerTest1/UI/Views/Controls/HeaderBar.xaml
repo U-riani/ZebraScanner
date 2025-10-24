@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentView
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="ZebraSCannerTest1.UI.Views.Controls.HeaderBar">
+
+    <Grid Padding="0" Margin="0" ColumnSpacing="10" HeightRequest="56" BackgroundColor="#0026b7">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Back Button -->
+        <ImageButton
+            Grid.Column="0"
+            Source="arrow_back.svg"
+            HeightRequest="30"
+            WidthRequest="30"
+            BackgroundColor="Transparent"
+            Command="{Binding BackCommand}"
+            IsVisible="{Binding CanGoBack}" />
+
+        <!-- Logo + Title -->
+        <HorizontalStackLayout Grid.Column="1"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"
+                               Spacing="8">
+            <Image Source="logo2.svg" HeightRequest="34" WidthRequest="34" />
+            <Label Text="SCANMATE"
+                   FontAttributes="Bold"
+                   FontSize="18"
+                   TextColor="White" />
+        </HorizontalStackLayout>
+
+        <!-- Menu -->
+        <Button
+            Grid.Column="2"
+            Text="⋮"
+            FontSize="22"
+            BackgroundColor="Transparent"
+            TextColor="White"
+            Command="{Binding OpenMenuCommand}" />
+    </Grid>
+
+</ContentView>

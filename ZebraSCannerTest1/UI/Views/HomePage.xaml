@@ -1,0 +1,100 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views"
+             xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             x:DataType="viewmodels:HomeViewModel"
+             x:Class="ZebraSCannerTest1.UI.Views.HomePage"
+             Title="Dashboard">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Inventory -->
+            <Frame Padding="20" CornerRadius="20" BackgroundColor="#0078D7">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
+                </Frame.GestureRecognizers>
+
+                <VerticalStackLayout>
+                    <Label Text="INVENTORIZATION" 
+                       FontSize="20"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory" 
+                       FontSize="14" 
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Inventory -->
+            <Frame Padding="20" CornerRadius="20" BackgroundColor="#0078D7">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
+                </Frame.GestureRecognizers>
+
+                <VerticalStackLayout>
+                    <Label Text="TRANSFER" 
+                       FontSize="20"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory" 
+                       FontSize="14" 
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                    <Label Text="soon ..." 
+                       FontSize="14" 
+                       TextColor="BlanchedAlmond"
+                       HorizontalOptions="End" />    
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Inventory -->
+            <Frame Padding="20" CornerRadius="20" BackgroundColor="#0078D7">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
+                </Frame.GestureRecognizers>
+
+                <VerticalStackLayout>
+                    <Label Text="RECIVE" 
+                       FontSize="20"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory" 
+                       FontSize="14" 
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                    <Label Text="soon ..." 
+                       FontSize="14" 
+                       TextColor="BlanchedAlmond"
+                       HorizontalOptions="End" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Inventory -->
+            <Frame Padding="20" CornerRadius="20" BackgroundColor="#0078D7">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
+                </Frame.GestureRecognizers>
+
+                <VerticalStackLayout>
+                    <Label Text="SALES" 
+                       FontSize="20"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory" 
+                       FontSize="14" 
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                    <Label Text="soon ..." 
+                       FontSize="14" 
+                       TextColor="BlanchedAlmond"
+                       HorizontalOptions="End" />
+                </VerticalStackLayout>
+            </Frame>
+
+
+            <!-- Add more cards here later -->
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

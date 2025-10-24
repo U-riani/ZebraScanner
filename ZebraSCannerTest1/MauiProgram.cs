@@ -7,11 +7,15 @@ using ZebraSCannerTest1.Infrastructure.Repositories;
 using ZebraSCannerTest1.UI.Services;
 using ZebraSCannerTest1.UI.ViewModels;
 using ZebraSCannerTest1.UI.Views;
+using Microsoft.Maui.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ZebraSCannerTest1;
 
 public static class MauiProgram
 {
+    public static IServiceProvider ServiceProvider { get; private set; }
+
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
@@ -38,6 +42,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ClipboardService>();
         builder.Services.AddSingleton<IScanningService, ScanningService>();
         builder.Services.AddSingleton<IProductService, ProductService>();
+        builder.Services.AddSingleton<IMenuService, MenuService>();
 
 
 
@@ -49,17 +54,23 @@ public static class MauiProgram
 
 
         // === ViewModels ===
-        builder.Services.AddSingleton<MainViewModel>();
+        builder.Services.AddSingleton<InventorizationViewModel>();
         builder.Services.AddTransient<DetailsViewModel>();
         builder.Services.AddTransient<LogsViewModel>();
         builder.Services.AddTransient<ScannedProductsViewModel>();
+        builder.Services.AddSingleton<ShellViewModel>();
 
         // === Views ===
-        builder.Services.AddSingleton<MainPage>();
+        builder.Services.AddSingleton<InventorizationPage>();
         builder.Services.AddTransient<DetailsPage>();
         builder.Services.AddTransient<LogsPage>();
         builder.Services.AddTransient<ScannedProductsPage>();
 
-        return builder.Build();
+        var app = builder.Build();
+
+        // 🔹 This line exposes the container globally
+        ServiceProvider = app.Services;
+
+        return app;
     }
 }

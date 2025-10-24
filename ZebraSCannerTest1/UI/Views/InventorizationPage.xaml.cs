@@ -3,11 +3,11 @@ using ZebraSCannerTest1.UI.ViewModels;
 
 namespace ZebraSCannerTest1.UI.Views;
 
-public partial class MainPage : ContentPage
+public partial class InventorizationPage : ContentPage
 {
-    private readonly MainViewModel _viewModel;
+    private readonly InventorizationViewModel _viewModel;
 
-    public MainPage(MainViewModel vm)
+    public InventorizationPage(InventorizationViewModel vm)
     {
         InitializeComponent();
         _viewModel = vm;

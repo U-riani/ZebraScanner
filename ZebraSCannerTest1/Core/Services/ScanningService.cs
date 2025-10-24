@@ -1,15 +1,13 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
+using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Maui.ApplicationModel;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
-using CommunityToolkit.Mvvm.Messaging;
 using ZebraSCannerTest1.Messages;
-
 
 #if ANDROID
 using Android.Media;
 #endif
-using Microsoft.Maui.ApplicationModel;
 
 namespace ZebraSCannerTest1.Core.Services
 {
@@ -21,15 +19,20 @@ namespace ZebraSCannerTest1.Core.Services
         private readonly ILoggerService<ScanningService> _logger;
         private readonly string _currentSection = Preferences.Get("CurrentSection", string.Empty);
 
+        private readonly BlockingCollection<string> _scanQueue = new();
+        private Task? _processingTask;
+        private CancellationTokenSource? _cts;
+
 #if ANDROID
         private static readonly ToneGenerator toneOk = new(Android.Media.Stream.System, 100);
         private static readonly ToneGenerator toneError = new(Android.Media.Stream.System, 100);
 #endif
 
-        public ScanningService(IProductRepository products,
-                               IScanLogRepository logs,
-                               IDialogService dialogs,
-                               ILoggerService<ScanningService> logger)
+        public ScanningService(
+            IProductRepository products,
+            IScanLogRepository logs,
+            IDialogService dialogs,
+            ILoggerService<ScanningService> logger)
         {
             _products = products;
             _logs = logs;
@@ -37,7 +40,41 @@ namespace ZebraSCannerTest1.Core.Services
             _logger = logger;
         }
 
-        public async Task ProcessAsync(string barcode)
+        public void Enqueue(string barcode)
+        {
+            if (!_scanQueue.IsAddingCompleted)
+                _scanQueue.Add(barcode);
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken = default)
+        {
+            if (_processingTask != null && !_processingTask.IsCompleted)
+                return _processingTask; // already running
+
+            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _processingTask = Task.Run(ProcessQueueAsync, _cts.Token);
+            return _processingTask;
+        }
+
+        public void Stop()
+        {
+            try
+            {
+                _scanQueue.CompleteAdding();
+                _cts?.Cancel();
+            }
+            catch { /* ignore */ }
+        }
+
+        private async Task ProcessQueueAsync()
+        {
+            foreach (var barcode in _scanQueue.GetConsumingEnumerable(_cts!.Token))
+            {
+                await ProcessAsync(barcode);
+            }
+        }
+
+        private async Task ProcessAsync(string barcode)
         {
             try
             {
@@ -95,9 +132,7 @@ namespace ZebraSCannerTest1.Core.Services
             });
 
             _logger.Info($"New product added: {barcode}");
-
             WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
-
         }
 
         private async Task UpdateProductAsync(Product product)
@@ -117,9 +152,7 @@ namespace ZebraSCannerTest1.Core.Services
             });
 
             _logger.Info($"Product scanned: {product.Barcode}");
-
             WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
-
         }
     }
 }
