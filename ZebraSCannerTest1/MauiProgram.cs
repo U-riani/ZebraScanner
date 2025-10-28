@@ -35,6 +35,7 @@ public static class MauiProgram
         // === Core services & repositories ===
         builder.Services.AddSingleton<IProductRepository, ProductRepository>();
         builder.Services.AddSingleton<IScanLogRepository, ScanLogRepository>();
+        builder.Services.AddSingleton<ILootsProductRepository, LootsProductRepository>();
         builder.Services.AddSingleton<IDataImportService, DataImportService>();
         builder.Services.AddSingleton<IExcelExportService, ExcelExportService>();
         builder.Services.AddSingleton<IExcelExportLogsService, ExcelExportLogsService>(); // ✅ Add this line
@@ -59,12 +60,14 @@ public static class MauiProgram
         builder.Services.AddTransient<LogsViewModel>();
         builder.Services.AddTransient<ScannedProductsViewModel>();
         builder.Services.AddSingleton<ShellViewModel>();
+        builder.Services.AddTransient<InventorizationByLootsMenuViewModel>();
 
         // === Views ===
         builder.Services.AddSingleton<InventorizationPage>();
         builder.Services.AddTransient<DetailsPage>();
         builder.Services.AddTransient<LogsPage>();
         builder.Services.AddTransient<ScannedProductsPage>();
+        builder.Services.AddTransient<InventorizationByLootsMenuPage>();
 
         var app = builder.Build();
 

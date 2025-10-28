@@ -22,5 +22,14 @@
                 HeightRequest="60"
                 Clicked="OnBarcodesClicked"/>
 
+        <Button Text="COMBOS"
+         FontSize="20"
+         BackgroundColor="#0078D7"
+         TextColor="White"
+         WidthRequest="200"
+         HeightRequest="60"
+         Clicked="OnCombosClicked"/>
+
+
     </VerticalStackLayout>
 </ContentPage>

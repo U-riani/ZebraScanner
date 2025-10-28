@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 
@@ -8,6 +9,8 @@ public class ProductRepository : IProductRepository
 {
     private readonly SqliteConnection _connection;
     public SqliteConnection Connection => _connection;
+    private string GetTableName(InventoryMode mode) =>
+        mode == InventoryMode.Loots ? "LootsProducts" : "Products";
 
 
     public ProductRepository(SqliteConnection connection)
@@ -15,85 +18,148 @@ public class ProductRepository : IProductRepository
         _connection = connection;
     }
 
-    public async Task<IEnumerable<Product>> GetRecentAsync(int limit = 8)
+    public async Task<IEnumerable<Product>> GetRecentAsync(int limit = 8, InventoryMode mode = InventoryMode.Standard)
     {
         var products = new List<Product>();
+        string table = GetTableName(mode);
+
+        bool isLoots = mode == InventoryMode.Loots;
+
         using var cmd = _connection.CreateCommand();
-        cmd.CommandText = "SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM Products ORDER BY UpdatedAt DESC LIMIT $limit";
+        cmd.CommandText = $@"
+            SELECT Barcode, 
+                   {(isLoots ? "Box_Id," : "")}
+                   InitialQuantity, 
+                   ScannedQuantity, 
+                   CreatedAt, 
+                   UpdatedAt 
+            FROM {table} 
+            ORDER BY UpdatedAt DESC 
+            LIMIT $limit";
         cmd.Parameters.AddWithValue("$limit", limit);
 
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
-            products.Add(new Product
+            var product = new Product
             {
                 Barcode = reader.GetString(0),
-                InitialQuantity = reader.GetInt32(1),
-                ScannedQuantity = reader.GetInt32(2),
-                CreatedAt = DateTime.Parse(reader.GetString(3)),
-                UpdatedAt = DateTime.Parse(reader.GetString(4))
-            });
+                InitialQuantity = reader.GetInt32(isLoots ? 2 : 1),
+                ScannedQuantity = reader.GetInt32(isLoots ? 3 : 2),
+                CreatedAt = DateTime.Parse(reader.GetString(isLoots ? 4 : 3)),
+                UpdatedAt = DateTime.Parse(reader.GetString(isLoots ? 5 : 4))
+            };
+
+            if (isLoots)
+                product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
+
+            products.Add(product);
         }
         return products;
     }
 
-    public async Task<Product?> FindAsync(string barcode)
+    public async Task<Product?> FindAsync(string barcode, InventoryMode mode = InventoryMode.Standard, string? boxId = null)
     {
+        string table = GetTableName(mode);
+        bool isLoots = mode == InventoryMode.Loots;
+
         using var cmd = _connection.CreateCommand();
-        cmd.CommandText = "SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM Products WHERE Barcode=$b";
+        cmd.CommandText = isLoots
+             ? $"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM {table} WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)"
+             : $"SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM {table} WHERE Barcode=$b";
+
         cmd.Parameters.AddWithValue("$b", barcode);
+
+        if (isLoots)
+            cmd.Parameters.AddWithValue("$box", boxId ?? (object)DBNull.Value);
+
         using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            return new Product
+            var product = new Product
             {
                 Barcode = reader.GetString(0),
-                InitialQuantity = reader.GetInt32(1),
-                ScannedQuantity = reader.GetInt32(2),
-                CreatedAt = DateTime.Parse(reader.GetString(3)),
-                UpdatedAt = DateTime.Parse(reader.GetString(4))
+                InitialQuantity = reader.GetInt32(isLoots ? 2 : 1),
+                ScannedQuantity = reader.GetInt32(isLoots ? 3 : 2),
+                CreatedAt = DateTime.Parse(reader.GetString(isLoots ? 4 : 3)),
+                UpdatedAt = DateTime.Parse(reader.GetString(isLoots ? 5 : 4))
             };
+
+            if (isLoots)
+                product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
+
+            return product;
         }
         return null;
     }
 
-    public async Task AddAsync(Product product)
+    public async Task AddAsync(Product product, InventoryMode mode = InventoryMode.Standard)
     {
+        string table = GetTableName(mode);
+        bool isLoots = mode == InventoryMode.Loots;
+
         using var cmd = _connection.CreateCommand();
-        cmd.CommandText = @"
-            INSERT INTO Products (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
-            VALUES ($b, $i, $s, $c, $u)";
+
+        cmd.CommandText = isLoots
+            ? $@"
+                INSERT INTO {table} 
+                (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+                VALUES ($b, $box, $i, $s, $c, $u)"
+            : $@"
+                INSERT INTO {table} 
+                (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+                VALUES ($b, $i, $s, $c, $u)";
+
         cmd.Parameters.AddWithValue("$b", product.Barcode);
+        if (isLoots)
+            cmd.Parameters.AddWithValue("$box", product.Box_Id is null ? DBNull.Value : product.Box_Id);
         cmd.Parameters.AddWithValue("$i", product.InitialQuantity);
         cmd.Parameters.AddWithValue("$s", product.ScannedQuantity);
         cmd.Parameters.AddWithValue("$c", product.CreatedAt.ToString("o"));
         cmd.Parameters.AddWithValue("$u", product.UpdatedAt.ToString("o"));
+
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public async Task UpdateAsync(Product product)
+    public async Task UpdateAsync(Product product, InventoryMode mode = InventoryMode.Standard)
     {
+        string table = GetTableName(mode);
+        bool isLoots = mode == InventoryMode.Loots;
+
         using var cmd = _connection.CreateCommand();
-        cmd.CommandText = @"
-            UPDATE Products 
-            SET ScannedQuantity=$s, UpdatedAt=$u
-            WHERE Barcode=$b";
+
+        cmd.CommandText = isLoots
+            ? $@"
+                UPDATE {table}
+                SET ScannedQuantity=$s, UpdatedAt=$u
+                WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)"
+            : $@"
+                UPDATE {table}
+                SET ScannedQuantity=$s, UpdatedAt=$u
+                WHERE Barcode=$b";
+
         cmd.Parameters.AddWithValue("$s", product.ScannedQuantity);
         cmd.Parameters.AddWithValue("$u", product.UpdatedAt.ToString("o"));
         cmd.Parameters.AddWithValue("$b", product.Barcode);
+
+        if (isLoots)
+            cmd.Parameters.AddWithValue("$box", product.Box_Id is null ? DBNull.Value : product.Box_Id);
+
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public (int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes) GetInventoryStats()
+    public (int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes) GetInventoryStats(InventoryMode mode = InventoryMode.Standard)
     {
+        string table = GetTableName(mode);
+
         using var cmd = _connection.CreateCommand();
-        cmd.CommandText = @"
-        SELECT 
-            SUM(InitialQuantity), 
-            SUM(ScannedQuantity),
-            COUNT(*) AS TotalBarcodes,
-            SUM(CASE WHEN ScannedQuantity > 0 THEN 1 ELSE 0 END) AS ScannedBarcodes
-        FROM Products;";
+        cmd.CommandText = $@"
+            SELECT 
+                SUM(InitialQuantity), 
+                SUM(ScannedQuantity),
+                COUNT(*) AS TotalBarcodes,
+                SUM(CASE WHEN ScannedQuantity > 0 THEN 1 ELSE 0 END) AS ScannedBarcodes
+            FROM {table};";
 
         using var reader = cmd.ExecuteReader();
 
@@ -109,5 +175,4 @@ public class ProductRepository : IProductRepository
 
         return (0, 0, 0, 0);
     }
-
 }

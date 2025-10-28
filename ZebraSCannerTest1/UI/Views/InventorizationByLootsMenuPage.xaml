@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ZebraSCannerTest1.UI.Views.InventorizationByLootsMenuPage"
+             xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views">
+    <Grid RowDefinitions="*,*,*,*,*"
+          VerticalOptions="FillAndExpand"
+          HorizontalOptions="Center">
+
+        <Button Grid.Row="0"
+            Text="CONTINUE"
+            FontSize="20"
+            BackgroundColor="MediumSeaGreen"
+            TextColor="White"
+            WidthRequest="200"
+            HeightRequest="60"
+            Command="{Binding NavigateToContinueCommand}"/>
+
+        <Button Grid.Row="1"
+            Text="RESULT"
+            FontSize="20"
+            BackgroundColor="LightGrey"
+            TextColor="White"
+            WidthRequest="200"
+            HeightRequest="60"
+            Command="{Binding NavigateToResultCommand}"/>
+
+        <Button Grid.Row="2"
+             Text="EXPORT"
+             FontSize="20"
+             BackgroundColor="CadetBlue"
+             TextColor="White"
+             WidthRequest="200"
+             HeightRequest="60"
+             Command="{Binding ExportLootsCommand}"/>
+
+        <Button Grid.Row="3"
+             Text="IMPORT"
+             FontSize="20"
+             BackgroundColor="#FFC107"
+             TextColor="White"
+             WidthRequest="200"
+             HeightRequest="60"
+             Command="{Binding ImportLootsCommand}"/>
+
+        <Button Grid.Row="4"
+            Text="CLEAR"
+             FontSize="20"
+             BackgroundColor="IndianRed"
+             TextColor="White"
+             WidthRequest="200"
+             HeightRequest="60"
+             Command="{Binding ClearResultCommand}"/>
+
+    </Grid>
+</ContentPage>

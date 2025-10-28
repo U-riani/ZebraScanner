@@ -1,10 +1,14 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Maui.Views;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.Sqlite;
+using Microsoft.Maui.Controls;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Core.Services;
+using ZebraSCannerTest1.UI.Helpers;
+using ZebraSCannerTest1.UI.Views;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
@@ -37,6 +41,7 @@ public partial class LogsViewModel : ObservableObject
 
     public ObservableCollection<LogSlot> Slots { get; } =
         new(Enumerable.Range(0, PageSize).Select(_ => new LogSlot()));
+
 
     public LogsViewModel(SqliteConnection conn, LogBufferService logBuffer, ClipboardService clipboard)
     {
@@ -288,6 +293,25 @@ public partial class LogsViewModel : ObservableObject
     {
         await _clipboard.CopyAsync(barcode);
     }
+
+    [RelayCommand]
+    private async Task ShowFullSectionText(string section)
+    {
+        if (string.IsNullOrWhiteSpace(section))
+            return;
+
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            var popup = new SectionPopup(section);
+
+            Shell.Current.CurrentPage.ShowPopup(popup);
+
+            popup.PopupFrame.Scale = 0.8;
+            popup.PopupFrame.FadeTo(1, 150, Easing.CubicIn);
+            popup.PopupFrame.ScaleTo(1, 150, Easing.CubicOut);
+        });
+    }
+
 
     public async Task InitializeAsync()
     {

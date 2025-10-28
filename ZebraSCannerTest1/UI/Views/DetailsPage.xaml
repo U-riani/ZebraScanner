@@ -30,7 +30,7 @@
                 <Label Text="BARCODE" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
                 <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
                 <Label Text="{Binding ProductBarcode}" VerticalTextAlignment="Center"
-                       TextColor="Black" FontSize="20" >
+                       TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" >
                     <Label.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}" 
                                               CommandParameter="{Binding ProductBarcode}" />
@@ -118,13 +118,13 @@
                     <DataTemplate x:DataType="models:ScanLog">
                         <Grid Padding="4" Margin="0,0,0,2" ColumnDefinitions="2*,*,*,*,*,*"
                               BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}" >
-                            <Label VerticalTextAlignment="Center" Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="Black"/>
+                            <Label VerticalTextAlignment="Center" Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="1" Text="{Binding Was}" 
-                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="2" Text="{Binding IncrementBy}" 
-                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="3" Text="{Binding IsValue}" 
-                                HorizontalTextAlignment="Center" FontSize="14" TextColor="Black"/>
+                                HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="4" Text="{Binding Section, FallbackValue='(none)'}"
                                 HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="5" 

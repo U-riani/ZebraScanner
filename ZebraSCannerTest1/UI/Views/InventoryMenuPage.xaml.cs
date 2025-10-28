@@ -9,11 +9,16 @@ public partial class InventoryMenuPage : ContentPage
 
     private async void OnLootsClicked(object sender, EventArgs e)
     {
-        await DisplayAlert("Coming soon", "LOOTS feature is under construction.", "OK");
+        await Shell.Current.GoToAsync(nameof(InventorizationByLootsMenuPage));
     }
 
     private async void OnBarcodesClicked(object sender, EventArgs e)
     {
         await Shell.Current.GoToAsync(nameof(InventorizationPage));
+    }
+
+    private async void OnCombosClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.DisplayAlert(null, "Will be added soon", "Cancel");
     }
 }

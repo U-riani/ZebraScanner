@@ -15,6 +15,8 @@ namespace ZebraSCannerTest1.Core.Models
         private string? _size;
         private string? _price;
         private string? _articCode;
+        private string? _boxId;
+
 
         public string? Barcode { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -72,6 +74,12 @@ namespace ZebraSCannerTest1.Core.Models
         {
             get => _articCode;
             set { _articCode = value; OnPropertyChanged(); }
+        }
+
+        public string? Box_Id
+        {
+            get => _boxId;
+            set { _boxId = value; OnPropertyChanged(); }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

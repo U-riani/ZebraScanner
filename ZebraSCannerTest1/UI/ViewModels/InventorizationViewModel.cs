@@ -26,8 +26,11 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
     private readonly ZebraSCannerTest1.UI.Services.PopupService _popup;
     private readonly IScanningService _scanningService;
 
+    private bool _importLocked = false;
+
     [ObservableProperty]
     private string currentSection = Preferences.Get("CurrentSection", string.Empty);
+
 
 
     public const int SlotCount = 8;
@@ -37,6 +40,8 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool isManualEntryVisible = true;
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private bool isNavigating;
+    [ObservableProperty] private string lastScannedBarcode = string.Empty;
+
 
     public ObservableCollection<ProductSlot> Slots { get; } =
         new(Enumerable.Range(0, SlotCount).Select(_ => new ProductSlot()));
@@ -82,7 +87,7 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
 
         GoToLogsCommand = new AsyncRelayCommand(() =>
             NavigateSafelyAsync(() => _navigation.NavigateToAsync(nameof(LogsPage)))); GoToScannedProductsCommand = new AsyncRelayCommand(() => _navigation.NavigateToAsync(nameof(ScannedProductsPage)));
-        
+
         GoToScannedProductsCommand = new AsyncRelayCommand(() =>
             NavigateSafelyAsync(() => _navigation.NavigateToAsync(nameof(ScannedProductsPage))));
 
@@ -119,6 +124,9 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
 
         _scanningService.Enqueue(scannedBarcode.Trim());
         CurrentBarcode = scannedBarcode.Trim();
+
+        LastScannedBarcode = scannedBarcode;
+
         return Task.CompletedTask;
     }
 
@@ -127,9 +135,23 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
     // === Import with Progress Popup ===
     private async Task OnImportDataAsync()
     {
+        var confirm = await Shell.Current.DisplayAlert(
+            "Import data?",
+            "This will overwrite current data. Continue?",
+            "Yes", "Cancel");
+
+        if (!confirm)
+            return;
+
+        if (_importLocked)
+            return;
+
+        _importLocked = true;
+
         bool popupOpened = false;
         try
         {
+
             var result = await FilePicker.PickAsync(new PickOptions
             {
                 PickerTitle = "Select File to Import",
@@ -196,6 +218,8 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
         }
         finally
         {
+            await Task.Delay(500); // slight cooldown
+            _importLocked = false;
             if (popupOpened)
                 await MainThread.InvokeOnMainThreadAsync(() => _popup.Close());
         }

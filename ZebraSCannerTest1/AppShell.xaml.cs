@@ -18,6 +18,8 @@ namespace ZebraSCannerTest1
             Routing.RegisterRoute(nameof(ScannedProductsPage), typeof(ScannedProductsPage));
             Routing.RegisterRoute(nameof(LogsPage), typeof(LogsPage));
             Routing.RegisterRoute(nameof(DetailsPage), typeof(DetailsPage));
+            Routing.RegisterRoute(nameof(InventorizationByLootsMenuPage), typeof(InventorizationByLootsMenuPage));
+            Routing.RegisterRoute(nameof(InventorizationByLootsPage), typeof(InventorizationByLootsPage));
 
             BindingContext = vm;
         }

@@ -17,7 +17,7 @@ namespace ZebraSCannerTest1.Core.Services
         private readonly IScanLogRepository _logs;
         private readonly IDialogService _dialogs;
         private readonly ILoggerService<ScanningService> _logger;
-        private readonly string _currentSection = Preferences.Get("CurrentSection", string.Empty);
+        private string CurrentSection => Preferences.Get("CurrentSection", string.Empty);
 
         private readonly BlockingCollection<string> _scanQueue = new();
         private Task? _processingTask;
@@ -128,7 +128,7 @@ namespace ZebraSCannerTest1.Core.Services
                 IncrementBy = 1,
                 IsValue = 1,
                 UpdatedAt = DateTime.UtcNow,
-                Section = _currentSection
+                Section = CurrentSection
             });
 
             _logger.Info($"New product added: {barcode}");
@@ -148,7 +148,7 @@ namespace ZebraSCannerTest1.Core.Services
                 IncrementBy = 1,
                 IsValue = product.ScannedQuantity,
                 UpdatedAt = DateTime.UtcNow,
-                Section = _currentSection
+                Section = CurrentSection
             });
 
             _logger.Info($"Product scanned: {product.Barcode}");

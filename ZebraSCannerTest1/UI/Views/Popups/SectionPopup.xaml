@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="ZebraSCannerTest1.UI.Views.SectionPopup"
+    Color="Transparent"
+    CanBeDismissedByTappingOutsideOfPopup="True">
+
+    <Frame
+        x:FieldModifier="public"
+        x:Name="PopupFrame"
+        BackgroundColor="{AppThemeBinding Light=#F9F9F9, Dark=#2C2C2C}"
+        BorderColor="{AppThemeBinding Light=#CCCCCC, Dark=#555555}"
+        CornerRadius="6"
+        Padding="6"
+        HasShadow="False">
+
+        <Label
+            FontSize="14"
+            Text="{Binding SectionText}"
+            TextColor="{AppThemeBinding Light=Black, Dark=White}"
+            HorizontalTextAlignment="Center"
+            VerticalTextAlignment="Center"
+            WidthRequest="250"
+            HeightRequest="50">
+            <Label.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnLabelTapped"/>
+            </Label.GestureRecognizers>
+        </Label>
+    </Frame>
+</toolkit:Popup>
