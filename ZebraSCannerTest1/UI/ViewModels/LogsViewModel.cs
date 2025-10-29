@@ -56,49 +56,58 @@ public partial class LogsViewModel : ObservableObject
         string whereClause = "";
         var cmd = _conn.CreateCommand();
 
-        // --- FILTER HANDLING ---
+        // --- BASE CLAUSE ---
+        List<string> conditions = new();
+
+        // Loots filter base condition
         if (Mode == InventoryMode.Loots && !string.IsNullOrWhiteSpace(BoxId))
         {
-            whereClause = "WHERE Section = $boxId";
+            conditions.Add("Section = $boxId");
             cmd.Parameters.AddWithValue("$boxId", BoxId);
         }
-        else if (!string.IsNullOrEmpty(_currentFilter))
+
+        // Apply filters (can combine with Loots condition)
+        if (!string.IsNullOrEmpty(_currentFilter))
         {
-        if (_currentFilter == "MANUAL")
-        {
-            whereClause = "WHERE IsManual = 1";
-        }
-        else if (_currentFilter == "SCANNED")
-        {
-            whereClause = "WHERE IsManual IS NULL";
-        }
-        else if (_currentFilter.StartsWith("TIME:"))
-        {
-            if (int.TryParse(_currentFilter.Split(':')[1], out int minutes))
+            if (_currentFilter == "MANUAL")
             {
-                DateTime cutoff = DateTime.UtcNow.AddMinutes(-minutes);
-                whereClause = "WHERE UpdatedAt >= $cutoff";
-                cmd.Parameters.AddWithValue("$cutoff", cutoff.ToString("o"));
+                conditions.Add("IsManual = 1");
+            }
+            else if (_currentFilter == "SCANNED")
+            {
+                conditions.Add("IsManual IS NULL");
+            }
+            else if (_currentFilter.StartsWith("TIME:"))
+            {
+                if (int.TryParse(_currentFilter.Split(':')[1], out int minutes))
+                {
+                    DateTime cutoff = DateTime.UtcNow.AddMinutes(-minutes);
+                    conditions.Add("UpdatedAt >= $cutoff");
+                    cmd.Parameters.AddWithValue("$cutoff", cutoff.ToString("o"));
+                }
+            }
+            else if (_currentFilter.StartsWith("SECTION:"))
+            {
+                string sectionName = _currentFilter.Substring("SECTION:".Length);
+                conditions.Add("Section = $section");
+                cmd.Parameters.AddWithValue("$section", sectionName);
+            }
+            else if (_currentFilter == "SECTION_NULL")
+            {
+                conditions.Add("(Section IS NULL OR TRIM(Section) = '')");
+            }
+            else
+            {
+                conditions.Add("Barcode LIKE $filter");
+                cmd.Parameters.AddWithValue("$filter", $"%{_currentFilter}%");
             }
         }
-        else if (_currentFilter.StartsWith("SECTION:"))
-        {
-            string sectionName = _currentFilter.Substring("SECTION:".Length);
-            whereClause = "WHERE Section = $section";
-            cmd.Parameters.AddWithValue("$section", sectionName);
-        }
-        else if (_currentFilter == "SECTION_NULL")
-        {
-            whereClause = "WHERE Section IS NULL OR TRIM(Section) = ''";
-        }
-        else if (!string.IsNullOrEmpty(_currentFilter))
-        {
-            whereClause = "WHERE Barcode LIKE $filter";
-            cmd.Parameters.AddWithValue("$filter", $"%{_currentFilter}%");
-        }
 
-        }
+        // Combine all filters into one WHERE
+        if (conditions.Count > 0)
+            whereClause = "WHERE " + string.Join(" AND ", conditions);
 
+        // COUNT + QUERY as before
         int totalCount = 0;
         using (var countCmd = _conn.CreateCommand())
         {
@@ -112,14 +121,15 @@ public partial class LogsViewModel : ObservableObject
         CurrentPage = Math.Clamp(page, 1, TotalPages);
 
         cmd.CommandText = $@"
-                SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section
-                FROM ScanLogs
-                {whereClause}
-                ORDER BY UpdatedAt DESC
-                LIMIT $limit OFFSET $offset";
+        SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section
+        FROM ScanLogs
+        {whereClause}
+        ORDER BY UpdatedAt DESC
+        LIMIT $limit OFFSET $offset";
 
         cmd.Parameters.AddWithValue("$limit", PageSize);
         cmd.Parameters.AddWithValue("$offset", (CurrentPage - 1) * PageSize);
+
 
         var rows = new List<ScanLog>();
         using (var r = cmd.ExecuteReader())
