@@ -10,6 +10,7 @@
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:ManualToColorConverter x:Key="ManualToColor"/>
+            <converters:InventoryModeToHeaderConverter x:Key="InventoryModeToHeaderConverter"/>
         </ResourceDictionary>
     </ContentPage.Resources>
 
@@ -28,7 +29,11 @@
             <Label Text="was" Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Text="IncBy" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Text="Is" Grid.Column="3" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Text="Sctin" Grid.Column="4" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            <Label Text="{Binding Mode, Converter={StaticResource InventoryModeToHeaderConverter}}" 
+               Grid.Column="4"
+               HorizontalTextAlignment="Center"
+               FontAttributes="Bold"
+               TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             <Label Text="Time" Grid.Column="5" HorizontalTextAlignment="End" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
         </Grid>
 

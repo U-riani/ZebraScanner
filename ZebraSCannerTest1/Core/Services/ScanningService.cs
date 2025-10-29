@@ -143,8 +143,9 @@ namespace ZebraSCannerTest1.Core.Services
                 IncrementBy = 1,
                 IsValue = 1,
                 UpdatedAt = DateTime.UtcNow,
-                Section = CurrentSection
+                Section = _mode == InventoryMode.Loots ? _currentBoxId : CurrentSection
             });
+
 
             _logger.Info($"New product added ({_mode}) {barcode}");
             WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
@@ -164,8 +165,9 @@ namespace ZebraSCannerTest1.Core.Services
                 IncrementBy = 1,
                 IsValue = product.ScannedQuantity,
                 UpdatedAt = DateTime.UtcNow,
-                Section = CurrentSection
+                Section = _mode == InventoryMode.Loots ? _currentBoxId : CurrentSection
             });
+
 
             _logger.Info($"Product scanned ({_mode}) {product.Barcode}");
             WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));

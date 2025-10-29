@@ -60,7 +60,12 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         ExportDataCommand = new AsyncRelayCommand(ExportDataAsync);
         ShowResultsCommand = new AsyncRelayCommand(ShowResultsAsync);
         GoToLogsCommand = new AsyncRelayCommand(() =>
-            _navigation.NavigateToAsync(nameof(LogsPage)));
+            _navigation.NavigateToAsync(nameof(LogsPage), new Dictionary<string, object>
+            {
+                ["Mode"] = InventoryMode.Loots,
+                ["BoxId"] = CurrentBoxId
+            }));
+
 
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadRecentAsync());
