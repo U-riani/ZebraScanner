@@ -58,6 +58,46 @@ public class ProductRepository : IProductRepository
         return products;
     }
 
+    public async Task<IEnumerable<Product>> GetByBoxAsync(string boxId, InventoryMode mode = InventoryMode.Standard)
+    {
+        var products = new List<Product>();
+        string table = GetTableName(mode);
+        bool isLoots = mode == InventoryMode.Loots;
+
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = isLoots
+            ? $@"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
+              FROM {table}
+              WHERE Box_Id = $box
+              ORDER BY UpdatedAt DESC"
+            : $@"SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
+              FROM {table}
+              ORDER BY UpdatedAt DESC"; // For non-loots mode, just ignore the box
+
+        cmd.Parameters.AddWithValue("$box", boxId);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var product = new Product
+            {
+                Barcode = reader.GetString(0),
+                InitialQuantity = reader.GetInt32(isLoots ? 2 : 1),
+                ScannedQuantity = reader.GetInt32(isLoots ? 3 : 2),
+                CreatedAt = DateTime.Parse(reader.GetString(isLoots ? 4 : 3)),
+                UpdatedAt = DateTime.Parse(reader.GetString(isLoots ? 5 : 4))
+            };
+
+            if (isLoots)
+                product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
+
+            products.Add(product);
+        }
+
+        return products;
+    }
+
+
     public async Task<Product?> FindAsync(string barcode, InventoryMode mode = InventoryMode.Standard, string? boxId = null)
     {
         string table = GetTableName(mode);

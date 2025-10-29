@@ -76,6 +76,18 @@ namespace ZebraSCannerTest1.Core.Services
             }
         }
 
+        public async Task<IEnumerable<Product>> GetProductsByBoxAsync(string boxId, InventoryMode mode = InventoryMode.Standard)
+        {
+            try
+            {
+                return await _repository.GetByBoxAsync(boxId, mode);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Failed to load products by box", ex);
+                return Array.Empty<Product>();
+            }
+        }
 
     }
 }

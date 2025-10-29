@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using System.Text.Json;
 using ZebraSCannerTest1.Core.Dtos;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Data;
 
@@ -21,9 +22,9 @@ namespace ZebraSCannerTest1.Core.Services
         }
 
         // ✅ Import Excel (already uses MiniExcel)
-        public async Task ImportExcelAsync(Stream stream, string? fileName = null)
+        public async Task ImportExcelAsync(Stream stream, InventoryMode mode = InventoryMode.Standard, string? fileName = null)
         {
-            await _excelImport.ImportExcelAsync(stream, fileName);
+            await _excelImport.ImportExcelAsync(stream, mode, fileName);
         }
 
 
@@ -64,73 +65,85 @@ namespace ZebraSCannerTest1.Core.Services
                 throw new Exception($"Failed to import DB: {ex.Message}", ex);
             }
 
-            // ✅ Ensure all required tables exist (including new ScanLogs schema)
-            using (var cmd = _conn.CreateCommand())
-            {
-                cmd.CommandText = @"
-                    CREATE TABLE IF NOT EXISTS Products (
-                        Barcode TEXT PRIMARY KEY,
-                        InitialQuantity INTEGER NOT NULL DEFAULT 0,
-                        ScannedQuantity INTEGER NOT NULL DEFAULT 0,
-                        CreatedAt TEXT NOT NULL,
-                        UpdatedAt TEXT NOT NULL,
-                        Name TEXT,
-                        Color TEXT,
-                        Size TEXT,
-                        Price TEXT,
-                        ArticCode TEXT
-                    );
+            //// ✅ Ensure all required tables exist (including new ScanLogs schema)
+            //using (var cmd = _conn.CreateCommand())
+            //{
+            //    cmd.CommandText = @"
+            //        CREATE TABLE IF NOT EXISTS Products (
+            //            Barcode TEXT PRIMARY KEY,
+            //            InitialQuantity INTEGER NOT NULL DEFAULT 0,
+            //            ScannedQuantity INTEGER NOT NULL DEFAULT 0,
+            //            CreatedAt TEXT NOT NULL,
+            //            UpdatedAt TEXT NOT NULL,
+            //            Name TEXT,
+            //            Color TEXT,
+            //            Size TEXT,
+            //            Price TEXT,
+            //            ArticCode TEXT
+            //        );
 
-                    CREATE TABLE IF NOT EXISTS ScanLogs (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Barcode TEXT NOT NULL,
-                        Was INTEGER NOT NULL DEFAULT 0,
-                        IncrementBy INTEGER NOT NULL DEFAULT 1,
-                        IsValue INTEGER NOT NULL DEFAULT 0,
-                        UpdatedAt TEXT NOT NULL,
-                        IsManual INTEGER NULL,
-                        Section TEXT NULL
-                    );
+            //        CREATE TABLE IF NOT EXISTS ScanLogs (
+            //            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            //            Barcode TEXT NOT NULL,
+            //            Was INTEGER NOT NULL DEFAULT 0,
+            //            IncrementBy INTEGER NOT NULL DEFAULT 1,
+            //            IsValue INTEGER NOT NULL DEFAULT 0,
+            //            UpdatedAt TEXT NOT NULL,
+            //            IsManual INTEGER NULL,
+            //            Section TEXT NULL
+            //        );
 
-                    CREATE TABLE IF NOT EXISTS ScannedProducts (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Barcode TEXT NOT NULL,
-                        Quantity INTEGER NOT NULL,
-                        InitialQuantity INTEGER NOT NULL DEFAULT 0,
-                        CreatedAt TEXT NOT NULL,
-                        UpdatedAt TEXT NOT NULL,
-                        Name TEXT,
-                        Color TEXT,
-                        Size TEXT,
-                        Price TEXT,
-                        ArticCode TEXT
-                    );
-                    ";
-                cmd.ExecuteNonQuery();
-            }
+            //        CREATE TABLE IF NOT EXISTS ScannedProducts (
+            //            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            //            Barcode TEXT NOT NULL,
+            //            Quantity INTEGER NOT NULL,
+            //            InitialQuantity INTEGER NOT NULL DEFAULT 0,
+            //            CreatedAt TEXT NOT NULL,
+            //            UpdatedAt TEXT NOT NULL,
+            //            Name TEXT,
+            //            Color TEXT,
+            //            Size TEXT,
+            //            Price TEXT,
+            //            ArticCode TEXT
+            //        );
+            //        ";
+            //    cmd.ExecuteNonQuery();
+            //}
 
-            // 🧩 Optional migration if old ScanLogs schema exists
-            try
-            {
-                using var alter = _conn.CreateCommand();
-                alter.CommandText = @"
-                ALTER TABLE ScanLogs ADD COLUMN Was INTEGER DEFAULT 0;
-                ALTER TABLE ScanLogs ADD COLUMN IncrementBy INTEGER DEFAULT 0;
-                ALTER TABLE ScanLogs ADD COLUMN IsValue INTEGER DEFAULT 0;
-                ALTER TABLE ScanLogs ADD COLUMN UpdatedAt TEXT DEFAULT '';
-                ALTER TABLE ScanLogs ADD COLUMN IsManual INTEGER DEFAULT null;
-                ";
-                alter.ExecuteNonQuery();
-            }
-            catch
-            {
-                // Ignore errors if columns already exist
-            }
+            //// 🧩 Optional migration if old ScanLogs schema exists
+            //try
+            //{
+            //    using var alter = _conn.CreateCommand();
+            //    alter.CommandText = @"
+            //    ALTER TABLE ScanLogs ADD COLUMN Was INTEGER DEFAULT 0;
+            //    ALTER TABLE ScanLogs ADD COLUMN IncrementBy INTEGER DEFAULT 0;
+            //    ALTER TABLE ScanLogs ADD COLUMN IsValue INTEGER DEFAULT 0;
+            //    ALTER TABLE ScanLogs ADD COLUMN UpdatedAt TEXT DEFAULT '';
+            //    ALTER TABLE ScanLogs ADD COLUMN IsManual INTEGER DEFAULT null;
+            //    ";
+            //    alter.ExecuteNonQuery();
+            //}
+            //catch
+            //{
+            //    // Ignore errors if columns already exist
+            //}
         }
 
         // ✅ Import JSON via Stream
-        public async Task<int> ImportJsonAsync(Stream jsonStream)
+        public async Task<int> ImportJsonAsync(Stream jsonStream, InventoryMode mode = InventoryMode.Standard)
         {
+            string table = mode == InventoryMode.Loots ? "LootsProducts" : "Products";
+            bool isLoots = mode == InventoryMode.Loots;
+
+            if (isLoots)
+            {
+                using var check = _conn.CreateCommand();
+                check.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='LootsProducts';";
+                var exists = check.ExecuteScalar() != null;
+                if (!exists)
+                    throw new InvalidOperationException("LootsProducts table not found. Please initialize database first.");
+            }
+
             using var reader = new StreamReader(jsonStream);
             var json = await reader.ReadToEndAsync();
 
@@ -143,13 +156,21 @@ namespace ZebraSCannerTest1.Core.Services
 
             using var tx = _conn.BeginTransaction();
             using var insert = _conn.CreateCommand();
-            insert.Transaction = tx;
-            insert.CommandText = @"
-                INSERT OR REPLACE INTO Products
-                (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
-                VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);";
 
+            insert.Transaction = tx;
+            insert.CommandText = isLoots
+                ? $@"
+                    INSERT OR REPLACE INTO {table}
+                    (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+                    VALUES ($barcode, $box, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);"
+                : $@"
+                    INSERT OR REPLACE INTO {table}
+                    (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+                    VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);";
+
+            // Add parameters
             insert.Parameters.Add("$barcode", SqliteType.Text);
+            insert.Parameters.Add("$box", SqliteType.Text);
             insert.Parameters.Add("$initial", SqliteType.Integer);
             insert.Parameters.Add("$scanned", SqliteType.Integer);
             insert.Parameters.Add("$created", SqliteType.Text);
@@ -163,28 +184,43 @@ namespace ZebraSCannerTest1.Core.Services
             int processed = 0;
             var now = DateTime.UtcNow.ToString("o");
 
-            foreach (var p in items)
+            try
             {
-                if (string.IsNullOrWhiteSpace(p.Barcode))
-                    continue;
+                foreach (var p in items)
+                {
+                    if (string.IsNullOrWhiteSpace(p.Barcode))
+                        continue;
 
-                insert.Parameters["$barcode"].Value = p.Barcode.Trim();
-                insert.Parameters["$initial"].Value = p.InitialQuantity;
-                insert.Parameters["$scanned"].Value = p.ScannedQuantity;
-                insert.Parameters["$created"].Value = string.IsNullOrWhiteSpace(p.CreatedAt) ? now : p.CreatedAt;
-                insert.Parameters["$updated"].Value = string.IsNullOrWhiteSpace(p.UpdatedAt) ? now : p.UpdatedAt;
-                insert.Parameters["$name"].Value = p.Name ?? "";
-                insert.Parameters["$color"].Value = p.Color ?? "";
-                insert.Parameters["$size"].Value = p.Size ?? "";
-                insert.Parameters["$price"].Value = p.Price ?? "";
-                insert.Parameters["$artic"].Value = p.ArticCode ?? "";
+                    insert.Parameters["$barcode"].Value = p.Barcode.Trim();
+                    insert.Parameters["$initial"].Value = p.InitialQuantity;
+                    insert.Parameters["$scanned"].Value = p.ScannedQuantity;
+                    insert.Parameters["$created"].Value = string.IsNullOrWhiteSpace(p.CreatedAt) ? now : p.CreatedAt;
+                    insert.Parameters["$updated"].Value = string.IsNullOrWhiteSpace(p.UpdatedAt) ? now : p.UpdatedAt;
+                    insert.Parameters["$name"].Value = p.Name ?? "";
+                    insert.Parameters["$color"].Value = p.Color ?? "";
+                    insert.Parameters["$size"].Value = p.Size ?? "";
+                    insert.Parameters["$price"].Value = p.Price ?? "";
+                    insert.Parameters["$artic"].Value = p.ArticCode ?? "";
 
-                insert.ExecuteNonQuery();
-                processed++;
+                    if (isLoots)
+                    {
+                        insert.Parameters["$box"].Value =
+                            p.GetType().GetProperty("Box_Id")?.GetValue(p)?.ToString()?.Trim()
+                            ?? "UnknownBox";
+                    }
+
+                    insert.ExecuteNonQuery();
+                    processed++;
+                }
+
+                tx.Commit();
+            } catch (Exception ex)
+            {
+                tx.Rollback();
+                Console.WriteLine($"❌ JSON import failed after {processed} rows → {ex.Message}");
+                throw;
             }
-
-            tx.Commit();
-            Console.WriteLine($"[IMPORT] ✅ JSON import complete: {processed} rows");
+            Console.WriteLine($"[IMPORT] ✅ JSON import complete → {processed} rows ({mode})");
 
             return processed;
         }

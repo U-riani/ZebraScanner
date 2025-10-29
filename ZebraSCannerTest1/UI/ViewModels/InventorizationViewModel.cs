@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Helpers;
@@ -26,7 +27,11 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
     private readonly ZebraSCannerTest1.UI.Services.PopupService _popup;
     private readonly IScanningService _scanningService;
 
+
     private bool _importLocked = false;
+
+    [ObservableProperty]
+    private string? currentBoxId;
 
     [ObservableProperty]
     private string currentSection = Preferences.Get("CurrentSection", string.Empty);
@@ -178,13 +183,13 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
                     case ".xlsx":
                         await MainThread.InvokeOnMainThreadAsync(() =>
                             _popup.UpdateMessage("Importing Excel data..."));
-                        await _importer.ImportExcelAsync(stream, result.FileName);
+                        await _importer.ImportExcelAsync(stream, InventoryMode.Standard, result.FileName);
                         break;
 
                     case ".json":
                         await MainThread.InvokeOnMainThreadAsync(() =>
                             _popup.UpdateMessage("Importing JSON data..."));
-                        await _importer.ImportJsonAsync(stream);
+                        await _importer.ImportJsonAsync(stream, InventoryMode.Standard);
                         break;
 
                     case ".db":

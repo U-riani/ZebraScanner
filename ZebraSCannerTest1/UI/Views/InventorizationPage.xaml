@@ -22,8 +22,8 @@
             <Button Text="Imprt" Command="{Binding ImportDataCommand}" InputTransparent="False" />
             <Button Text="Stats" Command="{Binding GoToScannedProductsCommand}" />
             <Button Text="Logs" Command="{Binding GoToLogsCommand}" />
-            <Button Text="Rslt" Command="{Binding ShowResultsCommand}"/> 
-            
+            <Button Text="Rslt" Command="{Binding ShowResultsCommand}"/>
+
         </HorizontalStackLayout>
 
         <!-- Current scanned barcode big and obvious -->

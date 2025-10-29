@@ -4,6 +4,8 @@ using Microsoft.Maui.ApplicationModel;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Messages;
+using ZebraSCannerTest1.Core.Enums;
+
 
 #if ANDROID
 using Android.Media;
@@ -17,7 +19,11 @@ namespace ZebraSCannerTest1.Core.Services
         private readonly IScanLogRepository _logs;
         private readonly IDialogService _dialogs;
         private readonly ILoggerService<ScanningService> _logger;
+
         private string CurrentSection => Preferences.Get("CurrentSection", string.Empty);
+
+        private InventoryMode _mode = InventoryMode.Standard;
+        private string? _currentBoxId;
 
         private readonly BlockingCollection<string> _scanQueue = new();
         private Task? _processingTask;
@@ -38,6 +44,13 @@ namespace ZebraSCannerTest1.Core.Services
             _logs = logs;
             _dialogs = dialogs;
             _logger = logger;
+        }
+
+        public void SetMode(InventoryMode mode, string? boxId = null)
+        {
+            _mode = mode;
+            _currentBoxId = boxId;
+            _logger.Info($"ScanningService mode set → {_mode} (Box: {_currentBoxId ?? "none"})");
         }
 
         public void Enqueue(string barcode)
@@ -78,7 +91,7 @@ namespace ZebraSCannerTest1.Core.Services
         {
             try
             {
-                var product = await _products.FindAsync(barcode);
+                var product = await _products.FindAsync(barcode, _mode, _currentBoxId);
 
                 if (product == null)
                 {
@@ -105,7 +118,7 @@ namespace ZebraSCannerTest1.Core.Services
             }
             catch (Exception ex)
             {
-                _logger.Error("Error processing barcode", ex);
+                _logger.Error($"Error processing barcode [{barcode}] in {_mode} mode", ex);
             }
         }
 
@@ -114,13 +127,15 @@ namespace ZebraSCannerTest1.Core.Services
             var product = new Product
             {
                 Barcode = barcode,
+                Box_Id = _mode == InventoryMode.Loots ? _currentBoxId : null,
                 InitialQuantity = 0,
                 ScannedQuantity = 1,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            await _products.AddAsync(product);
+            await _products.AddAsync(product, _mode);
+
             await _logs.InsertAsync(new ScanLog
             {
                 Barcode = barcode,
@@ -131,7 +146,7 @@ namespace ZebraSCannerTest1.Core.Services
                 Section = CurrentSection
             });
 
-            _logger.Info($"New product added: {barcode}");
+            _logger.Info($"New product added ({_mode}) {barcode}");
             WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
         }
 
@@ -139,7 +154,8 @@ namespace ZebraSCannerTest1.Core.Services
         {
             product.ScannedQuantity++;
             product.UpdatedAt = DateTime.UtcNow;
-            await _products.UpdateAsync(product);
+
+            await _products.UpdateAsync(product, _mode);
 
             await _logs.InsertAsync(new ScanLog
             {
@@ -151,8 +167,9 @@ namespace ZebraSCannerTest1.Core.Services
                 Section = CurrentSection
             });
 
-            _logger.Info($"Product scanned: {product.Barcode}");
+            _logger.Info($"Product scanned ({_mode}) {product.Barcode}");
             WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
         }
+
     }
 }

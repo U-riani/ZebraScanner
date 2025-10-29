@@ -61,6 +61,9 @@ public static class MauiProgram
         builder.Services.AddTransient<ScannedProductsViewModel>();
         builder.Services.AddSingleton<ShellViewModel>();
         builder.Services.AddTransient<InventorizationByLootsMenuViewModel>();
+        builder.Services.AddTransient<InventorizationByLootsViewModel>();
+        builder.Services.AddTransient<LootsScanningViewModel>();
+
 
         // === Views ===
         builder.Services.AddSingleton<InventorizationPage>();
@@ -68,6 +71,9 @@ public static class MauiProgram
         builder.Services.AddTransient<LogsPage>();
         builder.Services.AddTransient<ScannedProductsPage>();
         builder.Services.AddTransient<InventorizationByLootsMenuPage>();
+        builder.Services.AddTransient<InventorizationByLootsPage>();
+        builder.Services.AddTransient<LootsScanningPage>();
+
 
         var app = builder.Build();
 

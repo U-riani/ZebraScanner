@@ -9,4 +9,6 @@ public class ExcelProductDto
     public string? Size { get; set; }
     public string? Price { get; set; }
     public string? ArticCode { get; set; }
+    public string? Box_Id { get; set; }
+
 }
