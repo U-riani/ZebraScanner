@@ -81,7 +81,9 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
         _popup = popup;
         _scanningService = scanningService;
 
+        _scanningService.SetMode(InventoryMode.Standard);
         _scanningService.StartAsync();
+
 
 
         AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);

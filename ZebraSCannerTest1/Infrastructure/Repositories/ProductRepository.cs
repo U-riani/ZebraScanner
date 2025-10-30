@@ -119,11 +119,12 @@ public class ProductRepository : IProductRepository
             var product = new Product
             {
                 Barcode = reader.GetString(0),
-                InitialQuantity = reader.GetInt32(isLoots ? 2 : 1),
-                ScannedQuantity = reader.GetInt32(isLoots ? 3 : 2),
+                InitialQuantity = Convert.ToInt32(reader.GetValue(isLoots ? 2 : 1)),
+                ScannedQuantity = Convert.ToInt32(reader.GetValue(isLoots ? 3 : 2)),
                 CreatedAt = DateTime.Parse(reader.GetString(isLoots ? 4 : 3)),
                 UpdatedAt = DateTime.Parse(reader.GetString(isLoots ? 5 : 4))
             };
+
 
             if (isLoots)
                 product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);

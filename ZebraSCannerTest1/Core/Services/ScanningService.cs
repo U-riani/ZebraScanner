@@ -138,13 +138,16 @@ namespace ZebraSCannerTest1.Core.Services
 
             await _logs.InsertAsync(new ScanLog
             {
-                Barcode = barcode,
-                Was = 0,
+                Barcode = product.Barcode,
+                Was = product.ScannedQuantity - 1,
                 IncrementBy = 1,
-                IsValue = 1,
+                IsValue = product.ScannedQuantity,
                 UpdatedAt = DateTime.UtcNow,
-                Section = _mode == InventoryMode.Loots ? _currentBoxId : CurrentSection
-            });
+                Box_Id = _currentBoxId, // <--- use this now
+                Section = CurrentSection
+            }, _mode);
+
+
 
 
             _logger.Info($"New product added ({_mode}) {barcode}");
@@ -165,8 +168,11 @@ namespace ZebraSCannerTest1.Core.Services
                 IncrementBy = 1,
                 IsValue = product.ScannedQuantity,
                 UpdatedAt = DateTime.UtcNow,
-                Section = _mode == InventoryMode.Loots ? _currentBoxId : CurrentSection
-            });
+                Box_Id = _currentBoxId, // <--- use this now
+                Section = CurrentSection
+            }, _mode);
+
+
 
 
             _logger.Info($"Product scanned ({_mode}) {product.Barcode}");

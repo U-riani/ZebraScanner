@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 
@@ -12,27 +13,53 @@ public class ScanLogRepository : IScanLogRepository
     {
         _connection = connection;
     }
+    private static string GetTable(InventoryMode mode)
+        => mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
 
-    public async Task InsertAsync(ScanLog log)
+
+    public async Task InsertAsync(ScanLog log, InventoryMode mode = InventoryMode.Standard)
     {
+        var table = GetTable(mode);
+
         using var cmd = _connection.CreateCommand();
-        cmd.CommandText = @"
-            INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section)
-            VALUES ($b, $w, $i, $v, $u, $s)";
+
+        if (mode == InventoryMode.Loots)
+        {
+            cmd.CommandText = $@"
+            INSERT INTO {table} (Barcode, Box_Id, Was, IncrementBy, IsValue, UpdatedAt, Section, IsManual)
+            VALUES ($b, $box, $w, $i, $v, $u, $s, $m)";
+            cmd.Parameters.AddWithValue("$box", log.Box_Id ?? (object)DBNull.Value);
+        }
+        else
+        {
+            cmd.CommandText = $@"
+            INSERT INTO {table} (Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section, IsManual)
+            VALUES ($b, $w, $i, $v, $u, $s, $m)";
+        }
+
         cmd.Parameters.AddWithValue("$b", log.Barcode);
         cmd.Parameters.AddWithValue("$w", log.Was);
         cmd.Parameters.AddWithValue("$i", log.IncrementBy);
         cmd.Parameters.AddWithValue("$v", log.IsValue);
         cmd.Parameters.AddWithValue("$u", log.UpdatedAt.ToString("o"));
         cmd.Parameters.AddWithValue("$s", log.Section ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue("$m", log.IsManual ?? (object)DBNull.Value);
+
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public async Task<IEnumerable<ScanLog>> GetByBarcodeAsync(string barcode)
+
+    public async Task<IEnumerable<ScanLog>> GetByBarcodeAsync(string barcode, InventoryMode mode = InventoryMode.Standard)
     {
         var logs = new List<ScanLog>();
+        var table = GetTable(mode);
+
         using var cmd = _connection.CreateCommand();
-        cmd.CommandText = "SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section FROM ScanLogs WHERE Barcode=$b ORDER BY UpdatedAt DESC";
+        cmd.CommandText = $@"
+            SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section
+            FROM {table}
+            WHERE Barcode=$b
+            ORDER BY UpdatedAt DESC";
         cmd.Parameters.AddWithValue("$b", barcode);
 
         using var reader = await cmd.ExecuteReaderAsync();
@@ -45,9 +72,19 @@ public class ScanLogRepository : IScanLogRepository
                 IncrementBy = reader.GetInt32(2),
                 IsValue = reader.GetInt32(3),
                 UpdatedAt = DateTime.Parse(reader.GetString(4)),
-                Section = reader.IsDBNull(5) ? null : reader.GetString(5)
+                IsManual = reader.IsDBNull(5) ? null : reader.GetInt32(5),
+                Section = reader.IsDBNull(6) ? null : reader.GetString(6)
             });
         }
         return logs;
     }
+
+    public async Task ClearAsync(InventoryMode mode = InventoryMode.Standard)
+    {
+        var table = GetTable(mode);
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = $"DELETE FROM {table}";
+        await cmd.ExecuteNonQueryAsync();
+    }
 }
+

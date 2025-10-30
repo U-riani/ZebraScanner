@@ -77,12 +77,12 @@
                        TextColor="{AppThemeBinding Dark=white, Light=black}"/>
 
                             <Label Grid.Column="4"
-                       Text="{Binding Section}"
-                       HorizontalTextAlignment="Center"
-                       VerticalTextAlignment="Center"
-                       MaxLines="1"
-                       LineBreakMode="TailTruncation"
-                       TextColor="{AppThemeBinding Dark=white, Light=black}">
+                                Text="{Binding Section}"
+                               HorizontalTextAlignment="Center"
+                               VerticalTextAlignment="Center"
+                               MaxLines="1"
+                               LineBreakMode="TailTruncation"
+                               TextColor="{AppThemeBinding Dark=white, Light=black}">   
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.ShowFullSectionTextCommand}"
                                               CommandParameter="{Binding Section}" />

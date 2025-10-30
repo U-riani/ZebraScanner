@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Models;
 
 namespace ZebraSCannerTest1.Core.Services
@@ -10,10 +11,17 @@ namespace ZebraSCannerTest1.Core.Services
         private readonly object _lock = new();
         private readonly Timer _timer;
 
+        private InventoryMode _mode = InventoryMode.Standard;
+
         public LogBufferService(SqliteConnection conn)
         {
             _conn = conn;
-            _timer = new Timer(_ => Flush(), null, 2000, 2000);
+            _timer = new Timer(_ => Flush(_mode), null, 2000, 2000);
+        }
+
+        public void SetMode(InventoryMode mode)
+        {
+            _mode = mode;
         }
 
         public void AddLog(ScanLog log)
@@ -24,7 +32,7 @@ namespace ZebraSCannerTest1.Core.Services
             }
         }
 
-        public void Flush()
+        public void Flush(InventoryMode mode = InventoryMode.Standard)
         {
             List<ScanLog> toWrite;
             lock (_lock)
@@ -34,11 +42,13 @@ namespace ZebraSCannerTest1.Core.Services
                 _buffer.Clear();
             }
 
+            var table = mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
+
             using var tx = _conn.BeginTransaction();
             using var cmd = _conn.CreateCommand();
             cmd.Transaction = tx;
-            cmd.CommandText = @"
-                INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section)
+            cmd.CommandText = $@"
+                INSERT INTO {table} (Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section)
                 VALUES ($b, $w, $i, $s, $t, $sec);";
             cmd.Parameters.Add("$b", SqliteType.Text);
             cmd.Parameters.Add("$w", SqliteType.Integer);

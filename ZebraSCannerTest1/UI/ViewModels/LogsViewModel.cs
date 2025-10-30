@@ -56,15 +56,22 @@ public partial class LogsViewModel : ObservableObject
         string whereClause = "";
         var cmd = _conn.CreateCommand();
 
+        var table = Mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
+        var column = Mode == InventoryMode.Loots ? "Box_Id" : "Section";
+
+
         // --- BASE CLAUSE ---
         List<string> conditions = new();
 
-        // Loots filter base condition
-        if (Mode == InventoryMode.Loots && !string.IsNullOrWhiteSpace(BoxId))
+        // Default filter for Loots mode (only when user has NOT manually chosen another Box)
+        if (Mode == InventoryMode.Loots && !string.IsNullOrWhiteSpace(BoxId)
+            && !_currentFilter.StartsWith("BOX:"))
         {
-            conditions.Add("Section = $boxId");
+            conditions.Add($"{column} = $boxId");
             cmd.Parameters.AddWithValue("$boxId", BoxId);
         }
+
+
 
         // Apply filters (can combine with Loots condition)
         if (!string.IsNullOrEmpty(_currentFilter))
@@ -96,6 +103,17 @@ public partial class LogsViewModel : ObservableObject
             {
                 conditions.Add("(Section IS NULL OR TRIM(Section) = '')");
             }
+            else if (_currentFilter.StartsWith("BOX:"))
+            {
+                string boxName = _currentFilter.Substring("BOX:".Length);
+                conditions.Add("Box_Id = $box");
+                cmd.Parameters.AddWithValue("$box", boxName);
+            }
+            else if (_currentFilter == "BOX_NULL")
+            {
+                conditions.Add("(Box_Id IS NULL OR TRIM(Box_Id) = '')");
+            }
+
             else
             {
                 conditions.Add("Barcode LIKE $filter");
@@ -109,9 +127,10 @@ public partial class LogsViewModel : ObservableObject
 
         // COUNT + QUERY as before
         int totalCount = 0;
+
         using (var countCmd = _conn.CreateCommand())
         {
-            countCmd.CommandText = $"SELECT COUNT(*) FROM ScanLogs {whereClause}";
+            countCmd.CommandText = $"SELECT COUNT(*) FROM {table} {whereClause}";
             foreach (SqliteParameter p in cmd.Parameters)
                 countCmd.Parameters.AddWithValue(p.ParameterName, p.Value);
             totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
@@ -121,11 +140,12 @@ public partial class LogsViewModel : ObservableObject
         CurrentPage = Math.Clamp(page, 1, TotalPages);
 
         cmd.CommandText = $@"
-        SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section
-        FROM ScanLogs
-        {whereClause}
-        ORDER BY UpdatedAt DESC
-        LIMIT $limit OFFSET $offset";
+            SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section, Box_Id
+            FROM {table}
+            {whereClause}
+            ORDER BY UpdatedAt DESC
+            LIMIT $limit OFFSET $offset";
+
 
         cmd.Parameters.AddWithValue("$limit", PageSize);
         cmd.Parameters.AddWithValue("$offset", (CurrentPage - 1) * PageSize);
@@ -144,8 +164,11 @@ public partial class LogsViewModel : ObservableObject
                     IsValue = r.GetInt32(3),
                     UpdatedAt = DateTime.Parse(r.GetString(4)),
                     IsManual = !r.IsDBNull(5) ? r.GetInt32(5) : (int?)null,
-                    Section = !r.IsDBNull(6) ? r.GetString(6) : null
+                    Section = !r.IsDBNull(6) ? r.GetString(6) : null,
+                    Box_Id = !r.IsDBNull(7) ? r.GetString(7) : null
                 });
+
+
             }
         }
 
@@ -163,7 +186,12 @@ public partial class LogsViewModel : ObservableObject
                     dst.IsValue = src.IsValue;
                     dst.UpdatedAt = src.UpdatedAt;
                     dst.IsManual = src.IsManual;
-                    dst.Section = src.Section;
+                    if (Mode == InventoryMode.Loots)
+                        dst.Section = src.Box_Id;
+                    else
+                        dst.Section = src.Section;
+
+
                 }
                 else
                 {
@@ -179,27 +207,28 @@ public partial class LogsViewModel : ObservableObject
             }
         });
     }
-    
+
 
 
     // ✅ Filter by time (1, 2, 3, 5, 10, 15, or custom)
     [RelayCommand]
     private async Task FilterTime()
     {
-        var choice = await Shell.Current.DisplayActionSheet(
-            "Filter by Time", "Cancel", null,
-            "Last 1 Minute",
-            "Last 2 Minutes",
-            "Last 3 Minutes",
-            "Last 5 Minutes",
-            "Last 10 Minutes",
-            "Last 15 Minutes",
-            "Custom (Enter Minutes)",
-            "Filter by Section",
-            "Manual Only",
-            "Scanned Only"
-        );
+        var baseMenu = new List<string>
+    {
+        "Last 1 Minute",
+        "Last 2 Minutes",
+        "Last 3 Minutes",
+        "Last 5 Minutes",
+        "Last 10 Minutes",
+        "Last 15 Minutes",
+        "Custom (Enter Minutes)",
+        Mode == InventoryMode.Loots ? "Filter by Box" : "Filter by Section",
+        "Manual Only",
+        "Scanned Only"
+    };
 
+        var choice = await Shell.Current.DisplayActionSheet("Filter Options", "Cancel", null, baseMenu.ToArray());
         if (string.IsNullOrEmpty(choice) || choice == "Cancel")
             return;
 
@@ -213,57 +242,62 @@ public partial class LogsViewModel : ObservableObject
             case "Last 15 Minutes": _currentFilter = "TIME:15"; break;
 
             case "Custom (Enter Minutes)":
-                var input = await Shell.Current.DisplayPromptAsync(
-                    "Custom Filter", "Enter number of minutes:",
-                    "OK", "Cancel", keyboard: Keyboard.Numeric);
+                var input = await Shell.Current.DisplayPromptAsync("Custom Filter", "Enter number of minutes:", "OK", "Cancel", keyboard: Keyboard.Numeric);
                 if (int.TryParse(input, out int mins) && mins > 0)
                     _currentFilter = $"TIME:{mins}";
                 else
                     return;
                 break;
-            // Manual filters
+
             case "Manual Only":
                 _currentFilter = "MANUAL";
                 break;
+
             case "Scanned Only":
                 _currentFilter = "SCANNED";
                 break;
-            // 🧭 NEW SECTION FILTER
+
+            case "Filter by Box":
             case "Filter by Section":
-                var sections = new List<string>();
+                var labels = new List<string>();
+                var table = Mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
+                var column = Mode == InventoryMode.Loots ? "Box_Id" : "Section";
 
                 using (var cmd = _conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT DISTINCT Section FROM ScanLogs ORDER BY Section ASC";
+                    cmd.CommandText = $"SELECT DISTINCT {column} FROM {table} WHERE TRIM({column}) != '' ORDER BY {column} ASC";
                     using var reader = cmd.ExecuteReader();
                     while (reader.Read())
                     {
-                        if (!reader.IsDBNull(0))
-                        {
-                            var value = reader.GetString(0).Trim();
-                            if (!string.IsNullOrEmpty(value))
-                                sections.Add(value);
-                        }
+                        var val = reader.GetString(0).Trim();
+                        if (!string.IsNullOrEmpty(val))
+                            labels.Add(val);
                     }
                 }
 
-                // 🧠 Add "No Section" option at top
-                sections.Insert(0, "(No Section)");
+                if (labels.Count == 0)
+                {
+                    await Shell.Current.DisplayAlert("No Data", Mode == InventoryMode.Loots ? "No boxes found." : "No sections found.", "OK");
+                    return;
+                }
 
-                var chosenSection = await Shell.Current.DisplayActionSheet(
-                    "Select Section", "Cancel", null, sections.ToArray());
+                labels.Insert(0, Mode == InventoryMode.Loots ? "(No Box)" : "(No Section)");
 
-                if (string.IsNullOrEmpty(chosenSection) || chosenSection == "Cancel")
+                var chosen = await Shell.Current.DisplayActionSheet(
+                    Mode == InventoryMode.Loots ? "Select Box" : "Select Section",
+                    "Cancel", null, labels.ToArray());
+
+                if (string.IsNullOrEmpty(chosen) || chosen == "Cancel")
                     return;
 
-                if (chosenSection == "(No Section)")
-                    _currentFilter = "SECTION_NULL";
+                if (Mode == InventoryMode.Loots)
+                    _currentFilter = chosen == "(No Box)" ? "BOX_NULL" : $"BOX:{chosen}";
                 else
-                    _currentFilter = $"SECTION:{chosenSection}";
-
+                    _currentFilter = chosen == "(No Section)" ? "SECTION_NULL" : $"SECTION:{chosen}";
                 break;
 
-            default: return;
+            default:
+                return;
         }
 
         await LoadPage(1);
