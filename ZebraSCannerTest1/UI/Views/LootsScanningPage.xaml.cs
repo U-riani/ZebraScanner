@@ -11,43 +11,49 @@ public partial class LootsScanningPage : ContentPage
     {
         InitializeComponent();
         BindingContext = _vm = vm;
+
+        lootBarcodeEntry.Loaded += (s, e) => FocusScannerEntry();
+        lootBarcodeEntry.Completed += OnBarcodeCompleted;
     }
 
     private async void OnBarcodeCompleted(object sender, EventArgs e)
     {
-        if (BindingContext is LootsScanningViewModel vm)
+        var text = lootBarcodeEntry.Text?.Trim();
+        if (string.IsNullOrEmpty(text))
         {
-            var text = lootBarcodeEntry.Text?.Trim();
-            if (string.IsNullOrEmpty(text)) return;
-
-            await _vm.AddProductAsync(text);
-            lootBarcodeEntry.Text = string.Empty;
-
-            MainThread.BeginInvokeOnMainThread(() => lootBarcodeEntry.Focus());
+            FocusScannerEntry();
+            return;
         }
+
+        await _vm.AddProductAsync(text);
+        lootBarcodeEntry.Text = string.Empty;
+        FocusScannerEntry();
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-
-        // Wait until the viewmodel is fully ready
         await _vm.InitializeAsync();
+        FocusScannerEntry();
+    }
 
-        // Optionally focus the scanner entry if it exists in XAML
+    /// <summary>
+    /// Forcefully refreshes and re-focuses scanner Entry.
+    /// </summary>
+    private void FocusScannerEntry()
+    {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            if (this.FindByName<Entry>("lootBarcodeEntry") is Entry entry)
-            {
-                entry.Focus();
-            }
+            if (lootBarcodeEntry == null) return;
+            lootBarcodeEntry.IsEnabled = false;
+            lootBarcodeEntry.IsEnabled = true;
+            lootBarcodeEntry.Focus();
         });
     }
+
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
         WeakReferenceMessenger.Default.UnregisterAll(_vm);
     }
-
 }
-

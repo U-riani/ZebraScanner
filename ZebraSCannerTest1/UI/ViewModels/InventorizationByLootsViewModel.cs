@@ -13,20 +13,32 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
 {
     private readonly ILootsProductRepository _repo;
 
-    [ObservableProperty] private bool isBusy;
+    [ObservableProperty] private string filterText = string.Empty;
+    [ObservableProperty] private ObservableCollection<LootBoxSummary> filteredLoots = new();
     [ObservableProperty] private ObservableCollection<LootBoxSummary> loots = new();
+
+    [ObservableProperty] private bool isBusy;
 
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand<string> OpenLootCommand { get; }
+    public IRelayCommand ApplyFilterCommand { get; }
+
 
     public InventorizationByLootsViewModel(ILootsProductRepository repo)
     {
         _repo = repo;
         RefreshCommand = new AsyncRelayCommand(LoadLootsAsync);
         OpenLootCommand = new AsyncRelayCommand<string>(OpenLootAsync);
+        ApplyFilterCommand = new RelayCommand(ApplyFilter);
 
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadLootsAsync());
+
+        this.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FilterText))
+                ApplyFilter();
+        };
     }
 
     public async Task LoadLootsAsync()
@@ -52,6 +64,9 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
             Loots.Clear();
             foreach (var g in grouped)
                 Loots.Add(g);
+
+            // ✅ Also refresh filtered view after reload
+            ApplyFilter();
         }
         catch (Exception ex)
         {
@@ -62,6 +77,25 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
             IsBusy = false;
         }
     }
+
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(FilterText))
+        {
+            // show all when entry is empty
+            FilteredLoots = new ObservableCollection<LootBoxSummary>(Loots);
+            return;
+        }
+
+        var lower = FilterText.Trim().ToLowerInvariant();
+        var filtered = Loots
+            .Where(l => !string.IsNullOrEmpty(l.Box_Id) && l.Box_Id.ToLowerInvariant().Contains(lower))
+            .ToList();
+
+        FilteredLoots = new ObservableCollection<LootBoxSummary>(filtered);
+    }
+
+
 
     private async Task OpenLootAsync(string boxId)
     {
@@ -74,7 +108,10 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
             ["BoxId"] = boxId
         };
 
-        await Shell.Current.GoToAsync(nameof(LootsScanningPage), parameters);
+        await Shell.Current.GoToAsync(nameof(LootsScanningPage), new Dictionary<string, object>
+        {
+            ["BoxId"] = boxId
+        });
     }
 
     public void Dispose()

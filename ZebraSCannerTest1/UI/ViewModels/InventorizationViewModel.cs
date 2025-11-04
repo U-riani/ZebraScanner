@@ -285,7 +285,7 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
                 if (choice == "Products")
                     await _exporter.ExportProductsAsync(fullPath, progress, InventoryMode.Standard);
                 else if (choice == "Logs")
-                    await _logExporter.ExportLogsAsync(fullPath, progress);
+                    await _logExporter.ExportLogsAsync(fullPath, progress, InventoryMode.Standard);
             });
 
             await MainThread.InvokeOnMainThreadAsync(() =>

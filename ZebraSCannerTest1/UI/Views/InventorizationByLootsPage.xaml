@@ -1,55 +1,68 @@
-<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="ZebraSCannerTest1.UI.Views.InventorizationByLootsPage"
              xmlns:vm="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             x:Class="ZebraSCannerTest1.UI.Views.InventorizationByLootsPage"
              Title="Loots Inventory">
 
-    <CollectionView ItemsSource="{Binding Loots}"
-                    Margin="10"
-                    VerticalScrollBarVisibility="Always"
-                    SelectionMode="None">
-        <CollectionView.Header>
+    <Grid RowDefinitions="Auto,*" Padding="10" RowSpacing="6">
+
+        <!-- header / filter row -->
+        <VerticalStackLayout Grid.Row="0" Spacing="6">
             <Label Text="Loots Inventory"
                    FontSize="22"
                    HorizontalOptions="Center"
-                   Padding="0,10,0,10"/>
-        </CollectionView.Header>
+                   Padding="0,10,0,10"
+                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
 
-        <CollectionView.ItemTemplate>
-            <DataTemplate>
-                <Frame Margin="6" Padding="8" BorderColor="Gray" CornerRadius="8" HasShadow="True">
-                    <Frame.GestureRecognizers>
-                        <TapGestureRecognizer
-                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:InventorizationByLootsViewModel}}, Path=OpenLootCommand}"
-                            CommandParameter="{Binding Box_Id}" />
-                    </Frame.GestureRecognizers>
+            <Entry Placeholder="Scan or enter Box ID..."
+                   Text="{Binding FilterText, Mode=TwoWay}"
+                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                   ClearButtonVisibility="WhileEditing"
+                   Keyboard="Text"
+                   FontSize="16"
+                   HeightRequest="42" />
+        </VerticalStackLayout>
 
-                    <VerticalStackLayout>
-                        <Label Text="Box ID"
-                               TextColor="{AppThemeBinding Dark=White, Light=Black}"
-                               FontAttributes="Bold"
-                               FontSize="13"
-                               HorizontalOptions="Center"/>
-                        <Label Text="{Binding Box_Id}"
-                               FontSize="14"
-                               TextColor="{AppThemeBinding Dark=White, Light=Black}"
-                               HorizontalOptions="Center"/>
+        <!-- scrollable list -->
+        <CollectionView Grid.Row="1"
+                        ItemsSource="{Binding FilteredLoots}"
+                        VerticalScrollBarVisibility="Always"
+                        SelectionMode="None">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Margin="6" Padding="8" BorderColor="Gray" CornerRadius="8" HasShadow="True">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:InventorizationByLootsViewModel}}, Path=OpenLootCommand}"
+                                CommandParameter="{Binding Box_Id}" />
+                        </Frame.GestureRecognizers>
 
-                        <FlexLayout HorizontalOptions="Center" Margin="0,6,0,0">
-                            <Label Text="{Binding ScannedQuantity}" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-                            <Label Text="/" Margin="3,0" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-                            <Label Text="{Binding InitialQuantity}" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-                        </FlexLayout>
+                        <VerticalStackLayout>
+                            <Label Text="Box ID"
+                                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                                   FontAttributes="Bold"
+                                   FontSize="13"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding Box_Id}"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                                   HorizontalOptions="Center"/>
 
-                        <Label Text="{Binding TotalInfo}" 
-                               FontSize="12" 
-                               HorizontalOptions="Center"
-                               TextColor="Gray"
-                               Margin="0,4,0,0"/>
-                    </VerticalStackLayout>
-                </Frame>
-            </DataTemplate>
-        </CollectionView.ItemTemplate>
-    </CollectionView>
+                            <FlexLayout HorizontalOptions="Center" Margin="0,6,0,0">
+                                <Label Text="{Binding ScannedQuantity}" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+                                <Label Text="/" Margin="3,0" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+                                <Label Text="{Binding InitialQuantity}" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+                            </FlexLayout>
+
+                            <Label Text="{Binding TotalInfo}" 
+                                   FontSize="12" 
+                                   HorizontalOptions="Center"
+                                   TextColor="Gray"
+                                   Margin="0,4,0,0"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
 </ContentPage>

@@ -38,17 +38,18 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
     public LootsScanningViewModel(
         IProductService productService,
-        IExcelExportService exporter,
-        IExcelExportLogsService logExporter,
-        IDialogService dialogs,
-        INavigationService navigation,
-        ILoggerService<LootsScanningViewModel> logger,
-        PopupService popup,
-        IScanningService scanningService)
+    IExcelExportService exporter,
+    IExcelExportLogsService logExporter,
+    IDialogService dialogs,                   // injected
+    INavigationService navigation,
+    ILoggerService<LootsScanningViewModel> logger,
+    PopupService popup,
+    IScanningService scanningService)
     {
         _productService = productService;
         _exporter = exporter;
         _logExporter = logExporter;
+        _dialogs = dialogs;                        // ← you forgot this
         _navigation = navigation;
         _logger = logger;
         _popup = popup;
@@ -113,11 +114,26 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         if (string.IsNullOrWhiteSpace(barcode))
             return Task.CompletedTask;
 
-        _scanningService.Enqueue(barcode.Trim());
-        CurrentBarcode = barcode.Trim();
-        LastScannedBarcode = barcode;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(CurrentBoxId))
+            {
+                Console.WriteLine("[WARN] BoxId missing during scan. Ignoring scan.");
+                return Task.CompletedTask;
+            }
+
+            _scanningService.Enqueue(barcode.Trim());
+            CurrentBarcode = barcode.Trim();
+            LastScannedBarcode = barcode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Loot scan failed: {ex}");
+        }
+
         return Task.CompletedTask;
     }
+
 
     public async Task ExportDataAsync()
     {
@@ -133,14 +149,20 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
             var file = Path.Combine(path, $"Loots_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx");
             var progress = new Progress<double>(p => _popup.UpdateMessage($"Progress {p:P0}"));
             await _exporter.ExportProductsAsync(file, progress, InventoryMode.Loots);
-            _popup.Close();
-            await _dialogs.ShowMessageAsync("✅ Export Complete", $"Saved to: {file}");
+            _popup?.Close();
+            if (_dialogs != null)
+                await _dialogs.ShowMessageAsync("✅ Export Complete", $"Saved to: {file}");
+            else
+                Console.WriteLine($"[INFO] Export Complete (no dialog service). Saved to: {file}");
         }
         catch (Exception ex)
         {
-            _popup.Close();
+            _popup?.Close();
             _logger.Error("Loots export failed", ex);
-            await _dialogs.ShowMessageAsync("❌ Export Error", ex.Message);
+            if (_dialogs != null)
+                await _dialogs.ShowMessageAsync("❌ Export Error", ex.Message);
+            else
+                Console.WriteLine($"[ERROR] Export Error: {ex}");
         }
     }
 
