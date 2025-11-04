@@ -56,6 +56,7 @@ public partial class InventorizationPage : ContentPage
 
         FocusScannerEntry();
 
+        await _viewModel.InitializeAsync();
     }
 
     /// <summary>

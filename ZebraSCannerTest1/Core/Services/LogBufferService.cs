@@ -43,19 +43,30 @@ namespace ZebraSCannerTest1.Core.Services
             }
 
             var table = mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
+            using var conn = new SqliteConnection($"Data Source={Path.Combine(FileSystem.AppDataDirectory,
+                mode == InventoryMode.Loots ? "zebraScanner_loots.db" : "zebraScanner_standard.db")}");
+            conn.Open();
 
-            using var tx = _conn.BeginTransaction();
-            using var cmd = _conn.CreateCommand();
+            using var tx = conn.BeginTransaction();
+            using var cmd = conn.CreateCommand();
             cmd.Transaction = tx;
-            cmd.CommandText = $@"
-                INSERT INTO {table} (Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section)
-                VALUES ($b, $w, $i, $s, $t, $sec);";
+
+            if (mode == InventoryMode.Loots)
+                cmd.CommandText = @"INSERT INTO LootsScanLogs
+            (Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section, Box_Id)
+            VALUES ($b,$w,$i,$s,$t,$sec,$box);";
+            else
+                cmd.CommandText = @"INSERT INTO ScanLogs
+            (Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section)
+            VALUES ($b,$w,$i,$s,$t,$sec);";
+
             cmd.Parameters.Add("$b", SqliteType.Text);
             cmd.Parameters.Add("$w", SqliteType.Integer);
             cmd.Parameters.Add("$i", SqliteType.Integer);
             cmd.Parameters.Add("$s", SqliteType.Integer);
             cmd.Parameters.Add("$t", SqliteType.Text);
             cmd.Parameters.Add("$sec", SqliteType.Text);
+            cmd.Parameters.Add("$box", SqliteType.Text);
 
             foreach (var log in toWrite)
             {
@@ -64,14 +75,15 @@ namespace ZebraSCannerTest1.Core.Services
                 cmd.Parameters["$i"].Value = log.IncrementBy;
                 cmd.Parameters["$s"].Value = log.IsValue;
                 cmd.Parameters["$t"].Value = log.UpdatedAt.ToString("o");
-                cmd.Parameters["$sec"].Value =
-                    string.IsNullOrEmpty(log.Section) ? DBNull.Value : log.Section;
+                cmd.Parameters["$sec"].Value = string.IsNullOrEmpty(log.Section) ? DBNull.Value : log.Section;
+                cmd.Parameters["$box"].Value = string.IsNullOrEmpty(log.Box_Id) ? DBNull.Value : log.Box_Id;
 
                 cmd.ExecuteNonQuery();
             }
 
             tx.Commit();
         }
+
 
         public void Clear()
         {

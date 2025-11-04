@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
+using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.UI.Services;
 using ZebraSCannerTest1.UI.Views;
 
@@ -28,6 +29,8 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
     private readonly ILoggerService<InventorizationByLootsMenuViewModel> _logger;
     private readonly PopupService _popup;
     private readonly IProductService _productService;
+    private readonly IExcelExportLogsService _logExporter; // inject it
+
 
     public InventorizationByLootsMenuViewModel(
         IDataImportService importer,
@@ -35,7 +38,8 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
         IDialogService dialogs,
         ILoggerService<InventorizationByLootsMenuViewModel> logger,
         PopupService popup,
-        IProductService productService)
+        IProductService productService,
+        IExcelExportLogsService logExporter)
     {
         _importer = importer;
         _exporter = exporter;
@@ -43,12 +47,14 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
         _logger = logger;
         _popup = popup;
         _productService = productService;
+        _logExporter = logExporter;
 
         NavigateToContinueCommand = new AsyncRelayCommand(OnContinueAsync);
         NavigateToResultCommand = new AsyncRelayCommand(OnResultAsync);
         ExportLootsCommand = new AsyncRelayCommand(OnExportAsync);
         ImportLootsCommand = new AsyncRelayCommand(OnImportAsync);
         ClearResultCommand = new AsyncRelayCommand(OnClearAsync);
+        _logExporter = logExporter;
     }
 
     private async Task OnContinueAsync()
@@ -92,19 +98,34 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
         bool popupOpened = false;
         try
         {
+            var choice = await Shell.Current.DisplayActionSheet(
+                "Export Loots Data",
+                "Cancel", null,
+                "Products", "Logs");
+
+            if (choice == "Cancel" || string.IsNullOrWhiteSpace(choice))
+                return;
+
             await _popup.ShowProgressAsync("Preparing export...");
             popupOpened = true;
 
 #if ANDROID
-            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
-                Android.OS.Environment.DirectoryDownloads).AbsolutePath;
+        var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
+            Android.OS.Environment.DirectoryDownloads).AbsolutePath;
 #else
             var path = FileSystem.AppDataDirectory;
 #endif
-            var file = Path.Combine(path, $"Loots_Export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx");
 
+            var file = Path.Combine(path, $"Loots_{choice}_Export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx");
             var progress = new Progress<double>(p => _popup.UpdateMessage($"Exporting... {(int)(p * 100)}%"));
-            await _exporter.ExportProductsAsync(file, progress); // reuse same service — it now works per mode if needed
+
+            await Task.Run(async () =>
+            {
+                if (choice == "Products")
+                    await _exporter.ExportProductsAsync(file, progress, InventoryMode.Loots);
+                else
+                    await _logExporter.ExportLogsAsync(file, progress, InventoryMode.Loots);
+            });
 
             _popup.Close();
             popupOpened = false;
@@ -118,7 +139,6 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
             await _dialogs.ShowMessageAsync("❌ Export Error", ex.Message);
         }
     }
-
     private async Task OnImportAsync()
     {
         try
@@ -134,9 +154,10 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
             {
                 PickerTitle = "Select File to Import",
                 FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
-                {
-                    { DevicePlatform.Android, new[] { "*/*" } }
-                })
+            {
+                { DevicePlatform.Android, new[] { "*/*" } },
+                { DevicePlatform.WinUI, new[] { ".xlsx", ".json", ".db" } }
+            })
             });
 
             if (result == null) return;
@@ -144,12 +165,34 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
             await _popup.ShowProgressAsync("Importing Loots data...");
             using var stream = await result.OpenReadAsync();
 
-            await _importer.ImportExcelAsync(stream, InventoryMode.Loots, result.FileName);
+            string ext = Path.GetExtension(result.FileName).ToLowerInvariant();
+
+            if (ext == ".xlsx")
+            {
+                // Excel import
+                await _importer.ImportExcelAsync(stream, InventoryMode.Loots, result.FileName);
+            }
+            else if (ext == ".db")
+            {
+                // SQLite DB import
+                await _importer.ImportDbAsync(stream, InventoryMode.Loots);
+
+            }
+            else if (ext == ".json")
+            {
+                // JSON import
+                await _importer.ImportJsonAsync(stream, InventoryMode.Loots);
+            }
+            else
+            {
+                throw new NotSupportedException("Unsupported file format. Please select .xlsx, .json, or .db");
+            }
 
             _popup.Close();
+            Console.WriteLine($"[Loots] Using DB: {DatabaseInitializer.GetConnection(InventoryMode.Loots).DataSource}");
 
+            await _dialogs.ShowMessageAsync("✅ Import Complete", $"Successfully imported Loots data from {result.FileName}");
             await Shell.Current.GoToAsync(nameof(InventorizationByLootsPage));
-
         }
         catch (Exception ex)
         {
@@ -158,6 +201,7 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
             await _dialogs.ShowMessageAsync("❌ Import Error", ex.Message);
         }
     }
+
 
     private async Task OnClearAsync()
     {

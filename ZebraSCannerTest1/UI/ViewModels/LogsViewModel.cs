@@ -54,9 +54,21 @@ public partial class LogsViewModel : ObservableObject
     private async Task LoadPage(int page)
     {
         string whereClause = "";
-        var cmd = _conn.CreateCommand();
+
+        // ✅ open correct database
+        var dbName = Mode == InventoryMode.Loots
+            ? "zebraScanner_loots.db"
+            : "zebraScanner_standard.db";
+
+        var dbPath = Path.Combine(FileSystem.AppDataDirectory, dbName);
+        using var conn = new SqliteConnection($"Data Source={dbPath}");
+        conn.Open();
 
         var table = Mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
+        var hasBox = Mode == InventoryMode.Loots;
+
+        using var cmd = conn.CreateCommand();
+
         var column = Mode == InventoryMode.Loots ? "Box_Id" : "Section";
 
 
@@ -64,12 +76,19 @@ public partial class LogsViewModel : ObservableObject
         List<string> conditions = new();
 
         // Default filter for Loots mode (only when user has NOT manually chosen another Box)
-        if (Mode == InventoryMode.Loots && !string.IsNullOrWhiteSpace(BoxId)
-            && !_currentFilter.StartsWith("BOX:"))
+        if (Mode == InventoryMode.Loots && !_currentFilter.StartsWith("BOX:"))
         {
-            conditions.Add($"{column} = $boxId");
-            cmd.Parameters.AddWithValue("$boxId", BoxId);
+            if (string.IsNullOrWhiteSpace(BoxId))
+            {
+                conditions.Add("(Box_Id IS NULL OR TRIM(Box_Id) = '')");
+            }
+            else
+            {
+                conditions.Add("(Box_Id = $boxId OR Box_Id IS NULL OR TRIM(Box_Id) = '')");
+                cmd.Parameters.AddWithValue("$boxId", BoxId);
+            }
         }
+
 
 
 
@@ -128,23 +147,37 @@ public partial class LogsViewModel : ObservableObject
         // COUNT + QUERY as before
         int totalCount = 0;
 
-        using (var countCmd = _conn.CreateCommand())
+        // COUNT
+        using (var countCmd = conn.CreateCommand())   // ✅ not _conn
         {
             countCmd.CommandText = $"SELECT COUNT(*) FROM {table} {whereClause}";
             foreach (SqliteParameter p in cmd.Parameters)
+            {
+                Console.WriteLine($"----------ameter to countCmd: {p.ParameterName} = {p.Value}");
                 countCmd.Parameters.AddWithValue(p.ParameterName, p.Value);
+
+            }
             totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
         }
+
 
         TotalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PageSize));
         CurrentPage = Math.Clamp(page, 1, TotalPages);
 
-        cmd.CommandText = $@"
-            SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section, Box_Id
-            FROM {table}
-            {whereClause}
-            ORDER BY UpdatedAt DESC
-            LIMIT $limit OFFSET $offset";
+        cmd.CommandText = hasBox
+    ? $@"
+        SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section, Box_Id
+        FROM {table}
+        {whereClause}
+        ORDER BY UpdatedAt DESC
+        LIMIT $limit OFFSET $offset"
+    : $@"
+        SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section
+        FROM {table}
+        {whereClause}
+        ORDER BY UpdatedAt DESC
+        LIMIT $limit OFFSET $offset";
+
 
 
         cmd.Parameters.AddWithValue("$limit", PageSize);
@@ -156,7 +189,7 @@ public partial class LogsViewModel : ObservableObject
         {
             while (r.Read())
             {
-                rows.Add(new ScanLog
+                var log = new ScanLog
                 {
                     Barcode = r.GetString(0),
                     Was = r.GetInt32(1),
@@ -164,12 +197,15 @@ public partial class LogsViewModel : ObservableObject
                     IsValue = r.GetInt32(3),
                     UpdatedAt = DateTime.Parse(r.GetString(4)),
                     IsManual = !r.IsDBNull(5) ? r.GetInt32(5) : (int?)null,
-                    Section = !r.IsDBNull(6) ? r.GetString(6) : null,
-                    Box_Id = !r.IsDBNull(7) ? r.GetString(7) : null
-                });
+                    Section = !r.IsDBNull(6) ? r.GetString(6) : null
+                };
 
+                if (hasBox)
+                    log.Box_Id = !r.IsDBNull(7) ? r.GetString(7) : null;
 
+                rows.Add(log);
             }
+
         }
 
         await MainThread.InvokeOnMainThreadAsync(() =>
@@ -263,8 +299,11 @@ public partial class LogsViewModel : ObservableObject
                 var table = Mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
                 var column = Mode == InventoryMode.Loots ? "Box_Id" : "Section";
 
-                using (var cmd = _conn.CreateCommand())
+                using (var conn = new SqliteConnection($"Data Source={Path.Combine(FileSystem.AppDataDirectory,
+                Mode == InventoryMode.Loots ? "zebraScanner_loots.db" : "zebraScanner_standard.db")}"))
                 {
+                    conn.Open();
+                    using var cmd = conn.CreateCommand();
                     cmd.CommandText = $"SELECT DISTINCT {column} FROM {table} WHERE TRIM({column}) != '' ORDER BY {column} ASC";
                     using var reader = cmd.ExecuteReader();
                     while (reader.Read())

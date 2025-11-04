@@ -81,10 +81,7 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
         _popup = popup;
         _scanningService = scanningService;
 
-        _scanningService.SetMode(InventoryMode.Standard);
-        _scanningService.StartAsync();
-
-
+        Console.WriteLine($"[VM INIT] SetMode called -> Standard");
 
         AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
         ImportDataCommand = new AsyncRelayCommand(OnImportDataAsync);
@@ -110,6 +107,18 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
         {
             await LoadRecentAsync();
         });
+    }
+
+    public async Task InitializeAsync()
+    {
+        WeakReferenceMessenger.Default.Unregister<ProductUpdatedMessage>(this);
+        WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
+            this, async (_, _) => await LoadRecentAsync());
+
+        _scanningService.SetMode(InventoryMode.Standard);
+        _scanningService.StartAsync();
+
+        await LoadRecentAsync();
     }
 
     // === Loaders ===
@@ -274,18 +283,19 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
             await Task.Run(async () =>
             {
                 if (choice == "Products")
-                    await _exporter.ExportProductsAsync(fullPath, progress);
-                else
+                    await _exporter.ExportProductsAsync(fullPath, progress, InventoryMode.Standard);
+                else if (choice == "Logs")
                     await _logExporter.ExportLogsAsync(fullPath, progress);
             });
 
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
                 _popup.UpdateMessage("Finishing up...");
+                _popup.Close();
             });
 
-            await Task.Delay(200);
-            _popup.Close();
+            //await Task.Delay(200);
+            //_popup.Close();
             popupOpened = false;
 
             await _dialogs.ShowMessageAsync("✅ Export Complete", $"File saved: {name}");

@@ -9,6 +9,7 @@ using ZebraSCannerTest1.UI.ViewModels;
 using ZebraSCannerTest1.UI.Views;
 using Microsoft.Maui.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using ZebraSCannerTest1.Core.Enums;
 
 namespace ZebraSCannerTest1;
 
@@ -30,7 +31,14 @@ public static class MauiProgram
             });
 
         // === Database connection ===
-        builder.Services.AddSingleton<SqliteConnection>(_ => DatabaseInitializer.GetConnection());
+        builder.Services.AddSingleton<SqliteConnection>(_ =>
+        {
+            var mode = Preferences.Get("CurrentMode", "Standard") == "Loots"
+                ? InventoryMode.Loots
+                : InventoryMode.Standard;
+
+            return DatabaseInitializer.GetConnection(mode);
+        });
 
         // === Core services & repositories ===
         builder.Services.AddSingleton<IProductRepository, ProductRepository>();
@@ -55,7 +63,7 @@ public static class MauiProgram
 
 
         // === ViewModels ===
-        builder.Services.AddSingleton<InventorizationViewModel>();
+        builder.Services.AddTransient<InventorizationViewModel>();
         builder.Services.AddTransient<DetailsViewModel>();
         builder.Services.AddTransient<LogsViewModel>();
         builder.Services.AddTransient<ScannedProductsViewModel>();

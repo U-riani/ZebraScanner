@@ -29,105 +29,44 @@ namespace ZebraSCannerTest1.Core.Services
 
 
         // ✅ Import SQLite DB (from FilePicker Stream)
-        public async Task ImportDbAsync(Stream dbStream)
+        public async Task ImportDbAsync(Stream dbStream, InventoryMode mode = InventoryMode.Standard)
         {
             try
             {
-                var targetPath = Path.Combine(FileSystem.AppDataDirectory, "zebraScannerData.db");
+                // ✅ pick correct file for each mode
+                var fileName = mode == InventoryMode.Loots
+                    ? "zebraScanner_loots.db"
+                    : "zebraScanner_standard.db";
 
-                // Overwrite safely inside app sandbox
+                var targetPath = Path.Combine(FileSystem.AppDataDirectory, fileName);
+
+                // ✅ optional: backup before overwrite
+                if (File.Exists(targetPath))
+                {
+                    var backup = targetPath + ".bak";
+                    File.Copy(targetPath, backup, true);
+                    Console.WriteLine($"[DB] Backup created: {backup}");
+                }
+
+                // ✅ overwrite only that mode’s DB file
                 using (var dst = File.Create(targetPath))
                     await dbStream.CopyToAsync(dst);
 
-                // Reopen connection to new DB
+                // ✅ reconnect only to that mode’s DB
                 _conn.Close();
                 _conn.ConnectionString = $"Data Source={targetPath}";
+                _conn.Open();
 
-                int retries = 3;
-                while (retries-- > 0)
-                {
-                    try
-                    {
-                        _conn.Open();
-                        break;
-                    }
-                    catch (SqliteException)
-                    {
-                        if (retries == 0) throw;
-                        await Task.Delay(200); // wait before retry
-                    }
-                }
-                DatabaseInitializer.Initialize(_conn); // ← THIS FIXES THE 'NO COLUMN NAMED SECTION' ERROR
+                DatabaseInitializer.Initialize(_conn, mode);
 
+                Console.WriteLine($"[DB] Successfully imported {mode} DB → {targetPath}");
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to import DB: {ex.Message}", ex);
+                throw new Exception($"Failed to import DB ({mode}): {ex.Message}", ex);
             }
-
-            //// ✅ Ensure all required tables exist (including new ScanLogs schema)
-            //using (var cmd = _conn.CreateCommand())
-            //{
-            //    cmd.CommandText = @"
-            //        CREATE TABLE IF NOT EXISTS Products (
-            //            Barcode TEXT PRIMARY KEY,
-            //            InitialQuantity INTEGER NOT NULL DEFAULT 0,
-            //            ScannedQuantity INTEGER NOT NULL DEFAULT 0,
-            //            CreatedAt TEXT NOT NULL,
-            //            UpdatedAt TEXT NOT NULL,
-            //            Name TEXT,
-            //            Color TEXT,
-            //            Size TEXT,
-            //            Price TEXT,
-            //            ArticCode TEXT
-            //        );
-
-            //        CREATE TABLE IF NOT EXISTS ScanLogs (
-            //            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            //            Barcode TEXT NOT NULL,
-            //            Was INTEGER NOT NULL DEFAULT 0,
-            //            IncrementBy INTEGER NOT NULL DEFAULT 1,
-            //            IsValue INTEGER NOT NULL DEFAULT 0,
-            //            UpdatedAt TEXT NOT NULL,
-            //            IsManual INTEGER NULL,
-            //            Section TEXT NULL
-            //        );
-
-            //        CREATE TABLE IF NOT EXISTS ScannedProducts (
-            //            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            //            Barcode TEXT NOT NULL,
-            //            Quantity INTEGER NOT NULL,
-            //            InitialQuantity INTEGER NOT NULL DEFAULT 0,
-            //            CreatedAt TEXT NOT NULL,
-            //            UpdatedAt TEXT NOT NULL,
-            //            Name TEXT,
-            //            Color TEXT,
-            //            Size TEXT,
-            //            Price TEXT,
-            //            ArticCode TEXT
-            //        );
-            //        ";
-            //    cmd.ExecuteNonQuery();
-            //}
-
-            //// 🧩 Optional migration if old ScanLogs schema exists
-            //try
-            //{
-            //    using var alter = _conn.CreateCommand();
-            //    alter.CommandText = @"
-            //    ALTER TABLE ScanLogs ADD COLUMN Was INTEGER DEFAULT 0;
-            //    ALTER TABLE ScanLogs ADD COLUMN IncrementBy INTEGER DEFAULT 0;
-            //    ALTER TABLE ScanLogs ADD COLUMN IsValue INTEGER DEFAULT 0;
-            //    ALTER TABLE ScanLogs ADD COLUMN UpdatedAt TEXT DEFAULT '';
-            //    ALTER TABLE ScanLogs ADD COLUMN IsManual INTEGER DEFAULT null;
-            //    ";
-            //    alter.ExecuteNonQuery();
-            //}
-            //catch
-            //{
-            //    // Ignore errors if columns already exist
-            //}
         }
+
 
         // ✅ Import JSON via Stream
         public async Task<int> ImportJsonAsync(Stream jsonStream, InventoryMode mode = InventoryMode.Standard)

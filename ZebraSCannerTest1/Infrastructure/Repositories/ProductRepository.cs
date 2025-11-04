@@ -2,6 +2,7 @@
 using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
+using ZebraSCannerTest1.Data;
 
 namespace ZebraSCannerTest1.Infrastructure.Repositories;
 
@@ -18,6 +19,26 @@ public class ProductRepository : IProductRepository
         _connection = connection;
     }
 
+    public SqliteConnection GetConnection(InventoryMode mode)
+    {
+        var dbName = mode == InventoryMode.Loots
+            ? "zebraScanner_loots.db"
+            : "zebraScanner_standard.db";
+        var path = Path.Combine(FileSystem.AppDataDirectory, dbName);
+
+        var isNew = !File.Exists(path);
+        var conn = new SqliteConnection($"Data Source={path}");
+        conn.Open();
+
+        //_logger?.Info($"[DB] Using {Path.GetFileName(path)} for {mode}");
+
+        if (isNew)
+            DatabaseInitializer.Initialize(conn, mode); // ensure schema exists
+
+        return conn;
+    }
+
+
     public async Task<IEnumerable<Product>> GetRecentAsync(int limit = 8, InventoryMode mode = InventoryMode.Standard)
     {
         var products = new List<Product>();
@@ -25,7 +46,9 @@ public class ProductRepository : IProductRepository
 
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var cmd = _connection.CreateCommand();
+        using var conn = GetConnection(mode);
+
+        using var cmd = conn.CreateCommand();
         cmd.CommandText = $@"
             SELECT Barcode, 
                    {(isLoots ? "Box_Id," : "")}
@@ -64,7 +87,9 @@ public class ProductRepository : IProductRepository
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var cmd = _connection.CreateCommand();
+        using var conn = GetConnection(mode);
+
+        using var cmd = conn.CreateCommand();
         cmd.CommandText = isLoots
             ? $@"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
               FROM {table}
@@ -103,7 +128,9 @@ public class ProductRepository : IProductRepository
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var cmd = _connection.CreateCommand();
+        using var conn = GetConnection(mode);
+
+        using var cmd = conn.CreateCommand();
         cmd.CommandText = isLoots
              ? $"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM {table} WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)"
              : $"SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM {table} WHERE Barcode=$b";
@@ -138,8 +165,9 @@ public class ProductRepository : IProductRepository
     {
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
+        using var conn = GetConnection(mode);
 
-        using var cmd = _connection.CreateCommand();
+        using var cmd = conn.CreateCommand();
 
         cmd.CommandText = isLoots
             ? $@"
@@ -166,8 +194,9 @@ public class ProductRepository : IProductRepository
     {
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
+        using var conn = GetConnection(mode);
 
-        using var cmd = _connection.CreateCommand();
+        using var cmd = conn.CreateCommand();
 
         cmd.CommandText = isLoots
             ? $@"
@@ -192,8 +221,9 @@ public class ProductRepository : IProductRepository
     public (int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes) GetInventoryStats(InventoryMode mode = InventoryMode.Standard)
     {
         string table = GetTableName(mode);
+        using var conn = GetConnection(mode);
 
-        using var cmd = _connection.CreateCommand();
+        using var cmd = conn.CreateCommand();
         cmd.CommandText = $@"
             SELECT 
                 SUM(InitialQuantity), 
@@ -216,4 +246,6 @@ public class ProductRepository : IProductRepository
 
         return (0, 0, 0, 0);
     }
+    
+
 }

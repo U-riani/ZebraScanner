@@ -91,6 +91,8 @@ namespace ZebraSCannerTest1.Core.Services
         {
             try
             {
+                _logger.Info($"[SCAN] Mode={_mode}, Box={_currentBoxId ?? "null"} Barcode={barcode}");
+
                 var product = await _products.FindAsync(barcode, _mode, _currentBoxId);
 
                 if (product == null)
@@ -143,11 +145,11 @@ namespace ZebraSCannerTest1.Core.Services
                 IncrementBy = 1,
                 IsValue = product.ScannedQuantity,
                 UpdatedAt = DateTime.UtcNow,
-                Box_Id = _currentBoxId, // <--- use this now
-                Section = CurrentSection
-            }, _mode);
-
-
+                Section = _mode == InventoryMode.Loots ? null : CurrentSection,
+                Box_Id = _mode == InventoryMode.Loots
+        ? (!string.IsNullOrWhiteSpace(_currentBoxId) ? _currentBoxId : "Unassigned")
+        : null
+            }, _mode == InventoryMode.Loots ? InventoryMode.Loots : InventoryMode.Standard);
 
 
             _logger.Info($"New product added ({_mode}) {barcode}");
@@ -168,11 +170,11 @@ namespace ZebraSCannerTest1.Core.Services
                 IncrementBy = 1,
                 IsValue = product.ScannedQuantity,
                 UpdatedAt = DateTime.UtcNow,
-                Box_Id = _currentBoxId, // <--- use this now
-                Section = CurrentSection
-            }, _mode);
-
-
+                Section = _mode == InventoryMode.Loots ? null : CurrentSection,
+                Box_Id = _mode == InventoryMode.Loots
+        ? (!string.IsNullOrWhiteSpace(_currentBoxId) ? _currentBoxId : "Unassigned")
+        : null
+            }, _mode == InventoryMode.Loots ? InventoryMode.Loots : InventoryMode.Standard);
 
 
             _logger.Info($"Product scanned ({_mode}) {product.Barcode}");
