@@ -11,6 +11,7 @@
         <ResourceDictionary>
             <converters:DifferenceToColorConverter x:Key="DiffToColor" />
             <converters:HideWhenLoadingConverter x:Key="HideWhenLoading" />
+            <converters:EnumEqualsConverter x:Key="EnumEqualsConverter" />
 
             <Style x:Key="HeaderStyle" TargetType="Label">
                 <Setter Property="FontAttributes" Value="Bold" />
@@ -70,17 +71,21 @@
                     <!-- Header Row -->
                     <Grid Padding="4"
                           BackgroundColor="#EEEEEE"
-                          ColumnDefinitions="110,50,50,50,100,110,140,80,80,30">
-                        <Label Text="Barcode" Grid.Column="0" HorizontalTextAlignment="Start" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="Scan" Grid.Column="1" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="Initial" Grid.Column="2" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="Diff" Grid.Column="3" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="ArticCode" Grid.Column="4" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="Name" Grid.Column="5" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="Color" Grid.Column="6" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="Size" Grid.Column="7" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="Price" Grid.Column="8" Style="{StaticResource HeaderStyle}" TextColor="black"/>
-                        <Label Text="→" Grid.Column="9" Style="{StaticResource HeaderStyle}" TextColor="black"/>
+                          ColumnDefinitions="110,110,50,50,50,100,110,140,80,80,30">
+
+                        <Label Text="Barcode" Grid.Column="0" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Box" Grid.Column="1" Style="{StaticResource HeaderStyle}" 
+       IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" />
+                        <Label Text="Scan" Grid.Column="2" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Initial" Grid.Column="3" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Diff" Grid.Column="4" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="ArticCode" Grid.Column="5" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Name" Grid.Column="6" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Color" Grid.Column="7" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Size" Grid.Column="8" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Price" Grid.Column="9" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="→" Grid.Column="10" Style="{StaticResource HeaderStyle}" />
+
                     </Grid>
 
                     <!-- Product List -->
@@ -98,35 +103,31 @@
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="models:StatsProduct">
                                 <Grid Padding="4"
-                  ColumnDefinitions="110,50,50,50,100,110,140,80,80,30"
-                  BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}">
-                                    <Label Grid.Column="0" Text="{Binding Barcode}" TextColor="black" Style="{StaticResource CellStyle}">
-                                        <Label.GestureRecognizers>
-                                            <TapGestureRecognizer
-                            Command="{Binding BindingContext.CopyBarcodeCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
-                            CommandParameter="{Binding Barcode}" />
-                                        </Label.GestureRecognizers>
-                                    </Label>
-
-                                    <Label Grid.Column="1" Text="{Binding ScannedQuantity}" Style="{StaticResource CellStyle}" TextColor="black"/>
-                                    <Label Grid.Column="2" Text="{Binding InitialQuantity}" Style="{StaticResource CellStyle}" TextColor="black"/>
-                                    <Label Grid.Column="3" Text="{Binding Difference}" Style="{StaticResource CellStyle}" TextColor="black"/>
-                                    <Label Grid.Column="4" Text="{Binding ArticCode}" Style="{StaticResource CellStyle}" TextColor="black"/>
-                                    <Label Grid.Column="5" Text="{Binding Name}" Style="{StaticResource CellStyle}" TextColor="black"/>
-                                    <Label Grid.Column="6" Text="{Binding Color}" Style="{StaticResource CellStyle}" TextColor="black"/>
-                                    <Label Grid.Column="7" Text="{Binding Size}" Style="{StaticResource CellStyle}" TextColor="black"/>
-                                    <Label Grid.Column="8" Text="{Binding Price}" Style="{StaticResource CellStyle}" TextColor="black"/>
-
-                                    <Button Grid.Column="9"
-                                        Text="➡"
-                                        BackgroundColor="#a9d5a5"
-                                        TextColor="White"
-                                        FontSize="14"
-                                        WidthRequest="30"
-                                        HeightRequest="25"
-                                        Padding="0"
-                                        Clicked="OnDetailsClicked" />
+      ColumnDefinitions="110,110,50,50,50,100,110,140,80,80,30"
+      BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}">
+                                    <Label Grid.Column="0" Text="{Binding Barcode}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="1" Text="{Binding BoxId}" 
+           Style="{StaticResource CellStyle}" 
+           IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:ScannedProductsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" />
+                                    <Label Grid.Column="2" Text="{Binding ScannedQuantity}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="3" Text="{Binding InitialQuantity}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="4" Text="{Binding Difference}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="5" Text="{Binding ArticCode}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="6" Text="{Binding Name}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="7" Text="{Binding Color}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="8" Text="{Binding Size}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="9" Text="{Binding Price}" Style="{StaticResource CellStyle}" />
+                                    <Button Grid.Column="10"
+            Text="➡"
+            BackgroundColor="#a9d5a5"
+            TextColor="White"
+            FontSize="14"
+            WidthRequest="30"
+            HeightRequest="25"
+            Padding="0"
+            Clicked="OnDetailsClicked" />
                                 </Grid>
+
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
 

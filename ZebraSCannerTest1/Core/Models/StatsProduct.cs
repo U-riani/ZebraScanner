@@ -21,7 +21,7 @@ namespace ZebraSCannerTest1.Core.Models
         private string? _size;
         private string? _price;
         private string? _articCode;
-
+        public string? _boxId;
         public string? Barcode
         {
             get => _barcode;
@@ -56,6 +56,12 @@ namespace ZebraSCannerTest1.Core.Models
         {
             get => _articCode;
             set { if (_articCode == value) return; _articCode = value; OnPropertyChanged(); }
+        }
+
+        public string? BoxId
+        {
+            get => _boxId;
+            set { if (_boxId == value) return; _boxId = value; OnPropertyChanged(); }
         }
 
         public int InitialQuantity

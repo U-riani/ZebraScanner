@@ -15,8 +15,8 @@ namespace ZebraSCannerTest1.UI.ViewModels;
 public partial class LootsScanningViewModel : ObservableObject, IDisposable
 {
     private readonly IProductService _productService;
-    private readonly IExcelExportService _exporter;
-    private readonly IExcelExportLogsService _logExporter;
+    //private readonly IExcelExportService _exporter;
+    //private readonly IExcelExportLogsService _logExporter;
     private readonly IDialogService _dialogs;
     private readonly INavigationService _navigation;
     private readonly ILoggerService<LootsScanningViewModel> _logger;
@@ -32,14 +32,14 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         new(Enumerable.Range(0, 8).Select(_ => new ProductSlot()));
 
     public IAsyncRelayCommand<string> AddProductCommand { get; }
-    public IAsyncRelayCommand ExportDataCommand { get; }
+    //public IAsyncRelayCommand ExportDataCommand { get; }
     public IAsyncRelayCommand ShowResultsCommand { get; }
     public IAsyncRelayCommand GoToLogsCommand { get; }
+    public IAsyncRelayCommand GoToScannedProductsCommand { get; }
 
     public LootsScanningViewModel(
         IProductService productService,
-    IExcelExportService exporter,
-    IExcelExportLogsService logExporter,
+   
     IDialogService dialogs,                   // injected
     INavigationService navigation,
     ILoggerService<LootsScanningViewModel> logger,
@@ -47,8 +47,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     IScanningService scanningService)
     {
         _productService = productService;
-        _exporter = exporter;
-        _logExporter = logExporter;
+        
         _dialogs = dialogs;                        // ← you forgot this
         _navigation = navigation;
         _logger = logger;
@@ -58,10 +57,18 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         //_scanningService.StartAsync();
 
         AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
-        ExportDataCommand = new AsyncRelayCommand(ExportDataAsync);
+       
         ShowResultsCommand = new AsyncRelayCommand(ShowResultsAsync);
         GoToLogsCommand = new AsyncRelayCommand(() =>
             _navigation.NavigateToAsync(nameof(LogsPage), new Dictionary<string, object>
+            {
+                ["Mode"] = InventoryMode.Loots,
+                ["BoxId"] = CurrentBoxId
+            }));
+
+        GoToScannedProductsCommand = new AsyncRelayCommand(() =>
+        _navigation.NavigateToAsync(nameof(ScannedProductsPage),
+            new Dictionary<string, object>
             {
                 ["Mode"] = InventoryMode.Loots,
                 ["BoxId"] = CurrentBoxId
@@ -135,36 +142,36 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     }
 
 
-    public async Task ExportDataAsync()
-    {
-        try
-        {
-            await _popup.ShowProgressAsync("Exporting Loots data...");
-#if ANDROID
-            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
-                Android.OS.Environment.DirectoryDownloads).AbsolutePath;
-#else
-            var path = FileSystem.AppDataDirectory;
-#endif
-            var file = Path.Combine(path, $"Loots_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx");
-            var progress = new Progress<double>(p => _popup.UpdateMessage($"Progress {p:P0}"));
-            await _exporter.ExportProductsAsync(file, progress, InventoryMode.Loots);
-            _popup?.Close();
-            if (_dialogs != null)
-                await _dialogs.ShowMessageAsync("✅ Export Complete", $"Saved to: {file}");
-            else
-                Console.WriteLine($"[INFO] Export Complete (no dialog service). Saved to: {file}");
-        }
-        catch (Exception ex)
-        {
-            _popup?.Close();
-            _logger.Error("Loots export failed", ex);
-            if (_dialogs != null)
-                await _dialogs.ShowMessageAsync("❌ Export Error", ex.Message);
-            else
-                Console.WriteLine($"[ERROR] Export Error: {ex}");
-        }
-    }
+//    public async Task ExportDataAsync()
+//    {
+//        try
+//        {
+//            await _popup.ShowProgressAsync("Exporting Loots data...");
+//#if ANDROID
+//            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
+//                Android.OS.Environment.DirectoryDownloads).AbsolutePath;
+//#else
+//            var path = FileSystem.AppDataDirectory;
+//#endif
+//            var file = Path.Combine(path, $"Loots_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx");
+//            var progress = new Progress<double>(p => _popup.UpdateMessage($"Progress {p:P0}"));
+//            await _exporter.ExportProductsAsync(file, progress, InventoryMode.Loots);
+//            _popup?.Close();
+//            if (_dialogs != null)
+//                await _dialogs.ShowMessageAsync("✅ Export Complete", $"Saved to: {file}");
+//            else
+//                Console.WriteLine($"[INFO] Export Complete (no dialog service). Saved to: {file}");
+//        }
+//        catch (Exception ex)
+//        {
+//            _popup?.Close();
+//            _logger.Error("Loots export failed", ex);
+//            if (_dialogs != null)
+//                await _dialogs.ShowMessageAsync("❌ Export Error", ex.Message);
+//            else
+//                Console.WriteLine($"[ERROR] Export Error: {ex}");
+//        }
+//    }
 
     private async Task ShowResultsAsync()
     {

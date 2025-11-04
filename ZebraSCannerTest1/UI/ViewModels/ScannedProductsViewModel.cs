@@ -2,12 +2,17 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Core.Services;
+using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.UI.Views;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
+
+[QueryProperty(nameof(CurrentBoxId), "BoxId")]
+[QueryProperty(nameof(CurrentMode), "Mode")]
 public partial class ScannedProductsViewModel : ObservableObject
 {
     private readonly SqliteConnection _conn;
@@ -31,6 +36,8 @@ public partial class ScannedProductsViewModel : ObservableObject
     [ObservableProperty] private int totalRowCount;
     [ObservableProperty] private bool isLoading;
     [ObservableProperty] private bool needsReload = true;
+    [ObservableProperty] private string currentBoxId = string.Empty;
+    [ObservableProperty] private InventoryMode currentMode = InventoryMode.Standard; // 👈 new
 
     public ObservableCollection<StatsProduct> ScannedProductsStats { get; private set; } = new();
 
@@ -42,7 +49,6 @@ public partial class ScannedProductsViewModel : ObservableObject
 
     private async Task LoadProductsAsync(bool reset)
     {
-        // Cancel any previous load
         _loadCts?.Cancel();
         _loadCts = new CancellationTokenSource();
         var token = _loadCts.Token;
@@ -55,70 +61,82 @@ public partial class ScannedProductsViewModel : ObservableObject
             IsInitialLoading = true;
             IsLoadingMore = false;
         }
-        else
-        {
-            IsLoadingMore = true;
-        }
+        else IsLoadingMore = true;
 
         try
         {
             var where = string.IsNullOrWhiteSpace(_currentFilter) ? "" : $"WHERE {_currentFilter}";
             var dir = _currentSortDescending ? "DESC" : "ASC";
 
-            // Run DB operations fully off the UI thread
+            // 🧠 choose table dynamically
+            var table = CurrentMode == InventoryMode.Loots ? "LootsProducts" : "Products";
+
+            // 🧠 add BoxId filter if in Loots mode and box specified
+            if (CurrentMode == InventoryMode.Loots && !string.IsNullOrWhiteSpace(CurrentBoxId))
+            {
+                var extra = $"Box_Id = '{CurrentBoxId.Replace("'", "''")}'";
+                where = string.IsNullOrWhiteSpace(where)
+                    ? $"WHERE {extra}"
+                    : $"{where} AND {extra}";
+            }
+
             var (temp, total) = await Task.Run(() =>
             {
                 var list = new List<StatsProduct>();
 
-                using var cmd = _conn.CreateCommand();
-                cmd.CommandText = $@"
-                    SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
-                           Name, Color, Size, Price, ArticCode
-                    FROM Products
-                    {where}
-                    ORDER BY {_currentSortField} {dir}
-                    LIMIT {PageSize} OFFSET {_offset};";
+                using var conn = DatabaseInitializer.GetConnection(CurrentMode);
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = CurrentMode == InventoryMode.Loots
+                    ? $@"
+                        SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
+                               Name, Color, Size, Price, ArticCode
+                        FROM {table}
+                        {where}
+                        ORDER BY {_currentSortField} {dir}
+                        LIMIT {PageSize} OFFSET {_offset};"
+                    : $@"
+                        SELECT Barcode, NULL as Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
+                               Name, Color, Size, Price, ArticCode
+                        FROM {table}
+                        {where}
+                        ORDER BY {_currentSortField} {dir}
+                        LIMIT {PageSize} OFFSET {_offset};";
+
 
                 using var r = cmd.ExecuteReader();
-                int batchCounter = 0;
-
                 while (r.Read())
                 {
-                    if (token.IsCancellationRequested)
-                        throw new OperationCanceledException();
+                    if (token.IsCancellationRequested) throw new OperationCanceledException();
+
 
                     list.Add(new StatsProduct
                     {
                         Barcode = r.GetString(0),
-                        InitialQuantity = r.GetInt32(1),
-                        ScannedQuantity = r.GetInt32(2),
-                        CreatedAt = DateTime.Parse(r.GetString(3)),
-                        UpdatedAt = DateTime.Parse(r.GetString(4)),
-                        Name = r.IsDBNull(5) ? "" : r.GetString(5),
-                        Color = r.IsDBNull(6) ? "" : r.GetString(6),
-                        Size = r.IsDBNull(7) ? "" : r.GetString(7),
-                        Price = r.IsDBNull(8) ? "" : r.GetString(8),
-                        ArticCode = r.IsDBNull(9) ? "" : r.GetString(9)
+                        BoxId = r.IsDBNull(1) ? "" : r.GetString(1),
+                        InitialQuantity = r.GetInt32(2),
+                        ScannedQuantity = r.GetInt32(3),
+                        CreatedAt = DateTime.Parse(r.GetString(4)),
+                        UpdatedAt = DateTime.Parse(r.GetString(5)),
+                        Name = r.IsDBNull(6) ? "" : r.GetString(6),
+                        Color = r.IsDBNull(7) ? "" : r.GetString(7),
+                        Size = r.IsDBNull(8) ? "" : r.GetString(8),
+                        Price = r.IsDBNull(9) ? "" : r.GetString(9),
+                        ArticCode = r.IsDBNull(10) ? "" : r.GetString(10)
                     });
 
-                    // Check for cancellation every 20 rows
-                    if (++batchCounter % 20 == 0 && token.IsCancellationRequested)
-                        throw new OperationCanceledException();
+
                 }
 
                 int totalCount;
-                using (var countCmd = _conn.CreateCommand())
-                {
-                    countCmd.CommandText = $"SELECT COUNT(*) FROM Products {where}";
-                    totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
-                }
+                using var countCmd = conn.CreateCommand();
+                countCmd.CommandText = $"SELECT COUNT(*) FROM {table} {where}";
+                totalCount = Convert.ToInt32(countCmd.ExecuteScalar());
 
                 return (list, totalCount);
             }, token);
 
             if (token.IsCancellationRequested) return;
 
-            // Update UI on MainThread
             await MainThread.InvokeOnMainThreadAsync(() =>
             {
                 foreach (var p in temp)
@@ -129,10 +147,6 @@ public partial class ScannedProductsViewModel : ObservableObject
                 TotalRowCount = total;
                 HasMoreRows = _offset < total;
             });
-        }
-        catch (OperationCanceledException)
-        {
-            // silently ignore user cancellation
         }
         catch (Exception ex)
         {
@@ -146,12 +160,28 @@ public partial class ScannedProductsViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private async Task LoadMoreAsync()
+
+    [RelayCommand] private async Task LoadMoreAsync() => await LoadProductsAsync(false);
+
+    public async Task LoadAsync(bool reset = true, CancellationToken token = default)
     {
-        if (IsInitialLoading || IsLoadingMore || !HasMoreRows)
-            return;
-        await LoadProductsAsync(reset: false);
+        if (IsLoading) return;
+        try
+        {
+            await Task.Yield();
+            await LoadProductsAsync(reset);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            await MainThread.InvokeOnMainThreadAsync(() =>
+                Shell.Current.DisplayAlert("Error", ex.Message, "OK"));
+        }
+        finally
+        {
+            IsInitialLoading = false;
+            IsLoadingMore = false;
+        }
     }
 
     [RelayCommand]
@@ -350,34 +380,34 @@ public partial class ScannedProductsViewModel : ObservableObject
         await Shell.Current.GoToAsync(nameof(DetailsPage), query);
     }
 
-    public async Task LoadAsync(bool reset = true, CancellationToken token = default)
-    {
-        // already loading? skip
-        if (IsLoading)
-            return;
+    //public async Task LoadAsync(bool reset = true, CancellationToken token = default)
+    //{
+    //    // already loading? skip
+    //    if (IsLoading)
+    //        return;
 
 
-        try
-        {
-            await Task.Yield(); // yield control so UI shows
-            await LoadProductsAsync(reset);
-        }
-        catch (OperationCanceledException)
-        {
-            // ignore cancellation
-        }
-        catch (Exception ex)
-        {
-            await MainThread.InvokeOnMainThreadAsync(() =>
-                Shell.Current.DisplayAlert("Error", ex.Message, "OK"));
-        }
-        finally
-        {
-            IsInitialLoading = false;
-            IsLoadingMore = false;
-        }
-    }
-    
+    //    try
+    //    {
+    //        await Task.Yield(); // yield control so UI shows
+    //        await LoadProductsAsync(reset);
+    //    }
+    //    catch (OperationCanceledException)
+    //    {
+    //        // ignore cancellation
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        await MainThread.InvokeOnMainThreadAsync(() =>
+    //            Shell.Current.DisplayAlert("Error", ex.Message, "OK"));
+    //    }
+    //    finally
+    //    {
+    //        IsInitialLoading = false;
+    //        IsLoadingMore = false;
+    //    }
+    //}
+
 
 
 }

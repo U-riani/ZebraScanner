@@ -19,18 +19,16 @@
     <VerticalStackLayout Padding="0" Spacing="12">
 
         <HorizontalStackLayout Spacing="8" Padding="3" HorizontalOptions="CenterAndExpand">
-            <Button Text="Export" Command="{Binding ExportDataCommand}" />
-            <Button Text="Stats" Command="{Binding ShowResultsCommand}" />
+            <Button Text="Stats" Command="{Binding GoToScannedProductsCommand}" />
             <Button Text="Logs" Command="{Binding GoToLogsCommand}" />
+            <Button Text="Rslt" Command="{Binding ShowResultsCommand}" />
         </HorizontalStackLayout>
 
-        <HorizontalStackLayout>
             <Label Text="{Binding CurrentBoxId, StringFormat='Box: {0}'}"
                    FontSize="20"
                    FontAttributes="Bold"
                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
-                   HorizontalOptions="CenterAndExpand" />
-        </HorizontalStackLayout>
+                   HorizontalTextAlignment="Center" />
 
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto" Padding="10,0">
             <Entry x:Name="lootBarcodeEntry"
