@@ -412,16 +412,17 @@ public partial class InventorizationMenuViewModel : ObservableObject
             if (choice == "From Server")
             {
                 _popup.UpdateMessage("Downloading from server...");
-                await _serverImporter.ImportJsonFromServerAsync(Mode);
+                imported = await _serverImporter.ImportJsonFromServerAsync(Mode);
 
-                // 🔁 Reset ScanLog connections (if you cached one)
-                _scanLogRepository?.ClearAsync(Mode);
+                // Clear any cached scan logs
+                await _scanLogRepository.ClearAsync(Mode);
 
-                // 🔁 Notify UI to reload its dataset
+                // 🔁 Notify UI layers
                 WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(new Product()));
 
                 _popup.UpdateMessage($"✅ Imported {imported} items from server.");
             }
+
 
             else // From Device
             {

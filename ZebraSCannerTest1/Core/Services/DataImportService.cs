@@ -92,6 +92,14 @@ namespace ZebraSCannerTest1.Core.Services
 
             if (items == null || items.Count == 0)
                 throw new Exception("No valid items found in JSON file.");
+            // 🔥 Delete old data for this mode first
+            using (var clear = _conn.CreateCommand())
+            {
+                string clearTable = isLoots ? "LootsProducts" : "Products";
+                clear.CommandText = $"DELETE FROM {clearTable};";
+                clear.ExecuteNonQuery();
+                Console.WriteLine($"[IMPORT] Cleared old data from {clearTable}");
+            }
 
             using var tx = _conn.BeginTransaction();
             using var insert = _conn.CreateCommand();

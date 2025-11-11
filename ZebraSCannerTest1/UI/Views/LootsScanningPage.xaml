@@ -103,7 +103,7 @@
             </Grid>
 
             <!-- Row 4 -->
-            <Grid Grid.Row="4" Padding="5" Grid.ColumnSpan="4" ColumnDefinitions="2*,*,*,*" BackgroundColor="{Binding Slots[5].Difference, Converter={StaticResource DiffToColor}}">
+            <Grid Grid.Row="4" Padding="5" Grid.ColumnSpan="4" ColumnDefinitions="2*,*,*,*" BackgroundColor="{Binding Slots[4].Difference, Converter={StaticResource DiffToColor}}">
                 <Label Grid.Column="0" Text="{Binding Slots[4].Barcode}" />
                 <Label Grid.Column="1" Text="{Binding Slots[4].ScannedQuantity}" HorizontalTextAlignment="Center" />
                 <Label Grid.Column="2" Text="{Binding Slots[4].InitialQuantity}" HorizontalTextAlignment="End" />

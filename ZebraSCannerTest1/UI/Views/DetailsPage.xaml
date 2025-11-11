@@ -17,7 +17,7 @@
     </ContentPage.Resources>
     
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="12">
+        <VerticalStackLayout Padding="10" Spacing="12">
 
             <ActivityIndicator 
                 IsRunning="{Binding IsLoading}" 
@@ -157,19 +157,32 @@ IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter},
                     IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"/>
 
             <!-- Logs -->
-            <Grid ColumnDefinitions="2*,*,*,*,*,*" Padding="6,4">
+            <Grid ColumnDefinitions="3*,*,*,*,2*,50" Padding="4,0,4,0">
                 <Label Text="Barcode" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                 <Label Text="was" Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                 <Label Text="IncBy" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                 <Label Text="Is" Grid.Column="3" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-                <Label Text="Sctn" Grid.Column="4" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                <!-- Section column only for Standard mode -->
+                <Label Text="Sctn"
+           Grid.Column="4"
+           IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
+           HorizontalTextAlignment="Center" FontAttributes="Bold"
+           TextColor="{AppThemeBinding Dark=white, Light=black}" />
+
+                <!-- Box column only for Loots mode -->
+                <Label Text="Box"
+           Grid.Column="4"
+           IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+           HorizontalTextAlignment="Center" FontAttributes="Bold"
+           TextColor="{AppThemeBinding Dark=white, Light=black}" />
+
                 <Label Text="Time" Grid.Column="5" HorizontalTextAlignment="End" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             </Grid>
             
             <CollectionView ItemsSource="{Binding Logs}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:ScanLog">
-                        <Grid Padding="4" Margin="0,0,0,2" ColumnDefinitions="2*,*,*,*,*,*"
+                        <Grid Padding="4,0,4,0" Margin="0,0,0,2" ColumnDefinitions="3*,*,*,*,2*,50"
                               BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}" >
                             <Label VerticalTextAlignment="Center" Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="1" Text="{Binding Was}" 
@@ -178,10 +191,22 @@ IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter},
                                 HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
                             <Label VerticalTextAlignment="Center" Grid.Column="3" Text="{Binding IsValue}" 
                                 HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-                            <Label VerticalTextAlignment="Center" Grid.Column="4" Text="{Binding Section, FallbackValue='(none)'}"
-                                HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                            <!-- Section (Standard only) -->
+                            <Label Grid.Column="4"
+                       Text="{Binding Section, FallbackValue='(none)'}"
+                       IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="14"
+                       TextColor="{AppThemeBinding Dark=white, Light=black}" />
+
+                            <!-- Box_Id (Loots only) -->
+                            <Label Grid.Column="4"
+                       Text="{Binding Box_Id, FallbackValue='(none)'}"
+                       IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                       HorizontalTextAlignment="Center" VerticalTextAlignment="Center" FontSize="14"
+                       TextColor="{AppThemeBinding Dark=white, Light=black}" />
+
                             <Label VerticalTextAlignment="Center" Grid.Column="5" 
-                               Text="{Binding UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}" 
+                               Text="{Binding UpdatedAt, StringFormat='{0:dd/MM HH:mm:ss}'}" 
                                FontSize="12" TextColor="Gray" 
                                HorizontalTextAlignment="End"/>
                         </Grid>
