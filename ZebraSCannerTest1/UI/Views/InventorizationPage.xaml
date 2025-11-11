@@ -18,8 +18,8 @@
     <VerticalStackLayout Padding="0" Spacing="12">
 
         <HorizontalStackLayout Spacing="8" Padding="3" HorizontalOptions="CenterAndExpand">
-            <Button Text="Exprt" Command="{Binding ExportDataCommand}" />
-            <Button Text="Imprt" Command="{Binding ImportDataCommand}" InputTransparent="False" />
+            <!--<Button Text="Exprt" Command="{Binding ExportDataCommand}" />
+            <Button Text="Imprt" Command="{Binding ImportDataCommand}" InputTransparent="False" />-->
             <Button Text="Stats" Command="{Binding GoToScannedProductsCommand}" />
             <Button Text="Logs" Command="{Binding GoToLogsCommand}" />
             <Button Text="Rslt" Command="{Binding ShowResultsCommand}"/>
@@ -27,15 +27,15 @@
         </HorizontalStackLayout>
 
         <!-- Current scanned barcode big and obvious -->
-        <HorizontalStackLayout >
+        <HorizontalStackLayout HorizontalOptions="Center">
 
-            <Label Text="{Binding LastScannedBarcode}"
+            <!--<Label Text="{Binding LastScannedBarcode}"
                    FontSize="24"
                    TextColor="{AppThemeBinding Dark=white, Light=black, Default=black}"
                    FontAttributes="Bold"
                    HorizontalTextAlignment="Center"
                    MinimumWidthRequest="200"
-                   MaximumWidthRequest="300"/>
+                   MaximumWidthRequest="300 -->
             <Button
                 Text="{Binding CurrentSection, StringFormat='Section: {0}'}"
                 Command="{Binding ChangeSectionCommand}"
@@ -43,7 +43,7 @@
                 TextColor="Black"
                 CornerRadius="8"
                 Padding="8,4"
-                HorizontalOptions="End" 
+                HorizontalOptions="Center" 
                 />
         </HorizontalStackLayout>
 

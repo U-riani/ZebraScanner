@@ -3,12 +3,15 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Core.Services;
+using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Messages;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
+[QueryProperty(nameof(BoxId), "BoxId")]
 public partial class DetailsViewModel : ObservableObject
 {
     private readonly SqliteConnection _conn;
@@ -50,7 +53,15 @@ public partial class DetailsViewModel : ObservableObject
     [ObservableProperty] private string productColor;
     [ObservableProperty] private string productSize;
     [ObservableProperty] private decimal productPrice;
-    [ObservableProperty] private string productArticCode;
+
+    [ObservableProperty] private string productArticCode; 
+    [ObservableProperty] private InventoryMode currentMode = InventoryMode.Standard;
+    [ObservableProperty] private string boxId = string.Empty;
+    [ObservableProperty] private int totalScannedQuantity;
+    [ObservableProperty] private int totalInitialQuantity;
+
+    [ObservableProperty] private string allBoxesInfo = string.Empty;
+
 
     public IAsyncRelayCommand SaveCommand { get; }
     public IAsyncRelayCommand LoadLogsCommand { get; }
@@ -62,15 +73,15 @@ public partial class DetailsViewModel : ObservableObject
         ScannedQuantity++;
         UpdateUnsavedState();
 
-
     }
 
     [RelayCommand]
     private void Decrement()
     {
-        if(ScannedQuantity > 0)
+        if (ScannedQuantity > 0)
         {
             ScannedQuantity--;
+
             UpdateUnsavedState();
 
         }
@@ -106,20 +117,25 @@ public partial class DetailsViewModel : ObservableObject
 
         var now = DateTime.UtcNow.ToString("o");
         int previousQty = previousValue ?? 0;
+        var table = CurrentMode == InventoryMode.Loots ? "LootsProducts" : "Products";
 
-        // Get last known quantity (if not passed)
+        using var conn = DatabaseInitializer.GetConnection(CurrentMode);
+
+        // read last quantity if not given
         if (previousValue == null)
         {
-            using var checkCmd = _conn.CreateCommand();
-            checkCmd.CommandText = "SELECT ScannedQuantity FROM Products WHERE Barcode = $b";
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.CommandText = CurrentMode == InventoryMode.Loots
+                ? $"SELECT ScannedQuantity FROM {table} WHERE Barcode = $b AND Box_Id = $box"
+                : $"SELECT ScannedQuantity FROM {table} WHERE Barcode = $b";
             checkCmd.Parameters.AddWithValue("$b", ProductBarcode);
+            if (CurrentMode == InventoryMode.Loots)
+                checkCmd.Parameters.AddWithValue("$box", BoxId ?? "");
             var result = checkCmd.ExecuteScalar();
             previousQty = result != null && result != DBNull.Value ? Convert.ToInt32(result) : 0;
         }
 
         int incrementBy = ScannedQuantity - previousQty;
-
-        // ✅ Skip saving & logging if nothing changed
         if (incrementBy == 0)
         {
             if (!isAutoSave)
@@ -127,42 +143,97 @@ public partial class DetailsViewModel : ObservableObject
             return;
         }
 
-        // Upsert into Products
-        using (var cmd = _conn.CreateCommand())
+        using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = @"
-INSERT INTO Products 
-    (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
-VALUES 
-    ($barcode,$initial,$scanned,$created,$updated,$name,$color,$size,$price,$artic)
-ON CONFLICT(Barcode) DO UPDATE SET
-    ScannedQuantity = $scanned,
+            if (CurrentMode == InventoryMode.Loots)
+            {
+                // manually check if record exists
+                cmd.CommandText = "SELECT COUNT(*) FROM LootsProducts WHERE Barcode = $barcode AND Box_Id = $box";
+                cmd.Parameters.AddWithValue("$barcode", ProductBarcode);
+                cmd.Parameters.AddWithValue("$box", BoxId ?? "");
+                long count = (long)cmd.ExecuteScalar();
+
+                cmd.Parameters.Clear();
+
+                if (count > 0)
+                {
+                    // update existing
+                    cmd.CommandText = @"
+UPDATE LootsProducts
+SET ScannedQuantity = $scanned,
     InitialQuantity = $initial,
     UpdatedAt = $updated,
     Name = $name,
     Color = $color,
     Size = $size,
     Price = $price,
-    ArticCode = $artic;";
-            cmd.Parameters.AddWithValue("$barcode", ProductBarcode);
-            cmd.Parameters.AddWithValue("$initial", InitialQuantity);
-            cmd.Parameters.AddWithValue("$scanned", ScannedQuantity);
-            cmd.Parameters.AddWithValue("$created", now);
-            cmd.Parameters.AddWithValue("$updated", now);
-            cmd.Parameters.AddWithValue("$name", ProductName ?? "");
-            cmd.Parameters.AddWithValue("$color", ProductColor ?? "");
-            cmd.Parameters.AddWithValue("$size", ProductSize ?? "");
-            cmd.Parameters.AddWithValue("$price", ProductPrice);
-            cmd.Parameters.AddWithValue("$artic", ProductArticCode ?? "");
-            cmd.ExecuteNonQuery();
+    ArticCode = $artic
+WHERE Barcode = $barcode AND Box_Id = $box;";
+                }
+                else
+                {
+                    // insert new
+                    cmd.CommandText = @"
+INSERT INTO LootsProducts
+    (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, 
+     Name, Color, Size, Price, ArticCode)
+VALUES
+    ($barcode, $box, $initial, $scanned, $created, $updated,
+     $name, $color, $size, $price, $artic);";
+                    cmd.Parameters.AddWithValue("$created", now);
+                }
+
+                cmd.Parameters.AddWithValue("$barcode", ProductBarcode);
+                cmd.Parameters.AddWithValue("$box", BoxId ?? "");
+                cmd.Parameters.AddWithValue("$initial", InitialQuantity);
+                cmd.Parameters.AddWithValue("$scanned", ScannedQuantity);
+                cmd.Parameters.AddWithValue("$updated", now);
+                cmd.Parameters.AddWithValue("$name", ProductName ?? "");
+                cmd.Parameters.AddWithValue("$color", ProductColor ?? "");
+                cmd.Parameters.AddWithValue("$size", ProductSize ?? "");
+                cmd.Parameters.AddWithValue("$price", ProductPrice);
+                cmd.Parameters.AddWithValue("$artic", ProductArticCode ?? "");
+                cmd.ExecuteNonQuery();
+            }
+            else
+            {
+                cmd.CommandText = @"
+INSERT INTO Products 
+    (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, 
+     Name, Color, Size, Price, ArticCode)
+VALUES 
+    ($barcode,$initial,$scanned,$created,$updated,$name,$color,$size,$price,$artic)
+ON CONFLICT(Barcode) DO UPDATE SET
+    ScannedQuantity=$scanned,
+    InitialQuantity=$initial,
+    UpdatedAt=$updated,
+    Name=$name,
+    Color=$color,
+    Size=$size,
+    Price=$price,
+    ArticCode=$artic;";
+                cmd.Parameters.AddWithValue("$barcode", ProductBarcode);
+                cmd.Parameters.AddWithValue("$initial", InitialQuantity);
+                cmd.Parameters.AddWithValue("$scanned", ScannedQuantity);
+                cmd.Parameters.AddWithValue("$created", now);
+                cmd.Parameters.AddWithValue("$updated", now);
+                cmd.Parameters.AddWithValue("$name", ProductName ?? "");
+                cmd.Parameters.AddWithValue("$color", ProductColor ?? "");
+                cmd.Parameters.AddWithValue("$size", ProductSize ?? "");
+                cmd.Parameters.AddWithValue("$price", ProductPrice);
+                cmd.Parameters.AddWithValue("$artic", ProductArticCode ?? "");
+                cmd.ExecuteNonQuery();
+            }
+
         }
 
-        // Add log record
-        using (var log = _conn.CreateCommand())
+        // ✅ log only for standard inventory
+        if (CurrentMode == InventoryMode.Standard)
         {
+            using var log = conn.CreateCommand();
             log.CommandText = @"
-                INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section)
-                VALUES ($barcode, $was, $inc, $isValue, $updated, $isManual, $section)";
+        INSERT INTO ScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section)
+        VALUES ($barcode, $was, $inc, $isValue, $updated, $isManual, $section)";
             log.Parameters.AddWithValue("$barcode", ProductBarcode);
             log.Parameters.AddWithValue("$was", previousQty);
             log.Parameters.AddWithValue("$inc", incrementBy);
@@ -171,29 +242,45 @@ ON CONFLICT(Barcode) DO UPDATE SET
             log.Parameters.AddWithValue("$isManual", 1);
             log.Parameters.AddWithValue("$section",
                 string.IsNullOrEmpty(_currentSection) ? (object)DBNull.Value : _currentSection);
+            log.ExecuteNonQuery();
 
+        }else if(CurrentMode == InventoryMode.Loots) {
+
+            using var log = conn.CreateCommand();
+            log.CommandText = @"
+        INSERT INTO LootsScanLogs (Barcode, Was, IncrementBy, IsValue, UpdatedAt, IsManual, Section)
+        VALUES ($barcode, $was, $inc, $isValue, $updated, $isManual, $section)";
+            log.Parameters.AddWithValue("$barcode", ProductBarcode);
+            log.Parameters.AddWithValue("$was", previousQty);
+            log.Parameters.AddWithValue("$inc", incrementBy);
+            log.Parameters.AddWithValue("$isValue", ScannedQuantity);
+            log.Parameters.AddWithValue("$updated", now);
+            log.Parameters.AddWithValue("$isManual", 1);
+            log.Parameters.AddWithValue("$section",
+                string.IsNullOrEmpty(_currentSection) ? (object)DBNull.Value : _currentSection);
             log.ExecuteNonQuery();
         }
 
-        // Notify and refresh UI
-        WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(new Product
-        {
-            Barcode = ProductBarcode,
-            InitialQuantity = InitialQuantity,
-            ScannedQuantity = ScannedQuantity,
-            UpdatedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
-        }));
+            //if (CurrentMode == InventoryMode.Loots)
+            //{
+            //    RecalculateTotals(conn);
+            //}
 
-        await LoadLogsAsync();
+            WeakReferenceMessenger.Default.Send(
+                new ProductUpdatedMessage(new Product
+                {
+                    Barcode = ProductBarcode,
+                    InitialQuantity = InitialQuantity,
+                    ScannedQuantity = ScannedQuantity,
+                    UpdatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                }));
 
         if (!isAutoSave)
             await Shell.Current.DisplayAlert("Saved", "Product updated successfully.", "OK");
 
-        // ✅ Reset baseline
         _originalQuantity = ScannedQuantity;
         HasUnsavedChanges = false;
-
     }
 
     private void UpdateUnsavedState()
@@ -225,6 +312,12 @@ ON CONFLICT(Barcode) DO UPDATE SET
     partial void OnScannedQuantityChanged(int oldValue, int newValue)
     {
         OnPropertyChanged(nameof(Difference)); // notify UI
+        if (CurrentMode == InventoryMode.Loots && !string.IsNullOrEmpty(ProductBarcode))
+        {
+            // reflect the visual total immediately (optimistic)
+            var delta = newValue - oldValue;
+            TotalScannedQuantity += delta;
+        }
     }
 
     partial void OnInitialQuantityChanged(int oldValue, int newValue)
@@ -238,8 +331,8 @@ ON CONFLICT(Barcode) DO UPDATE SET
         if (string.IsNullOrEmpty(ProductBarcode)) return;
 
         Logs.Clear();
-
-        using var cmd = _conn.CreateCommand();
+        using var conn = DatabaseInitializer.GetConnection(CurrentMode);
+        using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
         SELECT Barcode, Was, IncrementBy, IsValue, UpdatedAt, Section
         FROM ScanLogs
@@ -256,7 +349,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
 
         try
         {
-            var colCheck = _conn.CreateCommand();
+            var colCheck = conn.CreateCommand();
             colCheck.CommandText = "PRAGMA table_info(ScanLogs)";
             using var info = colCheck.ExecuteReader();
             while (info.Read())
@@ -268,7 +361,8 @@ ON CONFLICT(Barcode) DO UPDATE SET
                     hasSection = true;
             }
         }
-        catch {
+        catch
+        {
             hasIsManual = false;
             hasSection = false;
         }
@@ -329,36 +423,131 @@ ON CONFLICT(Barcode) DO UPDATE SET
                 });
             }
         }
+        r.Close();
     }
 
 
     public async Task LoadProductAsync()
     {
-        if (string.IsNullOrEmpty(ProductBarcode)) return;
+        if (string.IsNullOrEmpty(ProductBarcode))
+            return;
 
-        using var cmd = _conn.CreateCommand();
-        cmd.CommandText = @"
+        var table = CurrentMode == InventoryMode.Loots ? "LootsProducts" : "Products";
+        using var conn = DatabaseInitializer.GetConnection(CurrentMode);
+
+        using var cmd = conn.CreateCommand();
+
+        if (CurrentMode == InventoryMode.Loots)
+        {
+            // 1️⃣ Load product info for current box
+            cmd.CommandText = @"
+            SELECT Name, Color, Size, Price, ArticCode, InitialQuantity, ScannedQuantity, Box_Id
+            FROM LootsProducts
+            WHERE Barcode = $b AND Box_Id = $box";
+            cmd.Parameters.AddWithValue("$b", ProductBarcode);
+            cmd.Parameters.AddWithValue("$box", BoxId ?? "");
+        }
+        else
+        {
+            cmd.CommandText = @"
             SELECT Name, Color, Size, Price, ArticCode, InitialQuantity, ScannedQuantity
             FROM Products
             WHERE Barcode = $b";
-        cmd.Parameters.AddWithValue("$b", ProductBarcode);
-
-        using var r = cmd.ExecuteReader();
-        if (r.Read())
-        {
-            ProductName = r.IsDBNull(0) ? "" : r.GetString(0);
-            ProductColor = r.IsDBNull(1) ? "" : r.GetString(1);
-            ProductSize = r.IsDBNull(2) ? "" : r.GetString(2);
-            ProductPrice = r.IsDBNull(3) || string.IsNullOrWhiteSpace(r.GetString(3)) ? 0 : Convert.ToDecimal(r.GetString(3));
-            ProductArticCode = r.IsDBNull(4) ? "" : r.GetString(4);
-            InitialQuantity = r.IsDBNull(5) ? 0 : r.GetInt32(5);
-            ScannedQuantity = r.IsDBNull(6) ? 0 : r.GetInt32(6);
+            cmd.Parameters.AddWithValue("$b", ProductBarcode);
         }
 
-        // ✅ Save the starting quantity for later comparison
+        using var r = cmd.ExecuteReader();
+        if (!r.Read())
+        {
+            // 🔒 Auto-create record if missing (Loots mode only)
+            if (CurrentMode == InventoryMode.Loots)
+            {
+                using var insert = conn.CreateCommand();
+                insert.CommandText = @"
+                INSERT OR IGNORE INTO LootsProducts
+                (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt)
+                VALUES ($b, $box, 0, 0, $now, $now)";
+                insert.Parameters.AddWithValue("$b", ProductBarcode);
+                insert.Parameters.AddWithValue("$box", BoxId ?? "");
+                insert.Parameters.AddWithValue("$now", DateTime.UtcNow.ToString("o"));
+                insert.ExecuteNonQuery();
+            }
+            return;
+        }
+
+        // ✅ Hydrate current box data
+        ProductName = r.IsDBNull(0) ? "" : r.GetString(0);
+        ProductColor = r.IsDBNull(1) ? "" : r.GetString(1);
+        ProductSize = r.IsDBNull(2) ? "" : r.GetString(2);
+        ProductPrice = r.IsDBNull(3) ? 0 :
+            Convert.ToDecimal(r.GetValue(3));
+
+        ProductArticCode = r.IsDBNull(4) ? "" : r.GetString(4);
+        InitialQuantity = r.IsDBNull(5) ? 0 : r.GetInt32(5);
+        ScannedQuantity = r.IsDBNull(6) ? 0 : r.GetInt32(6);
+
+        if (CurrentMode == InventoryMode.Loots && !r.IsDBNull(7))
+            BoxId = r.GetString(7);
+
+        r.Close();
+
+        // 2️⃣ If in Loots mode — calculate totals across all boxes
+        if (CurrentMode == InventoryMode.Loots)
+        {
+            int totalQty = 0;
+            TotalInitialQuantity = 0;
+            List<string> boxes = new();
+
+            using var totalCmd = conn.CreateCommand();
+            totalCmd.CommandText = @"
+            SELECT Box_Id, SUM(ScannedQuantity), SUM(InitialQuantity)
+            FROM LootsProducts
+            WHERE Barcode = $b
+            GROUP BY Box_Id";
+            totalCmd.Parameters.AddWithValue("$b", ProductBarcode);
+
+            using var totalReader = totalCmd.ExecuteReader();
+            while (totalReader.Read())
+            {
+                string box = totalReader.IsDBNull(0) ? "(none)" : totalReader.GetString(0);
+                int scanned = totalReader.IsDBNull(1) ? 0 : totalReader.GetInt32(1);
+                int initial = totalReader.IsDBNull(2) ? 0 : totalReader.GetInt32(2);
+
+                totalQty += scanned;
+                TotalInitialQuantity += initial; // ← accumulate initial quantity
+                boxes.Add($"{box} ({scanned}/{initial})");
+            }
+
+            TotalScannedQuantity = totalQty;
+            AllBoxesInfo = string.Join(", ", boxes);
+        }
+
         _originalQuantity = ScannedQuantity;
         HasUnsavedChanges = false;
     }
+
+    private void RecalculateTotals(SqliteConnection conn)
+    {
+        if (CurrentMode != InventoryMode.Loots || string.IsNullOrEmpty(ProductBarcode))
+            return;
+
+        using var totalCmd = conn.CreateCommand();
+        totalCmd.CommandText = @"
+        SELECT 
+            COALESCE(SUM(ScannedQuantity), 0),
+            COALESCE(SUM(InitialQuantity), 0)
+        FROM LootsProducts
+        WHERE Barcode = $b;";
+        totalCmd.Parameters.AddWithValue("$b", ProductBarcode);
+
+        using var reader = totalCmd.ExecuteReader();
+        if (reader.Read())
+        {
+            TotalScannedQuantity = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+            TotalInitialQuantity = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+        }
+    }
+
 
     [RelayCommand]
     private async Task CopyBarcode(string barcode)

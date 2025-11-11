@@ -108,10 +108,13 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
             ["BoxId"] = boxId
         };
 
-        await Shell.Current.GoToAsync(nameof(LootsScanningPage), new Dictionary<string, object>
-        {
-            ["BoxId"] = boxId
-        });
+        await Shell.Current.GoToAsync(nameof(LootsScanningPage), true,
+            new Dictionary<string, object>
+            {
+                ["BoxId"] = boxId
+            });
+
+
     }
 
     public void Dispose()

@@ -33,8 +33,12 @@ public partial class LootsScanningPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _vm.InitializeAsync();
-        FocusScannerEntry();
+        if (BindingContext is LootsScanningViewModel vm)
+        {
+            await Task.Yield(); // allow QueryProperty binding to finish
+            await vm.InitializeAsync();
+            FocusScannerEntry();
+        }
     }
 
     /// <summary>

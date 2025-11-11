@@ -52,7 +52,10 @@ public static class MauiProgram
         builder.Services.AddSingleton<IScanningService, ScanningService>();
         builder.Services.AddSingleton<IProductService, ProductService>();
         builder.Services.AddSingleton<IMenuService, MenuService>();
-
+        builder.Services.AddSingleton<IJsonExportService, JsonExportService>();
+        builder.Services.AddSingleton<IJsonExportLogsService, JsonExportLogsService>();
+        builder.Services.AddSingleton<IApiService, ApiService>();
+        builder.Services.AddSingleton<IServerImportService, ServerImportService>();
 
 
         // === UI helpers ===
@@ -71,6 +74,8 @@ public static class MauiProgram
         builder.Services.AddTransient<InventorizationByLootsMenuViewModel>();
         builder.Services.AddTransient<InventorizationByLootsViewModel>();
         builder.Services.AddTransient<LootsScanningViewModel>();
+        builder.Services.AddTransient<InventorizationMenuViewModel>();
+
 
 
         // === Views ===
@@ -81,6 +86,7 @@ public static class MauiProgram
         builder.Services.AddTransient<InventorizationByLootsMenuPage>();
         builder.Services.AddTransient<InventorizationByLootsPage>();
         builder.Services.AddTransient<LootsScanningPage>();
+        builder.Services.AddTransient<InventorizationMenuPage>();
 
 
         var app = builder.Build();

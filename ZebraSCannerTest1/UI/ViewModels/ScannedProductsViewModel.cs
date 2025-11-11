@@ -187,11 +187,12 @@ public partial class ScannedProductsViewModel : ObservableObject
     [RelayCommand]
     private async Task Sort()
     {
-        string[] fields = new[]
-        {
-            "Barcode", "ScannedQuantity", "InitialQuantity", "Difference",
-            "UpdatedAt", "ArticCode", "Name", "Color", "Size", "Price", "CreatedAt"
-        };
+        // 🧠 Add Box_Id when in Loots mode
+        var fields = CurrentMode == InventoryMode.Loots
+            ? new[] { "Box_Id", "Barcode", "ScannedQuantity", "InitialQuantity", "Difference",
+                  "UpdatedAt", "ArticCode", "Name", "Color", "Size", "Price", "CreatedAt" }
+            : new[] { "Barcode", "ScannedQuantity", "InitialQuantity", "Difference",
+                  "UpdatedAt", "ArticCode", "Name", "Color", "Size", "Price", "CreatedAt" };
 
         string fieldChoice = await Shell.Current.DisplayActionSheet("Sort by:", "Cancel", null, fields);
         if (string.IsNullOrEmpty(fieldChoice) || fieldChoice == "Cancel") return;
@@ -211,12 +212,16 @@ public partial class ScannedProductsViewModel : ObservableObject
         await LoadProductsAsync(reset: true);
     }
 
+
     [RelayCommand]
     private async Task Filter()
     {
         var fieldChoice = await Shell.Current.DisplayActionSheet(
             "Choose filter", "Cancel", null,
-            // Quantity
+            // Loots specific (only when in Loots mode)
+            CurrentMode == InventoryMode.Loots ? "All Products (All Boxes)" : null,
+            CurrentMode == InventoryMode.Loots ? "Filter by Box ID" : null,
+            // Common filters
             "All Products",
             "Scanned > 0",
             "Unscanned (Scanned = 0)",
@@ -228,7 +233,6 @@ public partial class ScannedProductsViewModel : ObservableObject
             "Manual Changed",
             "Automatic Only",
             "",
-            // Info
             "Missing Name",
             "Missing Color",
             "Missing Size",
@@ -236,16 +240,15 @@ public partial class ScannedProductsViewModel : ObservableObject
             "No Price",
             "Missing Info (Name or Color or Size)",
             "",
-            // Dates
             "Updated Today",
             "Not Updated Recently (7+ days)",
             "Created Today",
             "",
-            // Search
             "Search by Barcode",
             "Search by Name",
             "Search by ArticCode"
         );
+
 
         if (string.IsNullOrEmpty(fieldChoice) || fieldChoice == "Cancel")
             return;
@@ -333,6 +336,30 @@ public partial class ScannedProductsViewModel : ObservableObject
 
             default: _currentFilter = ""; CurrentFilterDescription = "Filter: All"; break;
         }
+        // === Loots-specific filters ===
+        if (CurrentMode == InventoryMode.Loots)
+        {
+            switch (fieldChoice)
+            {
+                case "All Products (All Boxes)":
+                    CurrentBoxId = string.Empty;
+                    _currentFilter = "";
+                    CurrentFilterDescription = "Filter: All Loots Boxes";
+                    await LoadProductsAsync(reset: true);
+                    return;
+
+                case "Filter by Box ID":
+                    var box = await Shell.Current.DisplayPromptAsync("Filter by Box", "Enter full or part of Box ID:", "OK", "Cancel");
+                    if (!string.IsNullOrWhiteSpace(box))
+                    {
+                        _currentFilter = $"Box_Id LIKE '%{box.Replace("'", "''")}%'";
+                        CurrentFilterDescription = $"Filter: Box~{box}";
+                        await LoadProductsAsync(reset: true);
+                    }
+                    return;
+            }
+        }
+
 
         await LoadProductsAsync(reset: true);
     }
@@ -340,14 +367,25 @@ public partial class ScannedProductsViewModel : ObservableObject
     [RelayCommand]
     private async Task ClearFilterAsync()
     {
-        _currentFilter = "ScannedQuantity > 0";
         _currentSortField = "UpdatedAt";
         _currentSortDescending = true;
-        CurrentFilterDescription = "Filter: Scanned";
         CurrentSortDescription = "Sort: Updated ↓";
+
+        if (CurrentMode == InventoryMode.Loots)
+        {
+            _currentFilter = "";
+            CurrentBoxId = string.Empty;
+            CurrentFilterDescription = "Filter: All Loots Boxes";
+        }
+        else
+        {
+            _currentFilter = "ScannedQuantity > 0";
+            CurrentFilterDescription = "Filter: Scanned";
+        }
 
         await LoadProductsAsync(reset: true);
     }
+
 
     [RelayCommand]
     private async Task CopyBarcode(string barcode) => await _clipboard.CopyAsync(barcode);

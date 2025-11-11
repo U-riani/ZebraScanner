@@ -10,12 +10,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
     {
         private SqliteConnection GetConnection()
         {
-            var path = Path.Combine(FileSystem.AppDataDirectory, "zebraScanner_loots.db");
-            var isNew = !File.Exists(path);
-            var conn = new SqliteConnection($"Data Source={path}");
-            conn.Open();
-            if (isNew)
-                DatabaseInitializer.Initialize(conn, InventoryMode.Loots);
+            var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
             return conn;
         }
 
@@ -39,6 +34,29 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("$p", p.Price ?? "");
             cmd.Parameters.AddWithValue("$a", p.ArticCode ?? "");
             cmd.Parameters.AddWithValue("$box", string.IsNullOrWhiteSpace(p.Box_Id) ? DBNull.Value : p.Box_Id);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task UpdateAsync(Product product)
+        {
+
+            using var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
+
+            using var cmd = conn.CreateCommand();
+
+            cmd.CommandText = $@"
+                UPDATE LootsProducts
+                SET ScannedQuantity=$s, UpdatedAt=$u
+                WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)";
+           
+
+            cmd.Parameters.AddWithValue("$s", product.ScannedQuantity);
+            cmd.Parameters.AddWithValue("$u", product.UpdatedAt.ToString("o"));
+            cmd.Parameters.AddWithValue("$b", product.Barcode);
+
+            
+                cmd.Parameters.AddWithValue("$box", product.Box_Id is null ? DBNull.Value : product.Box_Id);
 
             await cmd.ExecuteNonQueryAsync();
         }
@@ -93,6 +111,99 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             }
 
             return list;
+        }
+
+        public async Task<Product?> FindAsync(string barcode, string boxId)
+        {
+
+            using var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM LootsProducts WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)";
+
+            cmd.Parameters.AddWithValue("$b", barcode);
+
+            cmd.Parameters.AddWithValue("$box", boxId ?? (object)DBNull.Value);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                var product = new Product
+                {
+                    Barcode = reader.GetString(0),
+                    InitialQuantity = Convert.ToInt32(reader.GetValue(2)),
+                    ScannedQuantity = Convert.ToInt32(reader.GetValue(3)),
+                    CreatedAt = DateTime.Parse(reader.GetString(4)),
+                    UpdatedAt = DateTime.Parse(reader.GetString(5))
+                };
+                product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
+
+                return product;
+            }
+            return null;
+        }
+
+        public async Task<IEnumerable<Product>> GetByBoxAsync(string boxId)
+        {
+            var products = new List<Product>();
+
+            using var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = $@"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
+              FROM LootsProducts
+              WHERE Box_Id = $box
+              ORDER BY UpdatedAt DESC"; 
+
+            cmd.Parameters.AddWithValue("$box", boxId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var product = new Product
+                {
+                    Barcode = reader.GetString(0),
+                    InitialQuantity = reader.GetInt32( 2 ),
+                    ScannedQuantity = reader.GetInt32( 3),
+                    CreatedAt = DateTime.Parse(reader.GetString( 4)),
+                    UpdatedAt = DateTime.Parse(reader.GetString( 5 ))
+                };
+
+
+                product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
+
+                products.Add(product);
+            }
+
+            return products;
+        }
+
+        public (int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes) GetInventoryStats(InventoryMode mode = InventoryMode.Loots)
+        {
+            using var conn = DatabaseInitializer.GetConnection(mode);
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+        SELECT 
+            COALESCE(SUM(InitialQuantity), 0),
+            COALESCE(SUM(ScannedQuantity), 0),
+            COUNT(*) AS TotalBarcodes,
+            SUM(CASE WHEN ScannedQuantity > 0 THEN 1 ELSE 0 END) AS ScannedBarcodes
+        FROM LootsProducts;";
+
+            using var reader = cmd.ExecuteReader();
+
+            if (reader.Read())
+            {
+                return (
+                    reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                    reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
+                    reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
+                    reader.IsDBNull(3) ? 0 : reader.GetInt32(3)
+                );
+            }
+
+            return (0, 0, 0, 0);
         }
 
         public async Task ClearAsync()

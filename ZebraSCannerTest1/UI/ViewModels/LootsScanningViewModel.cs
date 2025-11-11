@@ -36,6 +36,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand ShowResultsCommand { get; }
     public IAsyncRelayCommand GoToLogsCommand { get; }
     public IAsyncRelayCommand GoToScannedProductsCommand { get; }
+    public IAsyncRelayCommand GoToDetailsCommand { get; }
 
     public LootsScanningViewModel(
         IProductService productService,
@@ -59,6 +60,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
        
         ShowResultsCommand = new AsyncRelayCommand(ShowResultsAsync);
+
         GoToLogsCommand = new AsyncRelayCommand(() =>
             _navigation.NavigateToAsync(nameof(LogsPage), new Dictionary<string, object>
             {
@@ -74,15 +76,50 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
                 ["BoxId"] = CurrentBoxId
             }));
 
+        GoToDetailsCommand = new AsyncRelayCommand<ProductSlot>(async slot =>
+        {
+            if (slot == null || string.IsNullOrWhiteSpace(slot.Barcode))
+                return;
+
+            // Try load product from DB first
+            var product = await _productService.GetByBarcodeAsync(slot.Barcode, InventoryMode.Loots, currentBoxId);
+            if (product == null)
+                return;
+
+            await _navigation.NavigateToAsync(nameof(DetailsPage),
+                new Dictionary<string, object>
+                {
+                    ["Barcode"] = product.Barcode,
+                    ["Quantity"] = product.ScannedQuantity,
+                    ["InitialQuantity"] = product.InitialQuantity,
+                    ["Name"] = product.Name ?? "",
+                    ["Color"] = product.Color ?? "",
+                    ["Size"] = product.Size ?? "",
+                    ["Price"] = decimal.TryParse(product.Price, out var p) ? p : 0,
+                    ["ArticCode"] = product.ArticCode ?? "",
+                    ["IsReadOnly"] = false,
+                    ["Mode"] = InventoryMode.Loots,
+                    ["BoxId"] = product.Box_Id ?? CurrentBoxId
+                });
+        });
 
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadRecentAsync());
     }
+
+
     public async Task InitializeAsync()
     {
         WeakReferenceMessenger.Default.Unregister<ProductUpdatedMessage>(this);
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadRecentAsync());
+
+
+        if (string.IsNullOrWhiteSpace(CurrentBoxId))
+        {
+            // Try to re-fetch it from Preferences or scanning service
+            CurrentBoxId = Preferences.Get("CurrentBoxId", string.Empty);
+        }
 
         _scanningService.SetMode(InventoryMode.Loots, CurrentBoxId);
         _scanningService.StartAsync();
@@ -187,6 +224,36 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         await _dialogs.ShowMessageAsync("Loots Results", msg);
     }
 
+    private async Task OnSlotTappedAsync(ProductSlot slot)
+    {
+        if (slot == null || string.IsNullOrEmpty(slot.Barcode))
+            return;
+
+        var product = await _productService.GetByBarcodeAsync(slot.Barcode);
+        if (product == null)
+            return;
+
+        var query = new Dictionary<string, object>
+        {
+            ["Barcode"] = product.Barcode,
+            ["Quantity"] = product.ScannedQuantity,
+            ["InitialQuantity"] = product.InitialQuantity,
+            ["Name"] = product.Name ?? "",
+            ["Color"] = product.Color ?? "",
+            ["Size"] = product.Size ?? "",
+            ["Price"] = decimal.TryParse(product.Price, out var p) ? p : 0,
+            ["ArticCode"] = product.ArticCode ?? "",
+            ["IsReadOnly"] = false
+        };
+
+        await Shell.Current.GoToAsync(nameof(DetailsPage), new Dictionary<string, object>
+        {
+            ["Barcode"] = product.Barcode,
+            ["IsReadOnly"] = false,
+            ["Mode"] = InventoryMode.Loots
+        });
+
+    }
     public void Dispose()
     {
         _scanningService.Stop();

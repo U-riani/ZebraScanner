@@ -11,6 +11,8 @@
         <ResourceDictionary>
             <converters:ManualToColorConverter x:Key="ManualToColor" />
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:EnumEqualsConverter x:Key="EnumEqualsConverter" />
+
         </ResourceDictionary>
     </ContentPage.Resources>
     
@@ -38,6 +40,34 @@
                 </Label>
             </HorizontalStackLayout>
 
+            <HorizontalStackLayout VerticalOptions="Center"
+                IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}">
+                
+                <Label Text="CURRENT BOX"
+                   IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                   TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20"
+                   VerticalTextAlignment="Center"/> 
+
+                <Label Text="----"
+                   IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                   Padding="10,0,10,0"
+                   TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+
+                <Label Text="{Binding BoxId}"
+                   IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                   FontSize="18"
+                   TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+
+            <!-- List all boxes where this barcode exists -->
+            <Label Text="IN BOXES:" 
+IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}" />
+            <Label Text="{Binding AllBoxesInfo}" 
+FontSize="16" TextColor="Gray"
+LineBreakMode="WordWrap"
+IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" />
+            
             <HorizontalStackLayout VerticalOptions="Center">
                 <Label Text="ARTIC CODE" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
                 <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
@@ -74,6 +104,23 @@
                 <Label Text="{Binding ProductPrice, StringFormat='{}{0:C}'}" 
                       FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             </HorizontalStackLayout>
+            
+            <!-- Show total quantity across all boxes -->
+            <HorizontalStackLayout VerticalOptions="Center"
+                IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}">
+                <Label Text="TOTAL INITIAL (all boxes)" 
+           TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" />
+                <Label Text="----" Padding="10,0,10,0" 
+           TextColor="{AppThemeBinding Dark=white, Light=black}" />
+                <Label Text="{Binding TotalInitialQuantity}" 
+           FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout VerticalOptions="Center"
+                    IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}">
+                <Label Text="TOTAL SCANNED (all boxes)" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" />
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" />
+                <Label Text="{Binding TotalScannedQuantity}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}" />
+            </HorizontalStackLayout>
 
             <!-- Quantities -->
             <HorizontalStackLayout VerticalOptions="Center">
@@ -91,6 +138,12 @@
                 <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
                 <Label Text="{Binding Difference}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             </HorizontalStackLayout>
+            
+            
+
+
+            
+
 
 
             <HorizontalStackLayout Spacing="65" VerticalOptions="Center"

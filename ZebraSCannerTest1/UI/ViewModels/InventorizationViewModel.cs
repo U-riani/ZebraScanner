@@ -277,7 +277,7 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
             var path = FileSystem.AppDataDirectory;
 #endif
 
-            var name = $"{choice}_Export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+            var name = $"{choice}_Export_{DateTime.UtcNow:yyyyMMdd_HHmm}.xlsx";
             var fullPath = Path.Combine(path, name);
 
             var progress = new Progress<double>(p =>
@@ -346,7 +346,13 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
             ["IsReadOnly"] = false
         };
 
-        await Shell.Current.GoToAsync(nameof(DetailsPage), query);
+        await Shell.Current.GoToAsync(nameof(DetailsPage), new Dictionary<string, object>
+        {
+            ["Barcode"] = product.Barcode,
+            ["IsReadOnly"] = false,
+            ["Mode"] = InventoryMode.Standard
+        });
+
     }
 
     private async Task ShowResultsAsync()

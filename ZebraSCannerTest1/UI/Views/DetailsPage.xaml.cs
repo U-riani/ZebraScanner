@@ -1,5 +1,6 @@
 using CommunityToolkit.Maui.Views;
 using System.Threading.Tasks;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.UI.ViewModels;
 
 namespace ZebraSCannerTest1.UI.Views;
@@ -13,10 +14,15 @@ namespace ZebraSCannerTest1.UI.Views;
 [QueryProperty(nameof(Price), "Price")]
 [QueryProperty(nameof(ArticCode), "ArticCode")]
 [QueryProperty(nameof(IsReadOnly), "IsReadOnly")]
+[QueryProperty(nameof(Mode), "Mode")]
+[QueryProperty(nameof(BoxId), "BoxId")]
 public partial class DetailsPage : ContentPage
 {
     private readonly DetailsViewModel _vm;
     private CancellationTokenSource? _loadCts;
+
+    public InventoryMode Mode { set => _vm.CurrentMode = value; }
+    public string BoxId { set => _vm.BoxId = value; }
 
     public bool IsReadOnly { set => _vm.IsReadOnly = value; }
 
@@ -81,7 +87,7 @@ public partial class DetailsPage : ContentPage
 
                 if (!string.IsNullOrEmpty(_vm.ProductBarcode))
                 {
-                    await _vm.LoadProductAsync();
+                    _vm.LoadProductAsync();
                     if (token.IsCancellationRequested) return;
 
                     await MainThread.InvokeOnMainThreadAsync(async () =>
