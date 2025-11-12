@@ -73,10 +73,15 @@ namespace ZebraSCannerTest1.Core.Services
         {
             try
             {
-                _scanQueue.CompleteAdding();
                 _cts?.Cancel();
+                _scanQueue.CompleteAdding();
+                _processingTask?.Wait(200); // ensure graceful shutdown
             }
-            catch { /* ignore */ }
+            catch (Exception ex)
+            {
+                _logger.Warn("Stop error" + ex);
+            }
+
         }
 
         private async Task ProcessQueueAsync()
@@ -153,7 +158,11 @@ namespace ZebraSCannerTest1.Core.Services
 
 
             _logger.Info($"New product added ({_mode}) {barcode}");
-            WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
+            });
+
         }
 
         private async Task UpdateProductAsync(Product product)
@@ -178,7 +187,11 @@ namespace ZebraSCannerTest1.Core.Services
 
 
             _logger.Info($"Product scanned ({_mode}) {product.Barcode}");
-            WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(product));
+            });
+
         }
 
     }

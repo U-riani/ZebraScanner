@@ -40,19 +40,19 @@ public partial class InventorizationPage : ContentPage
     {
         base.OnAppearing();
 
-        var readStatus = await Permissions.RequestAsync<Permissions.StorageRead>();
-        var writeStatus = await Permissions.RequestAsync<Permissions.StorageWrite>();
+        //var readStatus = await Permissions.RequestAsync<Permissions.StorageRead>();
+        //var writeStatus = await Permissions.RequestAsync<Permissions.StorageWrite>();
 
-        var mediaStatus = await Permissions.RequestAsync<Permissions.Media>();
+        //var mediaStatus = await Permissions.RequestAsync<Permissions.Media>();
 
 
-        if (readStatus != PermissionStatus.Granted ||
-            writeStatus != PermissionStatus.Granted ||
-            mediaStatus != PermissionStatus.Granted)
+        //if (readStatus != PermissionStatus.Granted ||
+        //    writeStatus != PermissionStatus.Granted ||
+        //    mediaStatus != PermissionStatus.Granted)
 
-        {
-            await DisplayAlert("Permission needed", "Storage access is required to export Excel files.", "OK");
-        }
+        //{
+        //    await DisplayAlert("Permission needed", "Storage access is required to export Excel files.", "OK");
+        //}
 
         FocusScannerEntry();
 

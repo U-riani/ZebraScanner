@@ -4,6 +4,7 @@ using System.Diagnostics;
 using ZebraSCannerTest1.Core.Dtos;
 using ZebraSCannerTest1.Core.Enums;
 using Microsoft.Maui.Storage;
+using ZebraSCannerTest1.Data;
 
 namespace ZebraSCannerTest1.Core.Services
 {
@@ -90,6 +91,29 @@ namespace ZebraSCannerTest1.Core.Services
 
             try
             {
+                // 🔧 Ensure correct DB and write mode
+                string dbFile = mode == InventoryMode.Loots
+                    ? "zebraScanner_loots.db"
+                    : "zebraScanner_standard.db";
+
+                string dbPath = Path.Combine(FileSystem.AppDataDirectory, dbFile);
+
+                // 🩹 Make sure file is writable
+                if (File.Exists(dbPath))
+                {
+                    var attr = File.GetAttributes(dbPath);
+                    if (attr.HasFlag(FileAttributes.ReadOnly))
+                        File.SetAttributes(dbPath, attr & ~FileAttributes.ReadOnly);
+                }
+
+                // 🧹 Close and reopen connection cleanly
+                try { _conn.Close(); } catch { }
+                _conn.ConnectionString = $"Data Source={dbPath};Mode=ReadWriteCreate";
+                _conn.Open();
+
+                Console.WriteLine($"[DB SWITCH] → {_conn.DataSource}");
+                DatabaseInitializer.Initialize(_conn, mode);
+
                 using var tx = _conn.BeginTransaction();
 
                 // 🔹 Step 1: Clear existing data (only target mode)
