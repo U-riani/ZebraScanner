@@ -40,10 +40,18 @@ public static class MauiProgram
             return DatabaseInitializer.GetConnection(mode);
         });
 
+        builder.Services.AddSingleton<SqliteConnection>(sp =>
+        {
+            var salesConn = SalesDatabaseInitializer.GetConnection();
+            SalesDatabaseInitializer.InitializeConnection(salesConn);
+            return salesConn;
+        });
+
         // === Core services & repositories ===
         builder.Services.AddSingleton<IProductRepository, ProductRepository>();
         builder.Services.AddSingleton<IScanLogRepository, ScanLogRepository>();
         builder.Services.AddSingleton<ILootsProductRepository, LootsProductRepository>();
+        builder.Services.AddSingleton<SalesRepository>();
         builder.Services.AddSingleton<IDataImportService, DataImportService>();
         builder.Services.AddSingleton<IExcelExportService, ExcelExportService>();
         builder.Services.AddSingleton<IExcelExportLogsService, ExcelExportLogsService>(); // ✅ Add this line
@@ -56,7 +64,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IJsonExportLogsService, JsonExportLogsService>();
         builder.Services.AddSingleton<IApiService, ApiService>();
         builder.Services.AddSingleton<IServerImportService, ServerImportService>();
-
+        builder.Services.AddSingleton<SalesExcelImportService>();
 
         // === UI helpers ===
         builder.Services.AddSingleton<IDialogService, MauiDialogService>();
@@ -75,7 +83,8 @@ public static class MauiProgram
         builder.Services.AddTransient<InventorizationByLootsViewModel>();
         builder.Services.AddTransient<LootsScanningViewModel>();
         builder.Services.AddTransient<InventorizationMenuViewModel>();
-
+        builder.Services.AddTransient<SalesMenuViewModel>();
+        builder.Services.AddTransient<SalesViewModel>();
 
 
         // === Views ===
@@ -87,7 +96,8 @@ public static class MauiProgram
         builder.Services.AddTransient<InventorizationByLootsPage>();
         builder.Services.AddTransient<LootsScanningPage>();
         builder.Services.AddTransient<InventorizationMenuPage>();
-
+        builder.Services.AddTransient<SalesMenuPage>();
+        builder.Services.AddTransient<SalesPage>();
 
         var app = builder.Build();
 
