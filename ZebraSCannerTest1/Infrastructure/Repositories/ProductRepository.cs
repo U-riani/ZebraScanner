@@ -8,16 +8,15 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories;
 
 public class ProductRepository : IProductRepository
 {
-    private readonly SqliteConnection _connection;
-    public SqliteConnection Connection => _connection;
+    private readonly IDbFactory _db;
+    public ProductRepository(IDbFactory db)
+    {
+        _db = db;
+    }
+
     private string GetTableName(InventoryMode mode) =>
         mode == InventoryMode.Loots ? "LootsProducts" : "Products";
 
-
-    public ProductRepository(SqliteConnection connection)
-    {
-        _connection = connection;
-    }
 
     //public SqliteConnection GetConnection(InventoryMode mode)
     //{
@@ -46,7 +45,7 @@ public class ProductRepository : IProductRepository
 
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var conn = DatabaseInitializer.GetConnection(mode);
+        using var conn = _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $@"
@@ -87,7 +86,7 @@ public class ProductRepository : IProductRepository
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var conn = DatabaseInitializer.GetConnection(mode);
+        using var conn = _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = isLoots
@@ -128,7 +127,7 @@ public class ProductRepository : IProductRepository
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var conn = DatabaseInitializer.GetConnection(mode);
+        using var conn = _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = isLoots
@@ -165,7 +164,7 @@ public class ProductRepository : IProductRepository
     {
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
-        using var conn = DatabaseInitializer.GetConnection(mode);
+        using var conn = _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
 
@@ -194,7 +193,7 @@ public class ProductRepository : IProductRepository
     {
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
-        using var conn = DatabaseInitializer.GetConnection(mode);
+        using var conn = _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
 
@@ -221,7 +220,7 @@ public class ProductRepository : IProductRepository
     public (int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes) GetInventoryStats(InventoryMode mode = InventoryMode.Standard)
     {
         string table = GetTableName(mode);
-        using var conn = DatabaseInitializer.GetConnection(mode);
+        using var conn = _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $@"

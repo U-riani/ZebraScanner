@@ -9,11 +9,11 @@ namespace ZebraSCannerTest1.Core.Services
 {
     public class JsonExportLogsService : IJsonExportLogsService
     {
-        private readonly SqliteConnection _conn;
+        private readonly IDbFactory _db;
 
-        public JsonExportLogsService(SqliteConnection conn)
+        public JsonExportLogsService(IDbFactory db)
         {
-            _conn = conn;
+            _db = db;
         }
 
         public async Task<string> ExportLogsJsonAsync(
@@ -22,11 +22,10 @@ namespace ZebraSCannerTest1.Core.Services
             InventoryMode mode = InventoryMode.Standard)
         {
             string table = mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
-            Console.WriteLine($"[DOTNET] Starting JSON log export from table: {table}");
 
             var logs = new List<object>();
 
-            using var conn = DatabaseInitializer.GetConnection(mode);
+            using var conn = _db.Inventorization(mode);
             using var cmd = conn.CreateCommand();
 
             cmd.CommandText = mode == InventoryMode.Loots

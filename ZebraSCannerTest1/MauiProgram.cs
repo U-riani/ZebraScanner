@@ -31,21 +31,8 @@ public static class MauiProgram
             });
 
         // === Database connection ===
-        builder.Services.AddSingleton<SqliteConnection>(_ =>
-        {
-            var mode = Preferences.Get("CurrentMode", "Standard") == "Loots"
-                ? InventoryMode.Loots
-                : InventoryMode.Standard;
+        builder.Services.AddSingleton<IDbFactory, DbFactory>();
 
-            return DatabaseInitializer.GetConnection(mode);
-        });
-
-        builder.Services.AddSingleton<SqliteConnection>(sp =>
-        {
-            var salesConn = SalesDatabaseInitializer.GetConnection();
-            SalesDatabaseInitializer.InitializeConnection(salesConn);
-            return salesConn;
-        });
 
         // === Core services & repositories ===
         builder.Services.AddSingleton<IProductRepository, ProductRepository>();
@@ -85,6 +72,7 @@ public static class MauiProgram
         builder.Services.AddTransient<InventorizationMenuViewModel>();
         builder.Services.AddTransient<SalesMenuViewModel>();
         builder.Services.AddTransient<SalesViewModel>();
+        builder.Services.AddTransient<SettingsViewModel>();
 
 
         // === Views ===
@@ -98,6 +86,7 @@ public static class MauiProgram
         builder.Services.AddTransient<InventorizationMenuPage>();
         builder.Services.AddTransient<SalesMenuPage>();
         builder.Services.AddTransient<SalesPage>();
+        builder.Services.AddTransient<SettingsPage>();
 
         var app = builder.Build();
 

@@ -12,13 +12,13 @@ namespace ZebraSCannerTest1.Core.Services
     /// </summary>
     public class DataImportService : IDataImportService
     {
-        private readonly SqliteConnection _conn;
+        private readonly IDbFactory _db;
         private readonly ExcelImportService _excelImport;
 
-        public DataImportService(SqliteConnection conn)
+        public DataImportService(IDbFactory db)
         {
-            _conn = conn;
-            _excelImport = new ExcelImportService(conn);
+            _db = db;
+            _excelImport = new ExcelImportService(db);
         }
 
         // ✅ Import Excel (already uses MiniExcel)
@@ -45,7 +45,6 @@ namespace ZebraSCannerTest1.Core.Services
                 {
                     var backup = targetPath + ".bak";
                     File.Copy(targetPath, backup, true);
-                    Console.WriteLine($"[DB] Backup created: {backup}");
                 }
 
                 // ✅ overwrite only that mode’s DB file
@@ -53,13 +52,10 @@ namespace ZebraSCannerTest1.Core.Services
                     await dbStream.CopyToAsync(dst);
 
                 // ✅ reconnect only to that mode’s DB
-                _conn.Close();
-                _conn.ConnectionString = $"Data Source={targetPath}";
-                _conn.Open();
+                using var conn = _db.Inventorization(mode);
+                DatabaseInitializer.Initialize(conn, mode);
 
-                DatabaseInitializer.Initialize(_conn, mode);
-
-                Console.WriteLine($"[DB] Successfully imported {mode} DB → {targetPath}");
+                Console.WriteLine($"[DB] Imported {mode} database.");
             }
             catch (Exception ex)
             {
@@ -71,17 +67,10 @@ namespace ZebraSCannerTest1.Core.Services
         // ✅ Import JSON via Stream
         public async Task<int> ImportJsonAsync(Stream jsonStream, InventoryMode mode = InventoryMode.Standard)
         {
+            using var conn = _db.Inventorization(mode);
             string table = mode == InventoryMode.Loots ? "LootsProducts" : "Products";
             bool isLoots = mode == InventoryMode.Loots;
 
-            if (isLoots)
-            {
-                using var check = _conn.CreateCommand();
-                check.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='LootsProducts';";
-                var exists = check.ExecuteScalar() != null;
-                if (!exists)
-                    throw new InvalidOperationException("LootsProducts table not found. Please initialize database first.");
-            }
 
             using var reader = new StreamReader(jsonStream);
             var json = await reader.ReadToEndAsync();
@@ -92,8 +81,9 @@ namespace ZebraSCannerTest1.Core.Services
 
             if (items == null || items.Count == 0)
                 throw new Exception("No valid items found in JSON file.");
+            
             // 🔥 Delete old data for this mode first
-            using (var clear = _conn.CreateCommand())
+            using (var clear = conn.CreateCommand())
             {
                 string clearTable = isLoots ? "LootsProducts" : "Products";
                 clear.CommandText = $"DELETE FROM {clearTable};";
@@ -101,8 +91,8 @@ namespace ZebraSCannerTest1.Core.Services
                 Console.WriteLine($"[IMPORT] Cleared old data from {clearTable}");
             }
 
-            using var tx = _conn.BeginTransaction();
-            using var insert = _conn.CreateCommand();
+            using var tx = conn.BeginTransaction();
+            using var insert = conn.CreateCommand();
 
             insert.Transaction = tx;
             insert.CommandText = isLoots

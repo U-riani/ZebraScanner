@@ -10,11 +10,11 @@ namespace ZebraSCannerTest1
             InitializeComponent();
 
             var shell = new AppShell(vm);
-            shell.FlyoutBehavior = FlyoutBehavior.Disabled; // single, safe instance
+
+            // REMOVE OR COMMENT THIS LINE – it disables the flyout and custom icon won't show properly
+            // shell.FlyoutBehavior = FlyoutBehavior.Disabled;
+
             MainPage = shell;
-
-
-
         }
     }
 }

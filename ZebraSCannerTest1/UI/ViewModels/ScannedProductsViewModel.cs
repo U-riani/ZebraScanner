@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
 using ZebraSCannerTest1.Core.Enums;
+using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Core.Services;
 using ZebraSCannerTest1.Data;
@@ -15,7 +16,7 @@ namespace ZebraSCannerTest1.UI.ViewModels;
 [QueryProperty(nameof(CurrentMode), "Mode")]
 public partial class ScannedProductsViewModel : ObservableObject
 {
-    private readonly SqliteConnection _conn;
+    private readonly IDbFactory _db;
     private readonly ClipboardService _clipboard;
     private CancellationTokenSource? _loadCts;
 
@@ -41,9 +42,9 @@ public partial class ScannedProductsViewModel : ObservableObject
 
     public ObservableCollection<StatsProduct> ScannedProductsStats { get; private set; } = new();
 
-    public ScannedProductsViewModel(SqliteConnection conn, ClipboardService clipboard)
+    public ScannedProductsViewModel(IDbFactory db, ClipboardService clipboard)
     {
-        _conn = conn;
+        _db = db;
         _clipboard = clipboard;
     }
 
@@ -84,7 +85,7 @@ public partial class ScannedProductsViewModel : ObservableObject
             {
                 var list = new List<StatsProduct>();
 
-                using var conn = DatabaseInitializer.GetConnection(CurrentMode);
+                using var conn = _db.Inventorization(CurrentMode);
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = CurrentMode == InventoryMode.Loots
                     ? $@"

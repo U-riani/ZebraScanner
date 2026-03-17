@@ -10,6 +10,7 @@ using ZebraSCannerTest1.Core.Services;
 using ZebraSCannerTest1.UI.Helpers;
 using ZebraSCannerTest1.UI.Views;
 using ZebraSCannerTest1.Core.Enums;
+using ZebraSCannerTest1.Core.Interfaces;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
@@ -17,7 +18,7 @@ namespace ZebraSCannerTest1.UI.ViewModels;
 [QueryProperty(nameof(BoxId), "BoxId")]
 public partial class LogsViewModel : ObservableObject
 {
-    private readonly SqliteConnection _conn;
+    private readonly IDbFactory _db;
     private readonly LogBufferService _logBuffer;
     private readonly ClipboardService _clipboard;
 
@@ -39,9 +40,9 @@ public partial class LogsViewModel : ObservableObject
         new(Enumerable.Range(0, PageSize).Select(_ => new LogSlot()));
 
 
-    public LogsViewModel(SqliteConnection conn, LogBufferService logBuffer, ClipboardService clipboard)
+    public LogsViewModel(IDbFactory db, LogBufferService logBuffer, ClipboardService clipboard)
     {
-        _conn = conn;
+        _db = db;
         _logBuffer = logBuffer;
         _clipboard = clipboard;
     }
@@ -56,12 +57,8 @@ public partial class LogsViewModel : ObservableObject
         string whereClause = "";
 
         // ✅ open correct database
-        var dbName = Mode == InventoryMode.Loots
-            ? "zebraScanner_loots.db"
-            : "zebraScanner_standard.db";
+        using var conn = _db.Inventorization(Mode);
 
-        var dbPath = Path.Combine(FileSystem.AppDataDirectory, dbName);
-        using var conn = new SqliteConnection($"Data Source={dbPath}");
         conn.Open();
 
         var table = Mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";

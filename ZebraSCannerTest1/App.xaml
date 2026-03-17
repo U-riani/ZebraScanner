@@ -1,28 +1,37 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:converters="clr-namespace:ZebraSCannerTest1.UI.Converters"
              x:Class="ZebraSCannerTest1.App">
+
     <Application.Resources>
         <ResourceDictionary>
+
             <Color x:Key="Bg">#101214</Color>
-            <Color x:Key="Fg">#FFFFFF</Color>
+            <Color x:Key="Fg">#F34</Color>
+
+            <!-- Global page background -->
             <Style TargetType="ContentPage">
                 <Setter Property="BackgroundColor" Value="{StaticResource Bg}" />
             </Style>
+
+            <!-- Global text color (affects popup labels too) -->
             <Style TargetType="Label">
-                <Setter Property="TextColor" Value="{StaticResource Fg}" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light=Black, Dark=White}" />
                 <Setter Property="FontSize" Value="14" />
             </Style>
+
+            <!-- Entry & Button text -->
             <Style TargetType="Entry">
                 <Setter Property="TextColor" Value="{StaticResource Fg}" />
             </Style>
+
             <Style TargetType="Button">
                 <Setter Property="TextColor" Value="{StaticResource Fg}" />
             </Style>
-            
+
             <converters:BoolToTextConverter x:Key="BoolToTextConverter" />
+
         </ResourceDictionary>
-        
     </Application.Resources>
 </Application>

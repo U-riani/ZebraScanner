@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ZebraSCannerTest1.UI.Services;
+using ZebraSCannerTest1.UI.Views;
 
 namespace ZebraSCannerTest1.UI.ViewModels
 {
@@ -13,7 +14,24 @@ namespace ZebraSCannerTest1.UI.ViewModels
 
         public IRelayCommand BackCommand { get; }
         public IRelayCommand OpenMenuCommand { get; }
+        [RelayCommand]
+        private async Task OpenSettings()
+        {
+            await Shell.Current.GoToAsync(nameof(SettingsPage));
+        }
 
+        [RelayCommand]
+        private async Task OpenAbout()
+        {
+            await Shell.Current.GoToAsync("AboutPage"); // or show alert
+        }
+
+        [RelayCommand]
+        private async Task Logout()
+        {
+            // Your logout logic
+            await Shell.Current.GoToAsync("///LoginPage");
+        }
         public ShellViewModel(IMenuService menu)
         {
             _menu = menu;

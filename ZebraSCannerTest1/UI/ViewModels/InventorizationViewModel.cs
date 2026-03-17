@@ -145,13 +145,28 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
     // === Scanning ===
     private Task AddProductAsync(string? scannedBarcode)
     {
-        if (string.IsNullOrWhiteSpace(scannedBarcode))
+
+        //if (string.IsNullOrWhiteSpace(scannedBarcode))
+        //    return Task.CompletedTask;
+
+        //_scanningService.Enqueue(scannedBarcode.Trim());
+        //CurrentBarcode = scannedBarcode.Trim();
+
+        //LastScannedBarcode = scannedBarcode;
+
+        //return Task.CompletedTask;
+
+        string validBarcode = scannedBarcode.Contains(" ") ? scannedBarcode.Split(" ")[0].TrimStart('0') : scannedBarcode.TrimStart('0');
+
+        Console.WriteLine($"////////// {validBarcode}");
+
+        if (string.IsNullOrWhiteSpace(validBarcode))
             return Task.CompletedTask;
 
-        _scanningService.Enqueue(scannedBarcode.Trim());
-        CurrentBarcode = scannedBarcode.Trim();
+        _scanningService.Enqueue(validBarcode.Trim());
+        CurrentBarcode = validBarcode.Trim();
 
-        LastScannedBarcode = scannedBarcode;
+        LastScannedBarcode = validBarcode;
 
         return Task.CompletedTask;
     }

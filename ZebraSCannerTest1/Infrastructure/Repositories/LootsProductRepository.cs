@@ -8,15 +8,19 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
 {
     public class LootsProductRepository : ILootsProductRepository
     {
-        private SqliteConnection GetConnection()
+        private readonly IDbFactory _db;
+
+        public LootsProductRepository(IDbFactory db)
         {
-            var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
-            return conn;
+            _db = db;
         }
+
+        private SqliteConnection Conn() => _db.Inventorization(InventoryMode.Loots);
+
 
         public async Task AddAsync(LootProduct p)
         {
-            using var conn = GetConnection();
+            using var conn = Conn();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
                 INSERT INTO LootsProducts
@@ -41,7 +45,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
         public async Task UpdateAsync(Product product)
         {
 
-            using var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
+            using var conn = Conn();
 
             using var cmd = conn.CreateCommand();
 
@@ -64,7 +68,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
         public async Task<IEnumerable<LootProduct>> GetAllAsync()
         {
             var list = new List<LootProduct>();
-            using var conn = GetConnection();
+            using var conn = Conn();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT * FROM LootsProducts";
 
@@ -116,7 +120,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
         public async Task<Product?> FindAsync(string barcode, string boxId)
         {
 
-            using var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
+            using var conn = Conn();
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM LootsProducts WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)";
@@ -147,7 +151,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
         {
             var products = new List<Product>();
 
-            using var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
+            using var conn = Conn();
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = $@"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
@@ -180,7 +184,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
 
         public (int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes) GetInventoryStats(InventoryMode mode = InventoryMode.Loots)
         {
-            using var conn = DatabaseInitializer.GetConnection(mode);
+            using var conn = Conn();
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
@@ -208,7 +212,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
 
         public async Task ClearAsync()
         {
-            using var conn = GetConnection();
+            using var conn = Conn();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "DELETE FROM LootsProducts;";
             await cmd.ExecuteNonQueryAsync();

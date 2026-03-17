@@ -10,11 +10,11 @@ namespace ZebraSCannerTest1.Core.Services
 {
     public class ExcelExportLogsService : IExcelExportLogsService
     {
-        private readonly SqliteConnection _conn;
+        private readonly IDbFactory _db;
 
-        public ExcelExportLogsService(SqliteConnection conn)
+        public ExcelExportLogsService(IDbFactory db)
         {
-            _conn = conn;
+            _db = db;
         }
 
         public async Task ExportLogsAsync(
@@ -26,11 +26,10 @@ namespace ZebraSCannerTest1.Core.Services
                 throw new ArgumentNullException(nameof(filePath));
 
             string table = mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
-            Console.WriteLine($"[DOTNET] Exporting logs from table: {table} → {filePath}");
 
             var logs = new List<ScanLog>();
 
-            using (var conn = DatabaseInitializer.GetConnection(mode))
+            using (var conn = _db.Inventorization(mode))
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = mode == InventoryMode.Loots

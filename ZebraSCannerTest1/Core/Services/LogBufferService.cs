@@ -1,21 +1,22 @@
 ﻿using Microsoft.Data.Sqlite;
 using ZebraSCannerTest1.Core.Enums;
+using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 
 namespace ZebraSCannerTest1.Core.Services
 {
     public class LogBufferService
     {
-        private readonly SqliteConnection _conn;
+        private readonly IDbFactory _db;
         private readonly List<ScanLog> _buffer = new();
         private readonly object _lock = new();
         private readonly Timer _timer;
 
         private InventoryMode _mode = InventoryMode.Standard;
 
-        public LogBufferService(SqliteConnection conn)
+        public LogBufferService(IDbFactory db)
         {
-            _conn = conn;
+            _db = db;
             _timer = new Timer(_ => Flush(_mode), null, 2000, 2000);
         }
 
@@ -43,8 +44,8 @@ namespace ZebraSCannerTest1.Core.Services
             }
 
             var table = mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
-            using var conn = new SqliteConnection($"Data Source={Path.Combine(FileSystem.AppDataDirectory,
-                mode == InventoryMode.Loots ? "zebraScanner_loots.db" : "zebraScanner_standard.db")}");
+            using var conn = _db.Inventorization(mode);     // << correct
+
             conn.Open();
 
             using var tx = conn.BeginTransaction();

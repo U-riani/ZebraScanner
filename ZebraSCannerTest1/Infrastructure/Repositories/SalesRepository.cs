@@ -5,24 +5,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ZebraSCannerTest1.Core.Dtos;
+using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 
 namespace ZebraSCannerTest1.Infrastructure.Repositories
 {
     public class SalesRepository
     {
-        private SqliteConnection _connection;
+        private readonly IDbFactory _db;
+
 
         private const string tableName = "Sales";
 
-        public SalesRepository(SqliteConnection connection)
+        public SalesRepository(IDbFactory db)
         {
-            _connection = connection;
+            _db = db;
         }
 
         public async Task<SalesModel?> GetSaleAsync(string barcode)
         {
-            using var cmd = _connection.CreateCommand();
+            using var conn = _db.Sales();
+            using var cmd = conn.CreateCommand();
             cmd.CommandText = $@"
 SELECT 
     Barcode,
@@ -59,7 +62,8 @@ WHERE Barcode == $b
 
         public async Task UpsertSaleAsync(ExcelSalesDto dto)
         {
-            using var cmd = _connection.CreateCommand();
+            using var conn = _db.Sales();
+            using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
 INSERT INTO Sales
 (Barcode, Name, Color, Size, SaleType, OldPrice, NewPrice, ArticCode, CreatedAt)
@@ -92,7 +96,9 @@ DO UPDATE SET
 
         public async Task ClearSalesAsync()
         {
-            using var cmd = _connection.CreateCommand();
+            using var conn = _db.Sales();
+            using var cmd = conn.CreateCommand();
+
             cmd.CommandText = "DELETE FROM Sales;";
             await cmd.ExecuteNonQueryAsync();
             Console.WriteLine("old sales table deleted");

@@ -254,6 +254,20 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         });
 
     }
+    // Example: when navigating to Settings from LootsScanningPage
+    // Example command in LootsScanningViewModel
+    // In LootsScanningViewModel.cs
+    [RelayCommand]
+    private async Task GoToSettings()
+    {
+        var vm = new SettingsViewModel();
+        vm.SetLootsMode(true); // ← show the buttons
+
+        await Shell.Current.GoToAsync(nameof(SettingsPage), true, new Dictionary<string, object>
+        {
+            ["BindingContext"] = vm // pass VM so x:DataType works
+        });
+    }
     public void Dispose()
     {
         _scanningService.Stop();

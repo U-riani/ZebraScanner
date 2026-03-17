@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
 using ZebraSCannerTest1.Core.Enums;
+using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Core.Services;
 using ZebraSCannerTest1.Data;
@@ -14,7 +15,7 @@ namespace ZebraSCannerTest1.UI.ViewModels;
 [QueryProperty(nameof(BoxId), "BoxId")]
 public partial class DetailsViewModel : ObservableObject
 {
-    private readonly SqliteConnection _conn;
+    private readonly IDbFactory _db;
     private readonly ClipboardService _clipboard;
     private int _originalQuantity;
     [ObservableProperty]
@@ -32,9 +33,9 @@ public partial class DetailsViewModel : ObservableObject
     [ObservableProperty]
     private bool isReadOnly = false; // Default: editable
 
-    public DetailsViewModel(SqliteConnection conn, ClipboardService clipboard)
+    public DetailsViewModel(IDbFactory db, ClipboardService clipboard)
     {
-        _conn = conn;
+        _db = db;
         _clipboard = clipboard;
         _currentSection = Preferences.Get("CurrentSection", null);
 
@@ -119,7 +120,7 @@ public partial class DetailsViewModel : ObservableObject
         int previousQty = previousValue ?? 0;
         var table = CurrentMode == InventoryMode.Loots ? "LootsProducts" : "Products";
 
-        using var conn = DatabaseInitializer.GetConnection(CurrentMode);
+        using var conn = _db.Inventorization(CurrentMode);
 
         // read last quantity if not given
         if (previousValue == null)
@@ -341,7 +342,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
         Logs.Clear();
         string table = CurrentMode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
 
-        using var conn = DatabaseInitializer.GetConnection(CurrentMode);
+        using var conn = _db.Inventorization(CurrentMode);
 
         // Check column availability dynamically
         bool hasIsManual = false;
@@ -424,7 +425,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
             return;
 
         var table = CurrentMode == InventoryMode.Loots ? "LootsProducts" : "Products";
-        using var conn = DatabaseInitializer.GetConnection(CurrentMode);
+        using var conn = _db.Inventorization(CurrentMode);
 
         using var cmd = conn.CreateCommand();
 

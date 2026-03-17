@@ -9,11 +9,11 @@ namespace ZebraSCannerTest1.Core.Services
 {
     public class JsonExportService : IJsonExportService
     {
-        private readonly SqliteConnection _conn;
+        private readonly IDbFactory _db;
 
-        public JsonExportService(SqliteConnection conn)
+        public JsonExportService(IDbFactory db)
         {
-            _conn = conn;
+            _db = db;
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace ZebraSCannerTest1.Core.Services
             int count = 0;
             int totalCount = 0;
 
-            using var conn = DatabaseInitializer.GetConnection(mode);
+            using var conn = _db.Inventorization(mode);
             using (var countCmd = conn.CreateCommand())
             {
                 countCmd.CommandText = $"SELECT COUNT(*) FROM {table}";

@@ -95,7 +95,17 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
         FilteredLoots = new ObservableCollection<LootBoxSummary>(filtered);
     }
 
+    // Example: when navigating to Settings from LootsScanningPage
+    private async Task GoToSettings()
+    {
+        var vm = new SettingsViewModel(); // or resolve from DI
+        vm.SetLootsMode(true); // ← set true because we are in Loots mode
 
+        await Shell.Current.GoToAsync(nameof(SettingsPage), true, new Dictionary<string, object>
+        {
+            ["BindingContext"] = vm // optional if using DI
+        });
+    }
 
     private async Task OpenLootAsync(string boxId)
     {
