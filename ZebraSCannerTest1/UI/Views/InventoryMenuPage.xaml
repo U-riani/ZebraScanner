@@ -2,64 +2,44 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ZebraSCannerTest1.UI.Views.InventoryMenuPage"
              Title="Inventory Menu"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="14"
-                             VerticalOptions="Center">
+        <VerticalStackLayout Padding="16" Spacing="12" VerticalOptions="Center">
 
-            <Label Text="INVENTORY"
-                   FontSize="13"
+            <Label Text="Inventory"
+                   FontSize="26"
                    FontAttributes="Bold"
-                   TextColor="#6B7A8D"
-                   LetterSpacing="3"
+                   TextColor="#111111"
                    HorizontalOptions="Center"
-                   Margin="0,20,0,8" />
+                   Margin="0,20,0,12" />
 
-            <!-- LOOTS -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="0">
-                <Button Text="📦  LOOTS"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#00D4FF"
-                        HeightRequest="60"
-                        Clicked="OnLootsClicked"/>
-            </Border>
+            <Button Text="LOOTS"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    BackgroundColor="#00A8CC"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="60"
+                    Clicked="OnLootsClicked"/>
 
-            <!-- BARCODES -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="0">
-                <Button Text="▦  BARCODES"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#A066FF"
-                        HeightRequest="60"
-                        Clicked="OnBarcodesClicked"/>
-            </Border>
+            <Button Text="BARCODES"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    BackgroundColor="#6D28D9"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="60"
+                    Clicked="OnBarcodesClicked"/>
 
-            <!-- COMBOS -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="0">
-                <Button Text="⊞  COMBOS"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#A066FF"
-                        HeightRequest="60"
-                        Clicked="OnCombosClicked"/>
-            </Border>
+            <Button Text="COMBOS"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    BackgroundColor="#6D28D9"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="60"
+                    Clicked="OnCombosClicked"/>
 
         </VerticalStackLayout>
     </ScrollView>

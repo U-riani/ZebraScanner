@@ -6,12 +6,11 @@
     xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views"
     Shell.FlyoutBehavior="Flyout"
     Shell.NavBarIsVisible="True"
-    Shell.BackgroundColor="#0D0D22"
-    Shell.TitleColor="#E8EAED"
-    Shell.NavBarHasShadow="False"
-    Shell.FlyoutBackgroundColor="#0A0A0F">
+    Shell.BackgroundColor="#00A8CC"
+    Shell.TitleColor="White"
+    Shell.NavBarHasShadow="True"
+    Shell.FlyoutBackgroundColor="#F5F5F7">
 
-    <!-- Custom burger menu icon on RIGHT side -->
     <Shell.ToolbarItems>
         <ToolbarItem IconImageSource="menu.png"
                      Order="Secondary"
@@ -19,30 +18,25 @@
                      Command="{Binding OpenMenuCommand}" />
     </Shell.ToolbarItems>
 
-    <!-- Global TitleView with logo + title (centered) -->
     <Shell.TitleView>
         <HorizontalStackLayout Spacing="8" VerticalOptions="Center" HorizontalOptions="Center">
             <Image Source="logo2.png" HeightRequest="28" WidthRequest="28" />
             <Label Text="ScanMate"
                    FontAttributes="Bold"
-                   FontSize="18"
+                   FontSize="20"
                    VerticalOptions="Center"
-                   TextColor="#00D4FF" />
+                   TextColor="White" />
         </HorizontalStackLayout>
     </Shell.TitleView>
 
-    <!-- Flyout Menu Items -->
-    <FlyoutItem Title="Home"
-                Icon="home.svg">
+    <FlyoutItem Title="Home" Icon="home.svg">
         <ShellContent Route="Home" ContentTemplate="{DataTemplate views:HomePage}" />
     </FlyoutItem>
 
-    <FlyoutItem Title="Loots Scanning"
-                Icon="qrcode_viewfinder.svg">
+    <FlyoutItem Title="Loots Scanning" Icon="qrcode_viewfinder.svg">
         <ShellContent Route="LootsScanning" ContentTemplate="{DataTemplate views:LootsScanningPage}" />
     </FlyoutItem>
 
-    <!-- Optional: Bottom TabBar -->
     <TabBar>
         <Tab Title="Scanning" Icon="qrcode_viewfinder.svg">
             <ShellContent Route="LootsScanning" ContentTemplate="{DataTemplate views:LootsScanningPage}" />

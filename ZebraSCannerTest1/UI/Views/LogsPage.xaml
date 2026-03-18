@@ -6,7 +6,7 @@
              xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
              x:Name="RootPage"
              Title="Logs"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -18,38 +18,33 @@
     <VerticalStackLayout Padding="4" Spacing="0">
 
         <!-- Filter Toolbar -->
-        <Border StrokeShape="RoundRectangle 0"
-                Stroke="#3300D4FF"
-                StrokeThickness="0"
-                BackgroundColor="#0D0D22"
-                Padding="6">
-            <HorizontalStackLayout HorizontalOptions="Center" Spacing="8">
-                <Button Text="Barcode" Command="{Binding FilterByBarcodeCommand}"
-                        BackgroundColor="#1C1C38" TextColor="#00D4FF"
-                        CornerRadius="8" Padding="10,6" FontSize="13"/>
-                <Button Text="Filter Time" Command="{Binding FilterTimeCommand}"
-                        BackgroundColor="#1C1C38" TextColor="#A066FF"
-                        CornerRadius="8" Padding="10,6" FontSize="13"/>
-                <Button Text="Clear" Command="{Binding ClearFilterCommand}"
-                        BackgroundColor="#3A1A1F" TextColor="#FF4757"
-                        CornerRadius="8" Padding="10,6" FontSize="13"/>
-            </HorizontalStackLayout>
-        </Border>
+        <HorizontalStackLayout HorizontalOptions="Center" Padding="6" Spacing="8"
+                               BackgroundColor="#F5F5F7">
+            <Button Text="Barcode"     Command="{Binding FilterByBarcodeCommand}"
+                    BackgroundColor="#00A8CC" TextColor="White"
+                    CornerRadius="8" HeightRequest="48" FontSize="15" FontAttributes="Bold"/>
+            <Button Text="Filter Time" Command="{Binding FilterTimeCommand}"
+                    BackgroundColor="#6D28D9" TextColor="White"
+                    CornerRadius="8" HeightRequest="48" FontSize="15" FontAttributes="Bold"/>
+            <Button Text="Clear"       Command="{Binding ClearFilterCommand}"
+                    BackgroundColor="#DC2626" TextColor="White"
+                    CornerRadius="8" HeightRequest="48" FontSize="15" FontAttributes="Bold"/>
+        </HorizontalStackLayout>
 
         <!-- Column Titles -->
-        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="8,6"
-              BackgroundColor="#12122A">
-            <Label Text="Barcode" FontAttributes="Bold" FontSize="13" TextColor="#00D4FF"/>
-            <Label Text="Was" Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
-            <Label Text="IncBy" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
-            <Label Text="Is" Grid.Column="3" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
+        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="8,8"
+              BackgroundColor="#EAEAF0">
+            <Label Text="Barcode" FontAttributes="Bold" FontSize="14" TextColor="#111111"/>
+            <Label Text="Was"   Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="14" TextColor="#555555"/>
+            <Label Text="IncBy" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="14" TextColor="#555555"/>
+            <Label Text="Is"    Grid.Column="3" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="14" TextColor="#555555"/>
             <Label Text="{Binding Mode, Converter={StaticResource InventoryModeToHeaderConverter}}"
                    Grid.Column="4"
                    HorizontalTextAlignment="Center"
                    FontAttributes="Bold"
-                   FontSize="13"
-                   TextColor="#A066FF"/>
-            <Label Text="Time" Grid.Column="5" HorizontalTextAlignment="End" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
+                   FontSize="14"
+                   TextColor="#6D28D9"/>
+            <Label Text="Time"  Grid.Column="5" HorizontalTextAlignment="End" FontAttributes="Bold" FontSize="14" TextColor="#555555"/>
         </Grid>
 
         <!-- Log Rows -->
@@ -59,62 +54,46 @@
                 IsVisible="{Binding IsLoading}"
                 VerticalOptions="Center"
                 HorizontalOptions="Center"
-                Color="#00D4FF"/>
+                Color="#00A8CC"/>
 
             <CollectionView ItemsSource="{Binding Slots}" SelectionMode="None">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="8,5"
+                        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="8,7"
                               BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}">
                             <Label Grid.Column="0"
                                    Text="{Binding Barcode}"
                                    VerticalTextAlignment="Center"
-                                   FontSize="13"
-                                   TextColor="#E8EAED">
+                                   FontSize="14"
+                                   TextColor="#111111">
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.CopyBarcodeCommand}"
                                                           CommandParameter="{Binding Barcode}" />
                                 </Label.GestureRecognizers>
                             </Label>
-
                             <Label Grid.Column="1" Text="{Binding Was}"
-                                   HorizontalTextAlignment="Center"
-                                   VerticalTextAlignment="Center"
-                                   FontSize="13"
-                                   TextColor="#6B7A8D"/>
-
+                                   HorizontalTextAlignment="Center" VerticalTextAlignment="Center"
+                                   FontSize="14" TextColor="#555555"/>
                             <Label Grid.Column="2" Text="{Binding IncrementBy}"
-                                   HorizontalTextAlignment="Center"
-                                   VerticalTextAlignment="Center"
-                                   FontSize="13"
-                                   TextColor="#00D4FF"/>
-
+                                   HorizontalTextAlignment="Center" VerticalTextAlignment="Center"
+                                   FontSize="14" TextColor="#00A8CC" FontAttributes="Bold"/>
                             <Label Grid.Column="3" Text="{Binding IsValue}"
-                                   HorizontalTextAlignment="Center"
-                                   VerticalTextAlignment="Center"
-                                   FontSize="13"
-                                   TextColor="#E8EAED"/>
-
+                                   HorizontalTextAlignment="Center" VerticalTextAlignment="Center"
+                                   FontSize="14" TextColor="#111111"/>
                             <Label Grid.Column="4"
                                    Text="{Binding Section}"
-                                   HorizontalTextAlignment="Center"
-                                   VerticalTextAlignment="Center"
-                                   MaxLines="1"
-                                   LineBreakMode="TailTruncation"
-                                   FontSize="13"
-                                   TextColor="#A066FF">
+                                   HorizontalTextAlignment="Center" VerticalTextAlignment="Center"
+                                   MaxLines="1" LineBreakMode="TailTruncation"
+                                   FontSize="14" TextColor="#6D28D9">
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.ShowFullSectionTextCommand}"
                                                           CommandParameter="{Binding Section}" />
                                 </Label.GestureRecognizers>
                             </Label>
-
                             <Label Grid.Column="5"
                                    Text="{Binding UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}"
-                                   HorizontalTextAlignment="End"
-                                   VerticalTextAlignment="Center"
-                                   FontSize="12"
-                                   TextColor="#3D4A5C"/>
+                                   HorizontalTextAlignment="End" VerticalTextAlignment="Center"
+                                   FontSize="13" TextColor="#888888"/>
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
@@ -122,23 +101,18 @@
         </VerticalStackLayout>
 
         <!-- Pagination -->
-        <Border StrokeShape="RoundRectangle 0"
-                Stroke="#3300D4FF"
-                StrokeThickness="0"
-                BackgroundColor="#0D0D22"
-                Padding="6">
-            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10" Margin="0,4,0,0">
-                <Button Text="◀ Prev" Command="{Binding PrevPageCommand}"
-                        BackgroundColor="#1C1C38" TextColor="#00D4FF"
-                        CornerRadius="8" Padding="12,6" FontSize="13"/>
-                <Label Text="{Binding CurrentPage}" VerticalOptions="Center" TextColor="#E8EAED" FontSize="14"/>
-                <Label Text="/" VerticalOptions="Center" TextColor="#3D4A5C" FontSize="14"/>
-                <Label Text="{Binding TotalPages}" VerticalOptions="Center" TextColor="#6B7A8D" FontSize="14"/>
-                <Button Text="Next ▶" Command="{Binding NextPageCommand}"
-                        BackgroundColor="#1C1C38" TextColor="#00D4FF"
-                        CornerRadius="8" Padding="12,6" FontSize="13"/>
-            </HorizontalStackLayout>
-        </Border>
+        <HorizontalStackLayout HorizontalOptions="Center" Spacing="10" Margin="0,8,0,4"
+                               BackgroundColor="#F5F5F7">
+            <Button Text="◀ Prev" Command="{Binding PrevPageCommand}"
+                    BackgroundColor="#00A8CC" TextColor="White"
+                    CornerRadius="8" HeightRequest="48" FontSize="15" FontAttributes="Bold"/>
+            <Label Text="{Binding CurrentPage}" VerticalOptions="Center" TextColor="#111111" FontSize="16" FontAttributes="Bold"/>
+            <Label Text="/" VerticalOptions="Center" TextColor="#888888" FontSize="16"/>
+            <Label Text="{Binding TotalPages}" VerticalOptions="Center" TextColor="#555555" FontSize="16"/>
+            <Button Text="Next ▶" Command="{Binding NextPageCommand}"
+                    BackgroundColor="#00A8CC" TextColor="White"
+                    CornerRadius="8" HeightRequest="48" FontSize="15" FontAttributes="Bold"/>
+        </HorizontalStackLayout>
 
     </VerticalStackLayout>
 </ContentPage>

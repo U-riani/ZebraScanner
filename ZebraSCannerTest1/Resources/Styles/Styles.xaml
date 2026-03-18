@@ -5,40 +5,42 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
     <!-- ═══════════════════════════════════════════
-         DARK GLASS OPS — Global Styles
+         HIGH CONTRAST LIGHT — Global Styles
+         Warehouse / Zebra TC21 — min 16sp, min 48dp
     ═══════════════════════════════════════════ -->
 
     <Style TargetType="ActivityIndicator">
-        <Setter Property="Color" Value="{StaticResource CyanAccent}" />
+        <Setter Property="Color" Value="{StaticResource PrimaryAccent}" />
     </Style>
 
     <Style TargetType="IndicatorView">
-        <Setter Property="IndicatorColor" Value="{StaticResource GlassBorderMuted}"/>
-        <Setter Property="SelectedIndicatorColor" Value="{StaticResource CyanAccent}"/>
+        <Setter Property="IndicatorColor" Value="{StaticResource Gray300}"/>
+        <Setter Property="SelectedIndicatorColor" Value="{StaticResource PrimaryAccent}"/>
     </Style>
 
     <Style TargetType="Border">
-        <Setter Property="Stroke" Value="{StaticResource GlassBorderCyan}" />
-        <Setter Property="StrokeShape" Value="RoundRectangle 12"/>
+        <Setter Property="Stroke" Value="{StaticResource DividerColor}" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 8"/>
         <Setter Property="StrokeThickness" Value="1"/>
-        <Setter Property="BackgroundColor" Value="{StaticResource GlassCard}"/>
+        <Setter Property="BackgroundColor" Value="{StaticResource CardBg}"/>
     </Style>
 
     <Style TargetType="BoxView">
-        <Setter Property="BackgroundColor" Value="{StaticResource GlassBorderCyan}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource DividerColor}" />
     </Style>
 
-    <!-- Primary cyan button -->
+    <!-- Default button: Primary cyan -->
     <Style TargetType="Button">
-        <Setter Property="TextColor" Value="{StaticResource DeepBg}" />
-        <Setter Property="BackgroundColor" Value="{StaticResource CyanAccent}" />
-        <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="BackgroundColor" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
         <Setter Property="BorderWidth" Value="0"/>
-        <Setter Property="CornerRadius" Value="10"/>
-        <Setter Property="Padding" Value="14,10"/>
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16,0"/>
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
@@ -46,7 +48,7 @@
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
                             <Setter Property="TextColor" Value="{StaticResource TextMuted}" />
-                            <Setter Property="BackgroundColor" Value="{StaticResource GlassCard}" />
+                            <Setter Property="BackgroundColor" Value="{StaticResource Gray200}" />
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="PointerOver" />
@@ -56,45 +58,45 @@
     </Style>
 
     <Style TargetType="CheckBox">
-        <Setter Property="Color" Value="{StaticResource CyanAccent}" />
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="Color" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
     </Style>
 
     <Style TargetType="DatePicker">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
     </Style>
 
     <Style TargetType="Editor">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" />
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
     </Style>
 
     <Style TargetType="Entry">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" />
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
     </Style>
 
     <Style TargetType="Frame">
-        <Setter Property="HasShadow" Value="False" />
-        <Setter Property="BorderColor" Value="{StaticResource GlassBorderCyan}" />
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="BackgroundColor" Value="{StaticResource GlassCard}" />
+        <Setter Property="HasShadow" Value="True" />
+        <Setter Property="BorderColor" Value="{StaticResource DividerColor}" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="BackgroundColor" Value="{StaticResource CardBg}" />
     </Style>
 
     <Style TargetType="ImageButton">
@@ -102,15 +104,15 @@
         <Setter Property="BorderColor" Value="Transparent"/>
         <Setter Property="BorderWidth" Value="0"/>
         <Setter Property="CornerRadius" Value="0"/>
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="Opacity" Value="0.3" />
+                            <Setter Property="Opacity" Value="0.4" />
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="PointerOver" />
@@ -123,7 +125,7 @@
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="16" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
@@ -143,130 +145,131 @@
     </Style>
 
     <Style TargetType="Label" x:Key="Headline">
-        <Setter Property="TextColor" Value="{StaticResource CyanAccent}" />
-        <Setter Property="FontSize" Value="32" />
+        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontAttributes" Value="Bold" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
 
     <Style TargetType="Label" x:Key="SubHeadline">
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
-        <Setter Property="FontSize" Value="24" />
+        <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="FontSize" Value="20" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
 
     <Style TargetType="ListView">
-        <Setter Property="SeparatorColor" Value="{StaticResource GlassBorderCyan}" />
-        <Setter Property="RefreshControlColor" Value="{StaticResource CyanAccent}" />
+        <Setter Property="SeparatorColor" Value="{StaticResource DividerColor}" />
+        <Setter Property="RefreshControlColor" Value="{StaticResource PrimaryAccent}" />
     </Style>
 
     <Style TargetType="Picker">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
-        <Setter Property="TitleColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="TitleColor" Value="{StaticResource TextMuted}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
     </Style>
 
     <Style TargetType="ProgressBar">
-        <Setter Property="ProgressColor" Value="{StaticResource CyanAccent}" />
+        <Setter Property="ProgressColor" Value="{StaticResource PrimaryAccent}" />
     </Style>
 
     <Style TargetType="RadioButton">
         <Setter Property="BackgroundColor" Value="Transparent"/>
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
     </Style>
 
     <Style TargetType="RefreshView">
-        <Setter Property="RefreshColor" Value="{StaticResource CyanAccent}" />
+        <Setter Property="RefreshColor" Value="{StaticResource PrimaryAccent}" />
     </Style>
 
     <Style TargetType="SearchBar">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" />
-        <Setter Property="CancelButtonColor" Value="{StaticResource CyanAccent}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextMuted}" />
+        <Setter Property="CancelButtonColor" Value="{StaticResource PrimaryAccent}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
     </Style>
 
     <Style TargetType="SearchHandler">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextMuted}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="16" />
     </Style>
 
     <Style TargetType="Shadow">
-        <Setter Property="Radius" Value="20" />
-        <Setter Property="Opacity" Value="0.4" />
-        <Setter Property="Brush" Value="{StaticResource CyanAccentBrush}" />
-        <Setter Property="Offset" Value="0,4" />
+        <Setter Property="Radius" Value="8" />
+        <Setter Property="Opacity" Value="0.12" />
+        <Setter Property="Brush" Value="Black" />
+        <Setter Property="Offset" Value="0,2" />
     </Style>
 
     <Style TargetType="Slider">
-        <Setter Property="MinimumTrackColor" Value="{StaticResource CyanAccent}" />
-        <Setter Property="MaximumTrackColor" Value="{StaticResource GlassBorderMuted}" />
-        <Setter Property="ThumbColor" Value="{StaticResource CyanAccent}" />
+        <Setter Property="MinimumTrackColor" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="MaximumTrackColor" Value="{StaticResource Gray300}" />
+        <Setter Property="ThumbColor" Value="{StaticResource PrimaryAccent}" />
     </Style>
 
     <Style TargetType="SwipeItem">
-        <Setter Property="BackgroundColor" Value="{StaticResource GlassCard}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource CardBg}" />
     </Style>
 
     <Style TargetType="Switch">
-        <Setter Property="OnColor" Value="{StaticResource CyanAccent}" />
-        <Setter Property="ThumbColor" Value="{StaticResource DeepBg}" />
+        <Setter Property="OnColor" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="ThumbColor" Value="White" />
     </Style>
 
     <Style TargetType="TimePicker">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent"/>
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="MinimumHeightRequest" Value="44"/>
-        <Setter Property="MinimumWidthRequest" Value="44"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="MinimumHeightRequest" Value="48"/>
+        <Setter Property="MinimumWidthRequest" Value="48"/>
     </Style>
 
     <Style TargetType="Page" ApplyToDerivedTypes="True">
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="BackgroundColor" Value="{StaticResource DeepBg}" />
+        <Setter Property="BackgroundColor" Value="{StaticResource PageBg}" />
     </Style>
 
     <Style TargetType="Shell" ApplyToDerivedTypes="True">
-        <Setter Property="Shell.BackgroundColor" Value="{StaticResource GlassHeader}" />
-        <Setter Property="Shell.ForegroundColor" Value="{StaticResource CyanAccent}" />
-        <Setter Property="Shell.TitleColor" Value="{StaticResource TextPrimary}" />
-        <Setter Property="Shell.DisabledColor" Value="{StaticResource TextMuted}" />
-        <Setter Property="Shell.UnselectedColor" Value="{StaticResource TextSecondary}" />
-        <Setter Property="Shell.NavBarHasShadow" Value="False" />
-        <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource GlassHeader}" />
-        <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource CyanAccent}" />
-        <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource CyanAccent}" />
-        <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="Shell.BackgroundColor" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="Shell.ForegroundColor" Value="White" />
+        <Setter Property="Shell.TitleColor" Value="White" />
+        <Setter Property="Shell.DisabledColor" Value="#88FFFFFF" />
+        <Setter Property="Shell.UnselectedColor" Value="#CCFFFFFF" />
+        <Setter Property="Shell.NavBarHasShadow" Value="True" />
+        <Setter Property="Shell.TabBarBackgroundColor" Value="White" />
+        <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource TextMuted}" />
     </Style>
 
     <Style TargetType="NavigationPage">
-        <Setter Property="BarBackgroundColor" Value="{StaticResource GlassHeader}" />
-        <Setter Property="BarTextColor" Value="{StaticResource TextPrimary}" />
-        <Setter Property="IconColor" Value="{StaticResource CyanAccent}" />
+        <Setter Property="BarBackgroundColor" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="BarTextColor" Value="White" />
+        <Setter Property="IconColor" Value="White" />
     </Style>
 
     <Style TargetType="TabbedPage">
-        <Setter Property="BarBackgroundColor" Value="{StaticResource GlassHeader}" />
-        <Setter Property="BarTextColor" Value="{StaticResource CyanAccent}" />
-        <Setter Property="UnselectedTabColor" Value="{StaticResource GlassCard}" />
-        <Setter Property="SelectedTabColor" Value="{StaticResource CyanAccent}" />
+        <Setter Property="BarBackgroundColor" Value="White" />
+        <Setter Property="BarTextColor" Value="{StaticResource PrimaryAccent}" />
+        <Setter Property="UnselectedTabColor" Value="{StaticResource Gray200}" />
+        <Setter Property="SelectedTabColor" Value="{StaticResource PrimaryAccent}" />
     </Style>
 
 </ResourceDictionary>

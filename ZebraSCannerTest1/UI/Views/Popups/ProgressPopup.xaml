@@ -5,31 +5,30 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     CanBeDismissedByTappingOutsideOfPopup="False"
-    Color="#880A0A0F">
+    Color="#88000000">
 
-    <Border StrokeShape="RoundRectangle 16"
-            Stroke="#3300D4FF"
-            StrokeThickness="1"
-            BackgroundColor="#1C1C38"
-            Padding="32"
-            HorizontalOptions="Center"
-            VerticalOptions="Center"
-            WidthRequest="260">
-
+    <Frame Padding="32"
+           BackgroundColor="White"
+           CornerRadius="8"
+           HasShadow="True"
+           BorderColor="#D0D0D8"
+           HorizontalOptions="Center"
+           VerticalOptions="Center"
+           WidthRequest="260">
         <VerticalStackLayout Spacing="14" HorizontalOptions="Center">
             <ActivityIndicator
                 IsRunning="True"
-                Color="#00D4FF"
+                Color="#00A8CC"
                 Scale="1.4"
                 HorizontalOptions="Center"
                 Margin="0,8,0,0" />
-
             <Label
                 x:Name="MessageLabel"
                 Text="Processing..."
-                TextColor="#E8EAED"
-                FontSize="15"
+                TextColor="#111111"
+                FontSize="16"
+                FontAttributes="Bold"
                 HorizontalTextAlignment="Center" />
         </VerticalStackLayout>
-    </Border>
+    </Frame>
 </toolkit:Popup>

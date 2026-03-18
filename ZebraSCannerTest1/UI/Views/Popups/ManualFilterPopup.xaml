@@ -3,31 +3,27 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ZebraSCannerTest1.Views.Popups.ManualFilterPopup"
              Title="Manual Filter"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="12">
+        <VerticalStackLayout Padding="16" Spacing="12">
 
-            <!-- Title -->
-            <Label Text="FILTER BUILDER"
-                   FontSize="13"
+            <Label Text="Filter Builder"
+                   FontSize="24"
                    FontAttributes="Bold"
-                   TextColor="#6B7A8D"
-                   LetterSpacing="3"
+                   TextColor="#111111"
                    HorizontalOptions="Center"
                    Margin="0,12,0,4"/>
 
-            <!-- Step 1: Select Field -->
-            <Label Text="Field" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
-            <Border StrokeShape="RoundRectangle 10"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="4,0">
+            <!-- Field -->
+            <Label Text="Select Field" FontAttributes="Bold" FontSize="16" TextColor="#555555"/>
+            <Frame CornerRadius="8" Padding="4,0" HasShadow="False"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
                 <Picker x:Name="FieldPicker"
                         Title="Choose column"
-                        TextColor="#E8EAED"
-                        BackgroundColor="Transparent">
+                        TextColor="#111111"
+                        BackgroundColor="Transparent"
+                        FontSize="16">
                     <Picker.ItemsSource>
                         <x:Array Type="{x:Type x:String}">
                             <x:String>Barcode</x:String>
@@ -41,19 +37,17 @@
                         </x:Array>
                     </Picker.ItemsSource>
                 </Picker>
-            </Border>
+            </Frame>
 
-            <!-- Step 2: Select Operator -->
-            <Label Text="Operator" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
-            <Border StrokeShape="RoundRectangle 10"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="4,0">
+            <!-- Operator -->
+            <Label Text="Select Operator" FontAttributes="Bold" FontSize="16" TextColor="#555555"/>
+            <Frame CornerRadius="8" Padding="4,0" HasShadow="False"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
                 <Picker x:Name="OperatorPicker"
                         Title="Choose condition"
-                        TextColor="#E8EAED"
-                        BackgroundColor="Transparent">
+                        TextColor="#111111"
+                        BackgroundColor="Transparent"
+                        FontSize="16">
                     <Picker.ItemsSource>
                         <x:Array Type="{x:Type x:String}">
                             <x:String>=</x:String>
@@ -66,75 +60,72 @@
                         </x:Array>
                     </Picker.ItemsSource>
                 </Picker>
-            </Border>
+            </Frame>
 
-            <!-- Step 3: Enter Value -->
-            <Label Text="Value" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
-            <Border StrokeShape="RoundRectangle 10"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="4,0">
+            <!-- Value -->
+            <Label Text="Enter Value" FontAttributes="Bold" FontSize="16" TextColor="#555555"/>
+            <Frame CornerRadius="8" Padding="4,0" HasShadow="False"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
                 <Entry x:Name="ValueEntry"
                        Placeholder="e.g. BLUE or 10"
-                       PlaceholderColor="#3D4A5C"
-                       TextColor="#E8EAED"
-                       BackgroundColor="Transparent"/>
-            </Border>
+                       PlaceholderColor="#888888"
+                       TextColor="#111111"
+                       BackgroundColor="Transparent"
+                       FontSize="16"
+                       HeightRequest="48"/>
+            </Frame>
 
-            <!-- Add Condition -->
             <Button Text="+ Add Condition"
                     Clicked="OnAddConditionClicked"
-                    BackgroundColor="#00D4FF"
-                    TextColor="#0A0A0F"
-                    CornerRadius="10"
+                    BackgroundColor="#00A8CC"
+                    TextColor="White"
+                    CornerRadius="8"
                     FontAttributes="Bold"
-                    HeightRequest="46"/>
+                    FontSize="16"
+                    HeightRequest="52"/>
 
-            <!-- Added Conditions -->
-            <Border StrokeShape="RoundRectangle 12"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#12122A"
-                    Padding="12">
+            <!-- Added conditions -->
+            <Frame Padding="12" BackgroundColor="White"
+                   CornerRadius="8" BorderColor="#D0D0D8" HasShadow="False">
                 <VerticalStackLayout Spacing="6">
-                    <Label Text="ADDED CONDITIONS"
+                    <Label Text="Added Conditions"
                            FontAttributes="Bold"
-                           FontSize="11"
-                           LetterSpacing="1"
-                           TextColor="#6B7A8D" />
+                           FontSize="15"
+                           TextColor="#555555" />
                     <CollectionView x:Name="ConditionsList" HeightRequest="120">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Grid Padding="4">
                                     <Label Text="{Binding}"
-                                           TextColor="#A066FF"
-                                           FontSize="13"/>
+                                           TextColor="#6D28D9"
+                                           FontSize="15"/>
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
             <!-- Action Buttons -->
             <HorizontalStackLayout Spacing="10" Padding="0,6,0,0" HorizontalOptions="Center">
                 <Button Text="✓ Apply Filter"
                         Clicked="OnApplyFilterClicked"
-                        BackgroundColor="#00C97B"
-                        TextColor="#0A0A0F"
-                        CornerRadius="10"
+                        BackgroundColor="#16A34A"
+                        TextColor="White"
+                        CornerRadius="8"
                         FontAttributes="Bold"
-                        WidthRequest="148"
-                        HeightRequest="46"/>
+                        FontSize="16"
+                        WidthRequest="160"
+                        HeightRequest="52"/>
                 <Button Text="✕ Cancel"
                         Clicked="OnCancelClicked"
-                        BackgroundColor="#FF4757"
+                        BackgroundColor="#DC2626"
                         TextColor="White"
-                        CornerRadius="10"
+                        CornerRadius="8"
                         FontAttributes="Bold"
-                        WidthRequest="120"
-                        HeightRequest="46"/>
+                        FontSize="16"
+                        WidthRequest="130"
+                        HeightRequest="52"/>
             </HorizontalStackLayout>
 
         </VerticalStackLayout>

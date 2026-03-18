@@ -7,27 +7,27 @@
     Color="Transparent"
     CanBeDismissedByTappingOutsideOfPopup="True">
 
-    <Border
+    <Frame
         x:FieldModifier="public"
         x:Name="PopupFrame"
-        StrokeShape="RoundRectangle 10"
-        Stroke="#337B2FFF"
-        StrokeThickness="1"
-        BackgroundColor="#1C1C38"
+        BackgroundColor="White"
+        BorderColor="#D0D0D8"
+        CornerRadius="8"
+        HasShadow="True"
         Padding="16">
 
         <Label
-            FontSize="14"
-            Text="{Binding SectionText}"
-            TextColor="#A066FF"
+            FontSize="16"
             FontAttributes="Bold"
+            Text="{Binding SectionText}"
+            TextColor="#6D28D9"
             HorizontalTextAlignment="Center"
             VerticalTextAlignment="Center"
             WidthRequest="260"
-            HeightRequest="50">
+            HeightRequest="52">
             <Label.GestureRecognizers>
                 <TapGestureRecognizer Tapped="OnLabelTapped"/>
             </Label.GestureRecognizers>
         </Label>
-    </Border>
+    </Frame>
 </toolkit:Popup>

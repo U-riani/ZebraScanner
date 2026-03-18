@@ -3,96 +3,48 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ZebraSCannerTest1.UI.Views.InventorizationMenuPage"
              xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
-             xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views"
              Title="Inventorization"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="14"
-                             VerticalOptions="Center">
+        <VerticalStackLayout Padding="16" Spacing="12" VerticalOptions="Center">
 
-            <Label Text="INVENTORIZATION"
-                   FontSize="13"
+            <Label Text="Inventorization"
+                   FontSize="26"
                    FontAttributes="Bold"
-                   TextColor="#6B7A8D"
-                   LetterSpacing="3"
+                   TextColor="#111111"
                    HorizontalOptions="Center"
-                   Margin="0,20,0,8" />
+                   Margin="0,20,0,12" />
 
-            <!-- CONTINUE -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#3300C97B"
-                    StrokeThickness="1"
-                    BackgroundColor="#1A3A2A"
-                    Padding="0">
-                <Button Text="▶  CONTINUE"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#00C97B"
-                        HeightRequest="60"
-                        Command="{Binding NavigateToContinueCommand}"/>
-            </Border>
+            <Button Text="CONTINUE"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#16A34A" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding NavigateToContinueCommand}"/>
 
-            <!-- RESULT -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="0">
-                <Button Text="◉  RESULT"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#00D4FF"
-                        HeightRequest="60"
-                        Command="{Binding NavigateToResultCommand}"/>
-            </Border>
+            <Button Text="RESULT"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#00A8CC" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding NavigateToResultCommand}"/>
 
-            <!-- EXPORT -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="0">
-                <Button Text="↑  EXPORT"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#A066FF"
-                        HeightRequest="60"
-                        Command="{Binding ExportCommand}"/>
-            </Border>
+            <Button Text="EXPORT"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#6D28D9" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding ExportCommand}"/>
 
-            <!-- IMPORT -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#33FFC107"
-                    StrokeThickness="1"
-                    BackgroundColor="#3A2E00"
-                    Padding="0">
-                <Button Text="↓  IMPORT"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#FFC107"
-                        HeightRequest="60"
-                        Command="{Binding ImportCommand}"/>
-            </Border>
+            <Button Text="IMPORT"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#D97706" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding ImportCommand}"/>
 
-            <!-- CLEAR -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#33FF4757"
-                    StrokeThickness="1"
-                    BackgroundColor="#3A1A1F"
-                    Padding="0">
-                <Button Text="✕  CLEAR"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#FF4757"
-                        HeightRequest="60"
-                        Command="{Binding ClearCommand}"/>
-            </Border>
+            <Button Text="CLEAR"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#DC2626" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding ClearCommand}"/>
 
         </VerticalStackLayout>
     </ScrollView>

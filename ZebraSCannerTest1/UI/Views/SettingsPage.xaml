@@ -5,79 +5,69 @@
              x:Class="ZebraSCannerTest1.UI.Views.SettingsPage"
              x:DataType="viewmodels:SettingsViewModel"
              Title="Settings"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="20">
+        <VerticalStackLayout Padding="16" Spacing="16">
 
-            <!-- Title -->
-            <Label Text="SETTINGS"
-                   FontSize="13"
+            <Label Text="Settings"
+                   FontSize="26"
                    FontAttributes="Bold"
-                   TextColor="#6B7A8D"
-                   LetterSpacing="3"
+                   TextColor="#111111"
                    HorizontalOptions="Center"
-                   Margin="0,20,0,4" />
+                   Margin="0,16,0,4" />
 
-            <!-- App version -->
             <Label Text="App version: 1.0.0"
-                   FontSize="14"
-                   TextColor="#3D4A5C"
+                   FontSize="16"
+                   TextColor="#888888"
                    HorizontalOptions="Center" />
 
-            <!-- Loots-specific buttons -->
-            <Border StrokeShape="RoundRectangle 16"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="16"
-                    IsVisible="{Binding IsLootsMode}">
+            <!-- Loots tools card -->
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White"
+                   IsVisible="{Binding IsLootsMode}">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="TOOLS"
-                           FontSize="11"
+                    <Label Text="Tools"
+                           FontSize="16"
                            FontAttributes="Bold"
-                           TextColor="#6B7A8D"
-                           LetterSpacing="2"
+                           TextColor="#555555"
                            HorizontalOptions="Center" />
                     <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
                         <Button Text="📊 Stats"
                                 Command="{Binding GoToScannedProductsCommand}"
-                                CornerRadius="10"
-                                HeightRequest="48"
-                                FontSize="14"
-                                BackgroundColor="#00D4FF"
-                                TextColor="#0A0A0F" />
-
+                                CornerRadius="8"
+                                HeightRequest="52"
+                                FontSize="16"
+                                BackgroundColor="#00A8CC"
+                                TextColor="White" />
                         <Button Text="📋 Logs"
                                 Command="{Binding GoToLogsCommand}"
-                                CornerRadius="10"
-                                HeightRequest="48"
-                                FontSize="14"
-                                BackgroundColor="#1C1C38"
-                                TextColor="#6B7A8D" />
-
+                                CornerRadius="8"
+                                HeightRequest="52"
+                                FontSize="16"
+                                BackgroundColor="#555555"
+                                TextColor="White" />
                         <Button Text="📈 Results"
                                 Command="{Binding ShowResultsCommand}"
-                                CornerRadius="10"
-                                HeightRequest="48"
-                                FontSize="14"
-                                BackgroundColor="#7B2FFF"
+                                CornerRadius="8"
+                                HeightRequest="52"
+                                FontSize="16"
+                                BackgroundColor="#6D28D9"
                                 TextColor="White" />
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
-            <!-- Back button -->
-            <Button Text="← Back"
+            <Button Text="Back"
                     Command="{Binding BackCommand}"
-                    CornerRadius="12"
-                    HeightRequest="52"
-                    FontSize="16"
+                    CornerRadius="8"
+                    HeightRequest="54"
+                    FontSize="18"
                     FontAttributes="Bold"
-                    BackgroundColor="#FF4757"
+                    BackgroundColor="#DC2626"
                     TextColor="White"
                     HorizontalOptions="Center"
-                    Margin="0,16,0,0" />
+                    Margin="0,12,0,0" />
 
         </VerticalStackLayout>
     </ScrollView>

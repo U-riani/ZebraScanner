@@ -4,50 +4,30 @@
              x:Class="ZebraSCannerTest1.UI.Views.SalesMenuPage"
              xmlns:viewModel="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
              Title="Sales"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="14"
-                             VerticalOptions="Center"
+        <VerticalStackLayout Padding="16" Spacing="12" VerticalOptions="Center"
                              x:DataType="viewModel:SalesMenuViewModel">
 
-            <Label Text="SALES"
-                   FontSize="13"
+            <Label Text="Sales"
+                   FontSize="26"
                    FontAttributes="Bold"
-                   TextColor="#6B7A8D"
-                   LetterSpacing="3"
+                   TextColor="#111111"
                    HorizontalOptions="Center"
-                   Margin="0,20,0,8" />
+                   Margin="0,20,0,12" />
 
-            <!-- CONTINUE -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#3300C97B"
-                    StrokeThickness="1"
-                    BackgroundColor="#1A3A2A"
-                    Padding="0">
-                <Button Text="▶  CONTINUE"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#00C97B"
-                        HeightRequest="60"
-                        Command="{Binding NavigateToSalesPageCommand}"/>
-            </Border>
+            <Button Text="CONTINUE"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#16A34A" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding NavigateToSalesPageCommand}"/>
 
-            <!-- IMPORT -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#33FFC107"
-                    StrokeThickness="1"
-                    BackgroundColor="#3A2E00"
-                    Padding="0">
-                <Button Text="↓  IMPORT"
-                        FontSize="18"
-                        FontAttributes="Bold"
-                        BackgroundColor="Transparent"
-                        TextColor="#FFC107"
-                        HeightRequest="60"
-                        Command="{Binding OnImportSalesDataCommand}"/>
-            </Border>
+            <Button Text="IMPORT"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#D97706" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding OnImportSalesDataCommand}"/>
 
         </VerticalStackLayout>
     </ScrollView>

@@ -6,7 +6,7 @@
              x:Class="ZebraSCannerTest1.UI.Views.ScannedProductsPage"
              x:DataType="viewmodel:ScannedProductsViewModel"
              Title="Scanned Products"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -16,19 +16,19 @@
 
             <Style x:Key="HeaderStyle" TargetType="Label">
                 <Setter Property="FontAttributes" Value="Bold" />
-                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="VerticalTextAlignment" Value="Center" />
                 <Setter Property="HorizontalTextAlignment" Value="Center" />
                 <Setter Property="Padding" Value="6,2" />
-                <Setter Property="TextColor" Value="#00D4FF" />
+                <Setter Property="TextColor" Value="#111111" />
             </Style>
 
             <Style x:Key="CellStyle" TargetType="Label">
-                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="VerticalTextAlignment" Value="Center" />
                 <Setter Property="HorizontalTextAlignment" Value="Center" />
                 <Setter Property="Padding" Value="6,2" />
-                <Setter Property="TextColor" Value="#E8EAED" />
+                <Setter Property="TextColor" Value="#111111" />
             </Style>
         </ResourceDictionary>
     </ContentPage.Resources>
@@ -37,67 +37,60 @@
 
         <!-- Filter description -->
         <VerticalStackLayout Grid.Row="0" Spacing="0" Padding="8,6,0,0">
-            <Label Text="{Binding CurrentFilterDescription}" TextColor="#3D4A5C" FontSize="12" />
+            <Label Text="{Binding CurrentFilterDescription}" TextColor="#888888" FontSize="13" />
         </VerticalStackLayout>
 
         <!-- Controls row -->
-        <Border Grid.Row="1"
-                StrokeShape="RoundRectangle 0"
-                Stroke="Transparent"
-                StrokeThickness="0"
-                BackgroundColor="#0A0A0F"
-                Padding="4,0">
-            <FlexLayout JustifyContent="SpaceBetween" AlignContent="Center" HeightRequest="40">
-                <VerticalStackLayout Spacing="2" Padding="4,0,0,0" HeightRequest="40">
-                    <Label Text="{Binding CurrentSortDescription}" TextColor="#3D4A5C" FontSize="12" />
-                    <HorizontalStackLayout Padding="0,2,0,0" Spacing="2">
-                        <Label Text="Rows:" TextColor="#3D4A5C" FontSize="12" />
-                        <Label Text="{Binding RowCount, StringFormat='{0:N0}'}" TextColor="#6B7A8D" FontSize="12" />
-                        <Label Text="/" TextColor="#3D4A5C" FontSize="12" />
-                        <Label Text="{Binding TotalRowCount, StringFormat='{0:N0}'}" TextColor="#6B7A8D" FontSize="12" />
-                    </HorizontalStackLayout>
-                </VerticalStackLayout>
-
-                <HorizontalStackLayout Spacing="6" HeightRequest="40" Padding="0,0,6,0">
-                    <Button Text="Sort" Command="{Binding SortCommand}"
-                            Padding="8,4" FontSize="12" CornerRadius="8"
-                            BackgroundColor="#12122A" TextColor="#6B7A8D"/>
-                    <Button Text="Filter" Command="{Binding FilterCommand}"
-                            Padding="8,4" FontSize="12" CornerRadius="8"
-                            BackgroundColor="#12122A" TextColor="#6B7A8D"/>
-                    <Button Text="Clear" Command="{Binding ClearFilterCommand}"
-                            Padding="8,4" FontSize="12" CornerRadius="8"
-                            BackgroundColor="#12122A" TextColor="#6B7A8D"/>
-                    <Button Text="⊟ Filter" Clicked="OnManualFilterClicked"
-                            Padding="8,4" FontSize="12" CornerRadius="8"
-                            BackgroundColor="#00D4FF" TextColor="#0A0A0F" />
+        <FlexLayout Grid.Row="1" JustifyContent="SpaceBetween" AlignContent="Center" HeightRequest="48"
+                    BackgroundColor="#F5F5F7" Padding="4,0">
+            <VerticalStackLayout Spacing="2" Padding="4,0,0,0" HeightRequest="48">
+                <Label Text="{Binding CurrentSortDescription}" TextColor="#888888" FontSize="12" />
+                <HorizontalStackLayout Padding="0,2,0,0" Spacing="2">
+                    <Label Text="Rows:" TextColor="#888888" FontSize="12" />
+                    <Label Text="{Binding RowCount, StringFormat='{0:N0}'}" TextColor="#555555" FontSize="12" />
+                    <Label Text="/" TextColor="#888888" FontSize="12" />
+                    <Label Text="{Binding TotalRowCount, StringFormat='{0:N0}'}" TextColor="#555555" FontSize="12" />
                 </HorizontalStackLayout>
-            </FlexLayout>
-        </Border>
+            </VerticalStackLayout>
+
+            <HorizontalStackLayout Spacing="6" HeightRequest="48" Padding="0,0,6,0">
+                <Button Text="Sort"   Command="{Binding SortCommand}"
+                        Padding="10,4" FontSize="14" CornerRadius="6" HeightRequest="40"
+                        BackgroundColor="#EAEAF0" TextColor="#111111"/>
+                <Button Text="Filter" Command="{Binding FilterCommand}"
+                        Padding="10,4" FontSize="14" CornerRadius="6" HeightRequest="40"
+                        BackgroundColor="#EAEAF0" TextColor="#111111"/>
+                <Button Text="Clear"  Command="{Binding ClearFilterCommand}"
+                        Padding="10,4" FontSize="14" CornerRadius="6" HeightRequest="40"
+                        BackgroundColor="#EAEAF0" TextColor="#111111"/>
+                <Button Text="⊟ Filter" Clicked="OnManualFilterClicked"
+                        Padding="10,4" FontSize="14" CornerRadius="6" HeightRequest="40"
+                        BackgroundColor="#00A8CC" TextColor="White" />
+            </HorizontalStackLayout>
+        </FlexLayout>
 
         <!-- Main Data Section -->
         <Grid Grid.Row="2" RowDefinitions="*,Auto">
 
-            <!-- Horizontally scrollable table -->
             <ScrollView Orientation="Horizontal">
                 <VerticalStackLayout>
 
                     <!-- Table Header -->
                     <Grid Padding="4"
-                          BackgroundColor="#12122A"
+                          BackgroundColor="#EAEAF0"
                           ColumnDefinitions="110,110,50,50,50,100,110,140,80,80,30">
-                        <Label Text="Barcode" Grid.Column="0" Style="{StaticResource HeaderStyle}" />
-                        <Label Text="Box" Grid.Column="1" Style="{StaticResource HeaderStyle}"
+                        <Label Text="Barcode"   Grid.Column="0" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Box"       Grid.Column="1" Style="{StaticResource HeaderStyle}"
                                IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" />
-                        <Label Text="Scan" Grid.Column="2" Style="{StaticResource HeaderStyle}" />
-                        <Label Text="Initial" Grid.Column="3" Style="{StaticResource HeaderStyle}" />
-                        <Label Text="Diff" Grid.Column="4" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Scan"      Grid.Column="2" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Initial"   Grid.Column="3" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Diff"      Grid.Column="4" Style="{StaticResource HeaderStyle}" />
                         <Label Text="ArticCode" Grid.Column="5" Style="{StaticResource HeaderStyle}" />
-                        <Label Text="Name" Grid.Column="6" Style="{StaticResource HeaderStyle}" />
-                        <Label Text="Color" Grid.Column="7" Style="{StaticResource HeaderStyle}" />
-                        <Label Text="Size" Grid.Column="8" Style="{StaticResource HeaderStyle}" />
-                        <Label Text="Price" Grid.Column="9" Style="{StaticResource HeaderStyle}" />
-                        <Label Text="→" Grid.Column="10" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Name"      Grid.Column="6" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Color"     Grid.Column="7" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Size"      Grid.Column="8" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="Price"     Grid.Column="9" Style="{StaticResource HeaderStyle}" />
+                        <Label Text="→"         Grid.Column="10" Style="{StaticResource HeaderStyle}" />
                     </Grid>
 
                     <!-- Product List -->
@@ -117,25 +110,25 @@
                                 <Grid Padding="4"
                                       ColumnDefinitions="110,110,50,50,50,100,110,140,80,80,30"
                                       BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}">
-                                    <Label Grid.Column="0" Text="{Binding Barcode}" Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="1" Text="{Binding BoxId}"
+                                    <Label Grid.Column="0"  Text="{Binding Barcode}"         Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="1"  Text="{Binding BoxId}"
                                            Style="{StaticResource CellStyle}"
                                            IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:ScannedProductsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" />
-                                    <Label Grid.Column="2" Text="{Binding ScannedQuantity}" Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="3" Text="{Binding InitialQuantity}" Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="4" Text="{Binding Difference}" Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="5" Text="{Binding ArticCode}" Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="6" Text="{Binding Name}" Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="7" Text="{Binding Color}" Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="8" Text="{Binding Size}" Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="9" Text="{Binding Price}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="2"  Text="{Binding ScannedQuantity}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="3"  Text="{Binding InitialQuantity}" Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="4"  Text="{Binding Difference}"      Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="5"  Text="{Binding ArticCode}"       Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="6"  Text="{Binding Name}"            Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="7"  Text="{Binding Color}"           Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="8"  Text="{Binding Size}"            Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="9"  Text="{Binding Price}"           Style="{StaticResource CellStyle}" />
                                     <Button Grid.Column="10"
                                             Text="→"
-                                            BackgroundColor="#00D4FF"
-                                            TextColor="#0A0A0F"
-                                            FontSize="13"
+                                            BackgroundColor="#00A8CC"
+                                            TextColor="White"
+                                            FontSize="14"
                                             WidthRequest="30"
-                                            HeightRequest="25"
+                                            HeightRequest="30"
                                             Padding="0"
                                             Clicked="OnDetailsClicked" />
                                 </Grid>
@@ -143,12 +136,11 @@
                         </CollectionView.ItemTemplate>
 
                         <CollectionView.Footer>
-                            <VerticalStackLayout Padding="0,10,0,175" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
+                            <VerticalStackLayout Padding="0,10,0,175" Spacing="8" HorizontalOptions="Center">
                                 <ActivityIndicator IsVisible="{Binding IsLoadingMore}"
                                                    IsRunning="{Binding IsLoadingMore}"
-                                                   Color="#00D4FF"
-                                                   WidthRequest="50"
-                                                   HeightRequest="50"
+                                                   Color="#00A8CC"
+                                                   WidthRequest="50" HeightRequest="50"
                                                    HorizontalOptions="Center" />
                             </VerticalStackLayout>
                         </CollectionView.Footer>
@@ -157,24 +149,19 @@
                 </VerticalStackLayout>
             </ScrollView>
 
-            <!-- Spinner for first page load -->
             <ActivityIndicator Grid.Row="1"
                                IsVisible="{Binding IsInitialLoading}"
                                IsRunning="{Binding IsInitialLoading}"
-                               Color="#00D4FF"
-                               WidthRequest="50"
-                               HeightRequest="50"
-                               VerticalOptions="Center"
-                               HorizontalOptions="Center" />
+                               Color="#00A8CC"
+                               WidthRequest="50" HeightRequest="50"
+                               VerticalOptions="Center" HorizontalOptions="Center" />
 
             <ActivityIndicator Grid.Row="1"
                                IsVisible="{Binding IsLoadingMore}"
                                IsRunning="{Binding IsLoadingMore}"
-                               Color="#7B2FFF"
-                               WidthRequest="30"
-                               HeightRequest="30"
-                               VerticalOptions="Center"
-                               HorizontalOptions="Center" />
+                               Color="#6D28D9"
+                               WidthRequest="30" HeightRequest="30"
+                               VerticalOptions="Center" HorizontalOptions="Center" />
         </Grid>
     </Grid>
 </ContentPage>

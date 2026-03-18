@@ -1,137 +1,99 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views"
              xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
              x:DataType="viewmodels:HomeViewModel"
              x:Class="ZebraSCannerTest1.UI.Views.HomePage"
              Title="Dashboard"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="16">
+        <VerticalStackLayout Padding="16" Spacing="12">
 
-            <!-- Page Title -->
-            <Label Text="DASHBOARD"
-                   FontSize="13"
-                   FontAttributes="Bold"
-                   TextColor="#6B7A8D"
-                   LetterSpacing="3"
-                   HorizontalOptions="Center"
-                   Margin="0,16,0,4" />
-
-            <!-- INVENTORIZATION Card -->
-            <Border StrokeShape="RoundRectangle 16"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="20">
-                <Border.GestureRecognizers>
+            <!-- INVENTORIZATION -->
+            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+                   BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
-                </Border.GestureRecognizers>
-                <VerticalStackLayout Spacing="6">
-                    <Label Text="⬡"
-                           FontSize="28"
-                           TextColor="#00D4FF"
-                           HorizontalOptions="Center" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
                     <Label Text="INVENTORIZATION"
-                           FontSize="20"
+                           FontSize="22"
                            FontAttributes="Bold"
-                           TextColor="#00D4FF"
+                           TextColor="#00A8CC"
                            HorizontalOptions="Center" />
                     <Label Text="Scan and manage inventory"
-                           FontSize="13"
-                           TextColor="#6B7A8D"
+                           FontSize="16"
+                           TextColor="#555555"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
-            <!-- TRANSFER Card -->
-            <Border StrokeShape="RoundRectangle 16"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="20">
-                <Border.GestureRecognizers>
+            <!-- TRANSFER -->
+            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+                   BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
-                </Border.GestureRecognizers>
-                <VerticalStackLayout Spacing="6">
-                    <Label Text="⇄"
-                           FontSize="28"
-                           TextColor="#7B2FFF"
-                           HorizontalOptions="Center" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
                     <Label Text="TRANSFER"
-                           FontSize="20"
+                           FontSize="22"
                            FontAttributes="Bold"
-                           TextColor="#7B2FFF"
+                           TextColor="#6D28D9"
                            HorizontalOptions="Center" />
                     <Label Text="Scan and manage inventory"
-                           FontSize="13"
-                           TextColor="#6B7A8D"
+                           FontSize="16"
+                           TextColor="#555555"
                            HorizontalOptions="Center" />
-                    <Label Text="coming soon"
-                           FontSize="11"
-                           TextColor="#3D4A5C"
+                    <Label Text="Coming soon"
+                           FontSize="14"
+                           TextColor="#888888"
                            HorizontalOptions="End"
                            FontAttributes="Italic" />
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
-            <!-- RECEIVE Card -->
-            <Border StrokeShape="RoundRectangle 16"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="20">
-                <Border.GestureRecognizers>
+            <!-- RECEIVE -->
+            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+                   BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
-                </Border.GestureRecognizers>
-                <VerticalStackLayout Spacing="6">
-                    <Label Text="↓"
-                           FontSize="28"
-                           TextColor="#7B2FFF"
-                           HorizontalOptions="Center" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
                     <Label Text="RECEIVE"
-                           FontSize="20"
+                           FontSize="22"
                            FontAttributes="Bold"
-                           TextColor="#7B2FFF"
+                           TextColor="#6D28D9"
                            HorizontalOptions="Center" />
                     <Label Text="Scan and manage inventory"
-                           FontSize="13"
-                           TextColor="#6B7A8D"
+                           FontSize="16"
+                           TextColor="#555555"
                            HorizontalOptions="Center" />
-                    <Label Text="coming soon"
-                           FontSize="11"
-                           TextColor="#3D4A5C"
+                    <Label Text="Coming soon"
+                           FontSize="14"
+                           TextColor="#888888"
                            HorizontalOptions="End"
                            FontAttributes="Italic" />
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
-            <!-- SALES Card -->
-            <Border StrokeShape="RoundRectangle 16"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="20">
-                <Border.GestureRecognizers>
+            <!-- SALES -->
+            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+                   BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NavigateToSalesCommand}" />
-                </Border.GestureRecognizers>
-                <VerticalStackLayout Spacing="6">
-                    <Label Text="◈"
-                           FontSize="28"
-                           TextColor="#00D4FF"
-                           HorizontalOptions="Center" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
                     <Label Text="SALES"
-                           FontSize="20"
+                           FontSize="22"
                            FontAttributes="Bold"
-                           TextColor="#00D4FF"
+                           TextColor="#00A8CC"
                            HorizontalOptions="Center" />
                     <Label Text="Scan and check sales"
-                           FontSize="13"
-                           TextColor="#6B7A8D"
+                           FontSize="16"
+                           TextColor="#555555"
                            HorizontalOptions="Center" />
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
         </VerticalStackLayout>
     </ScrollView>

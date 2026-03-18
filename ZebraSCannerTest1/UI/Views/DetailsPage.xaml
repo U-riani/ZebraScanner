@@ -6,7 +6,7 @@
              x:Class="ZebraSCannerTest1.UI.Views.DetailsPage"
              x:DataType="viewmodel:DetailsViewModel"
              Title="Details"
-             BackgroundColor="#0A0A0F">
+             BackgroundColor="#F5F5F7">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -18,30 +18,26 @@
     </ContentPage.Resources>
 
     <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="14">
+        <VerticalStackLayout Padding="14" Spacing="12">
 
             <ActivityIndicator
                 IsRunning="{Binding IsLoading}"
                 IsVisible="{Binding IsLoading}"
-                Color="#00D4FF"
-                HorizontalOptions="Center"
-                VerticalOptions="Center" />
+                Color="#00A8CC"
+                HorizontalOptions="Center" />
 
             <!-- Barcode Card -->
-            <Border StrokeShape="RoundRectangle 16"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="16">
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
                 <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
                     <Label Text="Barcode"
                            FontSize="18"
                            FontAttributes="Bold"
-                           TextColor="#E8EAED" />
+                           TextColor="#111111" />
                     <Label Text="{Binding ProductBarcode}"
                            FontSize="22"
                            FontAttributes="Bold"
-                           TextColor="#00D4FF"
+                           TextColor="#00A8CC"
                            VerticalOptions="Center">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
@@ -49,256 +45,181 @@
                         </Label.GestureRecognizers>
                     </Label>
                 </HorizontalStackLayout>
-            </Border>
+            </Frame>
 
             <!-- Current Box (Loots only) -->
-            <Border IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                    StrokeShape="RoundRectangle 14"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="16">
+            <Frame IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                   CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
                 <HorizontalStackLayout Spacing="12">
                     <Label Text="Current Box"
                            FontSize="18"
                            FontAttributes="Bold"
-                           TextColor="#E8EAED" />
+                           TextColor="#111111" />
                     <Label Text="{Binding BoxId}"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="#A066FF" />
+                           TextColor="#6D28D9" />
                 </HorizontalStackLayout>
-            </Border>
+            </Frame>
 
             <!-- In Boxes (Loots only) -->
-            <Border IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                    StrokeShape="RoundRectangle 14"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#12122A"
-                    Padding="16">
-                <VerticalStackLayout Spacing="8">
+            <Frame IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                   CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="#F0F0F4">
+                <VerticalStackLayout Spacing="6">
                     <Label Text="In Boxes"
                            FontSize="17"
                            FontAttributes="Bold"
-                           TextColor="#E8EAED" />
+                           TextColor="#111111" />
                     <Label Text="{Binding AllBoxesInfo}"
                            FontSize="15"
-                           TextColor="#6B7A8D"
+                           TextColor="#555555"
                            LineBreakMode="WordWrap" />
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
             <!-- Product Details Card -->
-            <Border StrokeShape="RoundRectangle 16"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="18">
-                <VerticalStackLayout Spacing="12">
-                    <HorizontalStackLayout Spacing="12">
-                        <Label Text="Artic Code" FontSize="14" TextColor="#6B7A8D" />
-                        <Label Text="{Binding ProductArticCode}"
-                               FontSize="15"
-                               FontAttributes="Bold"
-                               TextColor="#E8EAED">
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <VerticalStackLayout Spacing="10">
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Artic Code" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductArticCode}" FontSize="17" FontAttributes="Bold" TextColor="#111111">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
                                                      CommandParameter="{Binding ProductArticCode}" />
                             </Label.GestureRecognizers>
                         </Label>
                     </HorizontalStackLayout>
-
-                    <HorizontalStackLayout Spacing="12">
-                        <Label Text="Name" FontSize="14" TextColor="#6B7A8D" />
-                        <Label Text="{Binding ProductName}" FontSize="15" TextColor="#E8EAED" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Name" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductName}" FontSize="17" FontAttributes="Bold" TextColor="#111111" />
                     </HorizontalStackLayout>
-
-                    <HorizontalStackLayout Spacing="12">
-                        <Label Text="Color" FontSize="14" TextColor="#6B7A8D" />
-                        <Label Text="{Binding ProductColor}" FontSize="15" TextColor="#E8EAED" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Color" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductColor}" FontSize="17" FontAttributes="Bold" TextColor="#111111" />
                     </HorizontalStackLayout>
-
-                    <HorizontalStackLayout Spacing="12">
-                        <Label Text="Size" FontSize="14" TextColor="#6B7A8D" />
-                        <Label Text="{Binding ProductSize}" FontSize="15" TextColor="#E8EAED" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Size" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductSize}" FontSize="17" FontAttributes="Bold" TextColor="#111111" />
                     </HorizontalStackLayout>
-
-                    <HorizontalStackLayout Spacing="12">
-                        <Label Text="Price" FontSize="14" TextColor="#6B7A8D" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Price" FontSize="16" TextColor="#555555" />
                         <Label Text="{Binding ProductPrice, StringFormat='{}{0} ₾'}"
-                               FontSize="18"
+                               FontSize="20"
                                FontAttributes="Bold"
-                               TextColor="#00D4FF" />
+                               TextColor="#00A8CC" />
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
             <!-- Totals & Quantities Card -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#337B2FFF"
-                    StrokeThickness="1"
-                    BackgroundColor="#12122A"
-                    Padding="16">
-                <VerticalStackLayout Spacing="12">
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="#F0F0F4">
+                <VerticalStackLayout Spacing="10">
 
                     <!-- Loots mode totals -->
-                    <VerticalStackLayout IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" Spacing="10">
-                        <HorizontalStackLayout Spacing="12">
-                            <Label Text="Total Initial (all boxes)" FontSize="14" TextColor="#6B7A8D" />
-                            <Label Text="{Binding TotalInitialQuantity}"
-                                   FontSize="18"
-                                   FontAttributes="Bold"
-                                   TextColor="#E8EAED" />
+                    <VerticalStackLayout IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" Spacing="8">
+                        <HorizontalStackLayout Spacing="10">
+                            <Label Text="Total Initial (all boxes)" FontSize="16" TextColor="#555555" />
+                            <Label Text="{Binding TotalInitialQuantity}" FontSize="18" FontAttributes="Bold" TextColor="#111111" />
                         </HorizontalStackLayout>
-
-                        <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
-                            <Label Text="Total Scanned (all boxes)"
-                                   FontSize="14"
-                                   TextColor="#6B7A8D"
-                                   VerticalOptions="Center" />
-                            <Border StrokeShape="RoundRectangle 10"
-                                    Stroke="Transparent"
-                                    StrokeThickness="0"
-                                    BackgroundColor="{Binding ScannedVsInitialDifference, Converter={StaticResource DifferenceToColorConverter}}"
-                                    Padding="14,6">
-                                <Label Text="{Binding TotalScannedQuantity}"
-                                       FontSize="19"
-                                       FontAttributes="Bold"
-                                       TextColor="#0A0A0F"
-                                       VerticalOptions="Center" />
-                            </Border>
+                        <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                            <Label Text="Total Scanned (all boxes)" FontSize="16" TextColor="#555555" VerticalOptions="Center" />
+                            <Frame CornerRadius="6" Padding="12,6" HasShadow="False" BorderColor="Transparent"
+                                   BackgroundColor="{Binding ScannedVsInitialDifference, Converter={StaticResource DifferenceToColorConverter}}">
+                                <Label Text="{Binding TotalScannedQuantity}" FontSize="18" FontAttributes="Bold" TextColor="#111111" />
+                            </Frame>
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
 
-                    <!-- Always visible quantities -->
-                    <HorizontalStackLayout Spacing="12">
-                        <Label Text="Initial Quantity" FontSize="14" TextColor="#6B7A8D" />
-                        <Label Text="{Binding InitialQuantity}"
-                               FontSize="18"
-                               FontAttributes="Bold"
-                               TextColor="#E8EAED" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Initial Quantity" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding InitialQuantity}" FontSize="18" FontAttributes="Bold" TextColor="#111111" />
                     </HorizontalStackLayout>
-
-                    <HorizontalStackLayout Spacing="12">
-                        <Label Text="Scanned Quantity" FontSize="14" TextColor="#6B7A8D" />
-                        <Label Text="{Binding ScannedQuantity}"
-                               FontSize="18"
-                               FontAttributes="Bold"
-                               TextColor="#E8EAED" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Scanned Quantity" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ScannedQuantity}" FontSize="18" FontAttributes="Bold" TextColor="#111111" />
                     </HorizontalStackLayout>
 
                     <!-- Difference -->
-                    <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
-                        <Label Text="Difference"
-                               FontSize="14"
-                               TextColor="#6B7A8D"
-                               VerticalOptions="Center" />
-                        <Border StrokeShape="RoundRectangle 10"
-                                Stroke="Transparent"
-                                StrokeThickness="0"
-                                BackgroundColor="{Binding Difference, Converter={StaticResource DifferenceToColorConverter}}"
-                                Padding="14,6">
-                            <Label Text="{Binding Difference}"
-                                   FontSize="19"
-                                   FontAttributes="Bold"
-                                   TextColor="#0A0A0F"
-                                   VerticalOptions="Center" />
-                        </Border>
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                        <Label Text="Difference" FontSize="16" TextColor="#555555" VerticalOptions="Center" />
+                        <Frame CornerRadius="6" Padding="12,6" HasShadow="False" BorderColor="Transparent"
+                               BackgroundColor="{Binding Difference, Converter={StaticResource DifferenceToColorConverter}}">
+                            <Label Text="{Binding Difference}" FontSize="19" FontAttributes="Bold" TextColor="#111111" />
+                        </Frame>
                     </HorizontalStackLayout>
-
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
             <!-- Action Buttons -->
-            <Border IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
-                    StrokeShape="RoundRectangle 16"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="16">
-                <HorizontalStackLayout Spacing="16" HorizontalOptions="Center">
+            <Frame IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
+                   CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
                     <Button Text="✎"
                             Command="{Binding ManualEditCommand}"
-                            WidthRequest="64"
-                            HeightRequest="64"
-                            FontSize="26"
-                            CornerRadius="12"
-                            BackgroundColor="#7B2FFF"
-                            TextColor="White" />
-
+                            WidthRequest="64" HeightRequest="64"
+                            FontSize="26" CornerRadius="8"
+                            BackgroundColor="#6D28D9" TextColor="White" />
                     <Button Text="−"
                             Command="{Binding DecrementCommand}"
-                            WidthRequest="64"
-                            HeightRequest="64"
-                            FontSize="32"
-                            FontAttributes="Bold"
-                            CornerRadius="12"
-                            BackgroundColor="#FF4757"
-                            TextColor="White" />
-
+                            WidthRequest="64" HeightRequest="64"
+                            FontSize="32" FontAttributes="Bold"
+                            CornerRadius="8"
+                            BackgroundColor="#DC2626" TextColor="White" />
                     <Button Text="+"
                             Command="{Binding IncrementCommand}"
-                            WidthRequest="64"
-                            HeightRequest="64"
-                            FontSize="32"
-                            FontAttributes="Bold"
-                            CornerRadius="12"
-                            BackgroundColor="#00C97B"
-                            TextColor="#0A0A0F" />
+                            WidthRequest="64" HeightRequest="64"
+                            FontSize="32" FontAttributes="Bold"
+                            CornerRadius="8"
+                            BackgroundColor="#16A34A" TextColor="White" />
                 </HorizontalStackLayout>
-            </Border>
+            </Frame>
 
             <Button Text="Save Changes"
                     Command="{Binding SaveCommand}"
-                    Margin="0,4,0,16"
-                    CornerRadius="12"
-                    HeightRequest="52"
-                    FontSize="16"
+                    Margin="0,4,0,12"
+                    CornerRadius="8"
+                    HeightRequest="54"
+                    FontSize="18"
                     FontAttributes="Bold"
                     IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
-                    BackgroundColor="#00D4FF"
-                    TextColor="#0A0A0F" />
+                    BackgroundColor="#00A8CC"
+                    TextColor="White" />
 
             <!-- Logs Header -->
-            <Label Text="SCAN / EDIT HISTORY"
-                   FontSize="12"
+            <Label Text="Scan / Edit History"
+                   FontSize="18"
                    FontAttributes="Bold"
-                   TextColor="#6B7A8D"
-                   LetterSpacing="2"
+                   TextColor="#111111"
                    Margin="4,8,4,4" />
 
-            <!-- Logs Table -->
-            <Border StrokeShape="RoundRectangle 14"
-                    Stroke="#3300D4FF"
-                    StrokeThickness="1"
-                    BackgroundColor="#1C1C38"
-                    Padding="0">
-
+            <Frame CornerRadius="8" Padding="0" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
                 <VerticalStackLayout Spacing="0">
 
-                    <!-- Logs Table Header -->
+                    <!-- Table Header -->
                     <Grid ColumnDefinitions="3*, 60, 60, 60, 80, 80"
                           Padding="12,10"
-                          BackgroundColor="#12122A">
-                        <Label Text="Barcode" FontSize="13" FontAttributes="Bold" TextColor="#00D4FF" />
-                        <Label Text="Was"    Grid.Column="1" FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D" HorizontalTextAlignment="Center" />
-                        <Label Text="IncBy"  Grid.Column="2" FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D" HorizontalTextAlignment="Center" />
-                        <Label Text="Now"    Grid.Column="3" FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D" HorizontalTextAlignment="Center" />
+                          BackgroundColor="#EAEAF0">
+                        <Label Text="Barcode" FontSize="14" FontAttributes="Bold" TextColor="#111111" />
+                        <Label Text="Was"   Grid.Column="1" FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
+                        <Label Text="IncBy" Grid.Column="2" FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
+                        <Label Text="Now"   Grid.Column="3" FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
                         <Label Text="Sctn"
                                Grid.Column="4"
                                IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
-                               FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D"
-                               HorizontalTextAlignment="Center" />
+                               FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
                         <Label Text="Box"
                                Grid.Column="4"
                                IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                               FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D"
-                               HorizontalTextAlignment="Center" />
-                        <Label Text="Time" Grid.Column="5" FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D" HorizontalTextAlignment="End" />
+                               FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
+                        <Label Text="Time" Grid.Column="5" FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="End" />
                     </Grid>
 
-                    <!-- Logs Collection -->
                     <CollectionView ItemsSource="{Binding Logs}"
                                     HeightRequest="260"
                                     VerticalScrollBarVisibility="Always">
@@ -310,22 +231,22 @@
                                         BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}"
                                         Padding="12,8">
                                     <Grid ColumnDefinitions="3*,60,60,60,80,80">
-                                        <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="13" TextColor="#E8EAED" />
-                                        <Label Grid.Column="1" Text="{Binding Was}" HorizontalTextAlignment="Center" FontSize="13" TextColor="#6B7A8D" />
-                                        <Label Grid.Column="2" Text="{Binding IncrementBy}" HorizontalTextAlignment="Center" FontSize="13" TextColor="#00D4FF" />
-                                        <Label Grid.Column="3" Text="{Binding IsValue}" HorizontalTextAlignment="Center" FontSize="13" TextColor="#E8EAED" />
+                                        <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="#111111" />
+                                        <Label Grid.Column="1" Text="{Binding Was}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#555555" />
+                                        <Label Grid.Column="2" Text="{Binding IncrementBy}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#00A8CC" FontAttributes="Bold" />
+                                        <Label Grid.Column="3" Text="{Binding IsValue}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#111111" />
                                         <Label Grid.Column="4"
                                                Text="{Binding Section, FallbackValue='—'}"
                                                IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
-                                               HorizontalTextAlignment="Center" FontSize="13" TextColor="#A066FF" />
+                                               HorizontalTextAlignment="Center" FontSize="14" TextColor="#6D28D9" />
                                         <Label Grid.Column="4"
                                                Text="{Binding Box_Id, FallbackValue='—'}"
                                                IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                                               HorizontalTextAlignment="Center" FontSize="13" TextColor="#A066FF" />
+                                               HorizontalTextAlignment="Center" FontSize="14" TextColor="#6D28D9" />
                                         <Label Grid.Column="5"
                                                Text="{Binding UpdatedAt, StringFormat='{0:dd/MM HH:mm:ss}'}"
-                                               FontSize="12"
-                                               TextColor="#3D4A5C"
+                                               FontSize="13"
+                                               TextColor="#888888"
                                                HorizontalTextAlignment="End" />
                                     </Grid>
                                 </Border>
@@ -333,7 +254,7 @@
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
-            </Border>
+            </Frame>
 
         </VerticalStackLayout>
     </ScrollView>

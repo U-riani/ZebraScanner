@@ -4,57 +4,46 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="ZebraSCannerTest1.UI.Views.Controls.HeaderBar">
 
-    <!-- Glass header bar with cyan accent -->
-    <Border StrokeShape="RoundRectangle 0"
-            Stroke="#3300D4FF"
-            StrokeThickness="0"
-            BackgroundColor="#0D0D22"
-            HeightRequest="56">
-        <Grid Padding="4,0" ColumnSpacing="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+    <Grid BackgroundColor="#00A8CC"
+          Padding="4,0"
+          ColumnSpacing="8"
+          HeightRequest="56">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
 
-            <!-- Bottom cyan accent line -->
-            <BoxView Grid.ColumnSpan="3"
-                     VerticalOptions="End"
-                     HeightRequest="1"
-                     BackgroundColor="#3300D4FF" />
+        <ImageButton
+            Grid.Column="0"
+            Source="arrow_back.svg"
+            HeightRequest="44"
+            WidthRequest="44"
+            BackgroundColor="Transparent"
+            Command="{Binding BackCommand}"
+            IsVisible="{Binding CanGoBack}" />
 
-            <!-- Back Button -->
-            <ImageButton
-                Grid.Column="0"
-                Source="arrow_back.svg"
-                HeightRequest="30"
-                WidthRequest="30"
-                BackgroundColor="Transparent"
-                Command="{Binding BackCommand}"
-                IsVisible="{Binding CanGoBack}" />
+        <HorizontalStackLayout Grid.Column="1"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"
+                               Spacing="8">
+            <Image Source="logo2.svg" HeightRequest="30" WidthRequest="30" />
+            <Label Text="SCANMATE"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   TextColor="White"
+                   VerticalOptions="Center" />
+        </HorizontalStackLayout>
 
-            <!-- Logo + Title -->
-            <HorizontalStackLayout Grid.Column="1"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center"
-                                   Spacing="8">
-                <Image Source="logo2.svg" HeightRequest="32" WidthRequest="32" />
-                <Label Text="SCANMATE"
-                       FontAttributes="Bold"
-                       FontSize="18"
-                       TextColor="#00D4FF"
-                       VerticalOptions="Center" />
-            </HorizontalStackLayout>
-
-            <!-- Menu -->
-            <Button
-                Grid.Column="2"
-                Text="⋮"
-                FontSize="22"
-                BackgroundColor="Transparent"
-                TextColor="#00D4FF"
-                Command="{Binding OpenMenuCommand}" />
-        </Grid>
-    </Border>
+        <Button
+            Grid.Column="2"
+            Text="⋮"
+            FontSize="24"
+            BackgroundColor="Transparent"
+            TextColor="White"
+            HeightRequest="48"
+            WidthRequest="48"
+            Command="{Binding OpenMenuCommand}" />
+    </Grid>
 
 </ContentView>
