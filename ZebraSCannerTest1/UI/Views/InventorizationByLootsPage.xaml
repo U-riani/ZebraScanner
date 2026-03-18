@@ -2,65 +2,84 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
              x:Class="ZebraSCannerTest1.UI.Views.InventorizationByLootsPage"
-             Title="Loots Inventory">
+             Title="Loots Inventory"
+             BackgroundColor="#0A0A0F">
 
-    <Grid RowDefinitions="Auto,*" Padding="10" RowSpacing="6">
+    <Grid RowDefinitions="Auto,*" Padding="14" RowSpacing="10">
 
-        <!-- header / filter row -->
-        <VerticalStackLayout Grid.Row="0" Spacing="6">
-            <Label Text="Loots Inventory"
-                   FontSize="22"
+        <!-- Header / Filter -->
+        <VerticalStackLayout Grid.Row="0" Spacing="10">
+
+            <Label Text="LOOTS INVENTORY"
+                   FontSize="13"
+                   FontAttributes="Bold"
+                   TextColor="#6B7A8D"
+                   LetterSpacing="3"
                    HorizontalOptions="Center"
-                   Padding="0,10,0,10"
-                   TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+                   Padding="0,12,0,0"/>
 
-            <Entry Placeholder="Scan or enter Box ID..."
-                   Text="{Binding FilterText, Mode=TwoWay}"
-                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
-                   ClearButtonVisibility="WhileEditing"
-                   Keyboard="Text"
-                   FontSize="16"
-                   HeightRequest="42" />
+            <!-- Search entry in glass card -->
+            <Border StrokeShape="RoundRectangle 12"
+                    Stroke="#3300D4FF"
+                    StrokeThickness="1"
+                    BackgroundColor="#1C1C38"
+                    Padding="4,0">
+                <Entry Placeholder="Scan or enter Box ID..."
+                       Text="{Binding FilterText, Mode=TwoWay}"
+                       TextColor="#E8EAED"
+                       PlaceholderColor="#3D4A5C"
+                       ClearButtonVisibility="WhileEditing"
+                       Keyboard="Text"
+                       FontSize="16"
+                       HeightRequest="44" />
+            </Border>
         </VerticalStackLayout>
 
-        <!-- scrollable list -->
+        <!-- Loots List -->
         <CollectionView Grid.Row="1"
                         ItemsSource="{Binding FilteredLoots}"
                         VerticalScrollBarVisibility="Always"
                         SelectionMode="None">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Frame Margin="6" Padding="8" BorderColor="Gray" CornerRadius="8" HasShadow="True">
-                        <Frame.GestureRecognizers>
+                    <Border StrokeShape="RoundRectangle 12"
+                            Stroke="#3300D4FF"
+                            StrokeThickness="1"
+                            BackgroundColor="#1C1C38"
+                            Margin="0,5"
+                            Padding="14">
+                        <Border.GestureRecognizers>
                             <TapGestureRecognizer
                                 Command="{Binding Source={RelativeSource AncestorType={x:Type vm:InventorizationByLootsViewModel}}, Path=OpenLootCommand}"
                                 CommandParameter="{Binding Box_Id}" />
-                        </Frame.GestureRecognizers>
+                        </Border.GestureRecognizers>
 
-                        <VerticalStackLayout>
-                            <Label Text="Box ID"
-                                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="BOX ID"
+                                   TextColor="#6B7A8D"
                                    FontAttributes="Bold"
-                                   FontSize="13"
+                                   FontSize="11"
+                                   LetterSpacing="1"
                                    HorizontalOptions="Center"/>
                             <Label Text="{Binding Box_Id}"
-                                   FontSize="14"
-                                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="#00D4FF"
                                    HorizontalOptions="Center"/>
 
-                            <FlexLayout HorizontalOptions="Center" Margin="0,6,0,0">
-                                <Label Text="{Binding ScannedQuantity}" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-                                <Label Text="/" Margin="3,0" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
-                                <Label Text="{Binding InitialQuantity}" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}"/>
+                            <FlexLayout HorizontalOptions="Center" Margin="0,4,0,0">
+                                <Label Text="{Binding ScannedQuantity}" FontAttributes="Bold" TextColor="#00C97B" FontSize="15"/>
+                                <Label Text=" / " Margin="2,0" TextColor="#3D4A5C" FontSize="15"/>
+                                <Label Text="{Binding InitialQuantity}" FontAttributes="Bold" TextColor="#6B7A8D" FontSize="15"/>
                             </FlexLayout>
 
-                            <Label Text="{Binding TotalInfo}" 
-                                   FontSize="12" 
+                            <Label Text="{Binding TotalInfo}"
+                                   FontSize="12"
                                    HorizontalOptions="Center"
-                                   TextColor="Gray"
-                                   Margin="0,4,0,0"/>
+                                   TextColor="#3D4A5C"
+                                   Margin="0,2,0,0"/>
                         </VerticalStackLayout>
-                    </Frame>
+                    </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

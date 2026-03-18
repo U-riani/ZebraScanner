@@ -1,4 +1,4 @@
-﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
              xmlns:models="clr-namespace:ZebraSCannerTest1.Core.Models"
@@ -6,7 +6,7 @@
              x:Class="ZebraSCannerTest1.UI.Views.DetailsPage"
              x:DataType="viewmodel:DetailsViewModel"
              Title="Details"
-             BackgroundColor="{AppThemeBinding Dark=#0A0F1A, Light=#F8FAFC}">
+             BackgroundColor="#0A0A0F">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -14,35 +14,34 @@
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
             <converters:EnumEqualsConverter x:Key="EnumEqualsConverter" />
             <converters:DifferenceToColorConverter x:Key="DifferenceToColorConverter" />
-            <!-- You can remove QuantityComparisonToColorConverter if not used elsewhere -->
         </ResourceDictionary>
     </ContentPage.Resources>
 
     <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="16">
+        <VerticalStackLayout Padding="16" Spacing="14">
 
             <ActivityIndicator
                 IsRunning="{Binding IsLoading}"
                 IsVisible="{Binding IsLoading}"
-                Color="{AppThemeBinding Dark=#60A5FA, Light=#2563EB}"
+                Color="#00D4FF"
                 HorizontalOptions="Center"
                 VerticalOptions="Center" />
 
-            <!-- Barcode -->
-            <Frame CornerRadius="16"
-                   Padding="16"
-                   HasShadow="True"
-                   BorderColor="{AppThemeBinding Dark=#1F2937, Light=#E2E8F0}"
-                   BackgroundColor="{AppThemeBinding Dark=#111827, Light=White}">
+            <!-- Barcode Card -->
+            <Border StrokeShape="RoundRectangle 16"
+                    Stroke="#3300D4FF"
+                    StrokeThickness="1"
+                    BackgroundColor="#1C1C38"
+                    Padding="16">
                 <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
                     <Label Text="Barcode"
                            FontSize="18"
                            FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                           TextColor="#E8EAED" />
                     <Label Text="{Binding ProductBarcode}"
                            FontSize="22"
                            FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Dark=#60A5FA, Light=#2563EB}"
+                           TextColor="#00D4FF"
                            VerticalOptions="Center">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
@@ -50,59 +49,59 @@
                         </Label.GestureRecognizers>
                     </Label>
                 </HorizontalStackLayout>
-            </Frame>
+            </Border>
 
             <!-- Current Box (Loots only) -->
-            <Frame IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                   CornerRadius="14"
-                   Padding="16"
-                   HasShadow="True"
-                   BorderColor="{AppThemeBinding Dark=#1F2937, Light=#E2E8F0}"
-                   BackgroundColor="{AppThemeBinding Dark=#111827, Light=White}">
+            <Border IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                    StrokeShape="RoundRectangle 14"
+                    Stroke="#337B2FFF"
+                    StrokeThickness="1"
+                    BackgroundColor="#1C1C38"
+                    Padding="16">
                 <HorizontalStackLayout Spacing="12">
                     <Label Text="Current Box"
                            FontSize="18"
                            FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                           TextColor="#E8EAED" />
                     <Label Text="{Binding BoxId}"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                           TextColor="#A066FF" />
                 </HorizontalStackLayout>
-            </Frame>
+            </Border>
 
             <!-- In Boxes (Loots only) -->
-            <Frame IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                   CornerRadius="14"
-                   Padding="16"
-                   HasShadow="True"
-                   BorderColor="{AppThemeBinding Dark=#1F2937, Light=#E2E8F0}"
-                   BackgroundColor="{AppThemeBinding Dark=#0F172A, Light=#F1F5F9}">
+            <Border IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                    StrokeShape="RoundRectangle 14"
+                    Stroke="#337B2FFF"
+                    StrokeThickness="1"
+                    BackgroundColor="#12122A"
+                    Padding="16">
                 <VerticalStackLayout Spacing="8">
                     <Label Text="In Boxes"
                            FontSize="17"
                            FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                           TextColor="#E8EAED" />
                     <Label Text="{Binding AllBoxesInfo}"
                            FontSize="15"
-                           TextColor="{AppThemeBinding Dark=#94A3B8, Light=#64748B}"
+                           TextColor="#6B7A8D"
                            LineBreakMode="WordWrap" />
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
             <!-- Product Details Card -->
-            <Frame CornerRadius="16"
-                   Padding="18"
-                   HasShadow="True"
-                   BorderColor="{AppThemeBinding Dark=#1F2937, Light=#E2E8F0}"
-                   BackgroundColor="{AppThemeBinding Dark=#111827, Light=White}">
-                <VerticalStackLayout Spacing="14">
+            <Border StrokeShape="RoundRectangle 16"
+                    Stroke="#3300D4FF"
+                    StrokeThickness="1"
+                    BackgroundColor="#1C1C38"
+                    Padding="18">
+                <VerticalStackLayout Spacing="12">
                     <HorizontalStackLayout Spacing="12">
-                        <Label Text="Artic Code" FontSize="16" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                        <Label Text="Artic Code" FontSize="14" TextColor="#6B7A8D" />
                         <Label Text="{Binding ProductArticCode}"
-                               FontSize="17"
+                               FontSize="15"
                                FontAttributes="Bold"
-                               TextColor="{AppThemeBinding Dark=White, Light=Black}">
+                               TextColor="#E8EAED">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
                                                      CommandParameter="{Binding ProductArticCode}" />
@@ -111,121 +110,121 @@
                     </HorizontalStackLayout>
 
                     <HorizontalStackLayout Spacing="12">
-                        <Label Text="Name" FontSize="16" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
-                        <Label Text="{Binding ProductName}" FontSize="17" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                        <Label Text="Name" FontSize="14" TextColor="#6B7A8D" />
+                        <Label Text="{Binding ProductName}" FontSize="15" TextColor="#E8EAED" />
                     </HorizontalStackLayout>
 
                     <HorizontalStackLayout Spacing="12">
-                        <Label Text="Color" FontSize="16" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
-                        <Label Text="{Binding ProductColor}" FontSize="17" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                        <Label Text="Color" FontSize="14" TextColor="#6B7A8D" />
+                        <Label Text="{Binding ProductColor}" FontSize="15" TextColor="#E8EAED" />
                     </HorizontalStackLayout>
 
                     <HorizontalStackLayout Spacing="12">
-                        <Label Text="Size" FontSize="16" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
-                        <Label Text="{Binding ProductSize}" FontSize="17" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                        <Label Text="Size" FontSize="14" TextColor="#6B7A8D" />
+                        <Label Text="{Binding ProductSize}" FontSize="15" TextColor="#E8EAED" />
                     </HorizontalStackLayout>
 
                     <HorizontalStackLayout Spacing="12">
-                        <Label Text="Price" FontSize="16" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                        <Label Text="Price" FontSize="14" TextColor="#6B7A8D" />
                         <Label Text="{Binding ProductPrice, StringFormat='{}{0} ₾'}"
                                FontSize="18"
                                FontAttributes="Bold"
-                               TextColor="{AppThemeBinding Dark=#60A5FA, Light=#2563EB}" />
+                               TextColor="#00D4FF" />
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
             <!-- Totals & Quantities Card -->
-            <Frame CornerRadius="14"
-                   Padding="16"
-                   HasShadow="True"
-                   BorderColor="{AppThemeBinding Dark=#1F2937, Light=#E2E8F0}"
-                   BackgroundColor="{AppThemeBinding Dark=#0F172A, Light=#F1F5F9}">
-                <VerticalStackLayout Spacing="14">
+            <Border StrokeShape="RoundRectangle 14"
+                    Stroke="#337B2FFF"
+                    StrokeThickness="1"
+                    BackgroundColor="#12122A"
+                    Padding="16">
+                <VerticalStackLayout Spacing="12">
 
                     <!-- Loots mode totals -->
-                    <VerticalStackLayout IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" Spacing="12">
+                    <VerticalStackLayout IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" Spacing="10">
                         <HorizontalStackLayout Spacing="12">
-                            <Label Text="Total Initial (all boxes)" FontSize="16" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                            <Label Text="Total Initial (all boxes)" FontSize="14" TextColor="#6B7A8D" />
                             <Label Text="{Binding TotalInitialQuantity}"
                                    FontSize="18"
                                    FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                                   TextColor="#E8EAED" />
                         </HorizontalStackLayout>
 
                         <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
                             <Label Text="Total Scanned (all boxes)"
-                                   FontSize="16"
-                                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                                   FontSize="14"
+                                   TextColor="#6B7A8D"
                                    VerticalOptions="Center" />
-                            <Frame CornerRadius="10"
-                                   Padding="14,8"
-                                   HasShadow="False"
-                                   BorderColor="Transparent"
-                                   BackgroundColor="{Binding ScannedVsInitialDifference, Converter={StaticResource DifferenceToColorConverter}}">
+                            <Border StrokeShape="RoundRectangle 10"
+                                    Stroke="Transparent"
+                                    StrokeThickness="0"
+                                    BackgroundColor="{Binding ScannedVsInitialDifference, Converter={StaticResource DifferenceToColorConverter}}"
+                                    Padding="14,6">
                                 <Label Text="{Binding TotalScannedQuantity}"
                                        FontSize="19"
                                        FontAttributes="Bold"
-                                       TextColor="{AppThemeBinding Dark=Black, Light=Black}"
+                                       TextColor="#0A0A0F"
                                        VerticalOptions="Center" />
-                            </Frame>
+                            </Border>
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
 
                     <!-- Always visible quantities -->
                     <HorizontalStackLayout Spacing="12">
-                        <Label Text="Initial Quantity" FontSize="16" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                        <Label Text="Initial Quantity" FontSize="14" TextColor="#6B7A8D" />
                         <Label Text="{Binding InitialQuantity}"
                                FontSize="18"
                                FontAttributes="Bold"
-                               TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                               TextColor="#E8EAED" />
                     </HorizontalStackLayout>
 
                     <HorizontalStackLayout Spacing="12">
-                        <Label Text="Scanned Quantity" FontSize="16" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                        <Label Text="Scanned Quantity" FontSize="14" TextColor="#6B7A8D" />
                         <Label Text="{Binding ScannedQuantity}"
                                FontSize="18"
                                FontAttributes="Bold"
-                               TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                               TextColor="#E8EAED" />
                     </HorizontalStackLayout>
 
                     <!-- Difference -->
                     <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
                         <Label Text="Difference"
-                               FontSize="16"
-                               TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                               FontSize="14"
+                               TextColor="#6B7A8D"
                                VerticalOptions="Center" />
-                        <Frame CornerRadius="10"
-                               Padding="14,8"
-                               BackgroundColor="{Binding Difference, Converter={StaticResource DifferenceToColorConverter}}"
-                               HasShadow="False"
-                               BorderColor="Transparent">
+                        <Border StrokeShape="RoundRectangle 10"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
+                                BackgroundColor="{Binding Difference, Converter={StaticResource DifferenceToColorConverter}}"
+                                Padding="14,6">
                             <Label Text="{Binding Difference}"
                                    FontSize="19"
                                    FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Dark=Black, Light=Black}"
+                                   TextColor="#0A0A0F"
                                    VerticalOptions="Center" />
-                        </Frame>
+                        </Border>
                     </HorizontalStackLayout>
 
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
             <!-- Action Buttons -->
-            <Frame IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
-                   CornerRadius="20"
-                   Padding="16"
-                   HasShadow="True"
-                   BorderColor="{AppThemeBinding Dark=#1F2937, Light=#E2E8F0}"
-                   BackgroundColor="{AppThemeBinding Dark=#111827, Light=White}">
-                <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+            <Border IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
+                    StrokeShape="RoundRectangle 16"
+                    Stroke="#3300D4FF"
+                    StrokeThickness="1"
+                    BackgroundColor="#1C1C38"
+                    Padding="16">
+                <HorizontalStackLayout Spacing="16" HorizontalOptions="Center">
                     <Button Text="✎"
                             Command="{Binding ManualEditCommand}"
                             WidthRequest="64"
                             HeightRequest="64"
-                            FontSize="28"
+                            FontSize="26"
                             CornerRadius="12"
-                            BackgroundColor="#3B82F6"
+                            BackgroundColor="#7B2FFF"
                             TextColor="White" />
 
                     <Button Text="−"
@@ -235,7 +234,7 @@
                             FontSize="32"
                             FontAttributes="Bold"
                             CornerRadius="12"
-                            BackgroundColor="#EF4444"
+                            BackgroundColor="#FF4757"
                             TextColor="White" />
 
                     <Button Text="+"
@@ -245,56 +244,58 @@
                             FontSize="32"
                             FontAttributes="Bold"
                             CornerRadius="12"
-                            BackgroundColor="#10B981"
-                            TextColor="White" />
+                            BackgroundColor="#00C97B"
+                            TextColor="#0A0A0F" />
                 </HorizontalStackLayout>
-            </Frame>
+            </Border>
 
             <Button Text="Save Changes"
                     Command="{Binding SaveCommand}"
-                    Margin="0,8,0,24"
+                    Margin="0,4,0,16"
                     CornerRadius="12"
-                    HeightRequest="56"
-                    FontSize="18"
+                    HeightRequest="52"
+                    FontSize="16"
                     FontAttributes="Bold"
                     IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
-                    BackgroundColor="#3B82F6"
-                    TextColor="White" />
+                    BackgroundColor="#00D4FF"
+                    TextColor="#0A0A0F" />
 
             <!-- Logs Header -->
-            <Label Text="Scan / Edit History"
-                   FontSize="18"
+            <Label Text="SCAN / EDIT HISTORY"
+                   FontSize="12"
                    FontAttributes="Bold"
-                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
-                   Margin="4,12,4,8" />
+                   TextColor="#6B7A8D"
+                   LetterSpacing="2"
+                   Margin="4,8,4,4" />
 
-            <Frame CornerRadius="14"
-                   Padding="0"
-                   HasShadow="True"
-                   BorderColor="{AppThemeBinding Dark=#1F2937, Light=#E2E8F0}"
-                   BackgroundColor="{AppThemeBinding Dark=#111827, Light=White}">
+            <!-- Logs Table -->
+            <Border StrokeShape="RoundRectangle 14"
+                    Stroke="#3300D4FF"
+                    StrokeThickness="1"
+                    BackgroundColor="#1C1C38"
+                    Padding="0">
 
                 <VerticalStackLayout Spacing="0">
 
                     <!-- Logs Table Header -->
                     <Grid ColumnDefinitions="3*, 60, 60, 60, 80, 80"
                           Padding="12,10"
-                          BackgroundColor="{AppThemeBinding Dark=#1F2937, Light=#F1F5F9}">
-                        <Label Text="Barcode" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
-                        <Label Text="Was"    Grid.Column="1" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}" HorizontalTextAlignment="Center" />
-                        <Label Text="IncBy"  Grid.Column="2" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}" HorizontalTextAlignment="Center" />
-                        <Label Text="Now"    Grid.Column="3" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}" HorizontalTextAlignment="Center" />
+                          BackgroundColor="#12122A">
+                        <Label Text="Barcode" FontSize="13" FontAttributes="Bold" TextColor="#00D4FF" />
+                        <Label Text="Was"    Grid.Column="1" FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D" HorizontalTextAlignment="Center" />
+                        <Label Text="IncBy"  Grid.Column="2" FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D" HorizontalTextAlignment="Center" />
+                        <Label Text="Now"    Grid.Column="3" FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D" HorizontalTextAlignment="Center" />
                         <Label Text="Sctn"
                                Grid.Column="4"
                                IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
-                               FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                               FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D"
                                HorizontalTextAlignment="Center" />
                         <Label Text="Box"
                                Grid.Column="4"
                                IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                               FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                               FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D"
                                HorizontalTextAlignment="Center" />
-                        <Label Text="Time" Grid.Column="5" FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=White, Light=Black}" HorizontalTextAlignment="End" />
+                        <Label Text="Time" Grid.Column="5" FontSize="13" FontAttributes="Bold" TextColor="#6B7A8D" HorizontalTextAlignment="End" />
                     </Grid>
 
                     <!-- Logs Collection -->
@@ -304,25 +305,27 @@
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="models:ScanLog">
                                 <Border StrokeShape="RoundRectangle 0"
+                                        Stroke="Transparent"
+                                        StrokeThickness="0"
                                         BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}"
-                                        Padding="12,10">
+                                        Padding="12,8">
                                     <Grid ColumnDefinitions="3*,60,60,60,80,80">
-                                        <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
-                                        <Label Grid.Column="1" Text="{Binding Was}" HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
-                                        <Label Grid.Column="2" Text="{Binding IncrementBy}" HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=#60A5FA, Light=#2563EB}" />
-                                        <Label Grid.Column="3" Text="{Binding IsValue}" HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                                        <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="13" TextColor="#E8EAED" />
+                                        <Label Grid.Column="1" Text="{Binding Was}" HorizontalTextAlignment="Center" FontSize="13" TextColor="#6B7A8D" />
+                                        <Label Grid.Column="2" Text="{Binding IncrementBy}" HorizontalTextAlignment="Center" FontSize="13" TextColor="#00D4FF" />
+                                        <Label Grid.Column="3" Text="{Binding IsValue}" HorizontalTextAlignment="Center" FontSize="13" TextColor="#E8EAED" />
                                         <Label Grid.Column="4"
-                                               Text="{Binding Section, FallbackValue='(none)'}"
+                                               Text="{Binding Section, FallbackValue='—'}"
                                                IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
-                                               HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                                               HorizontalTextAlignment="Center" FontSize="13" TextColor="#A066FF" />
                                         <Label Grid.Column="4"
-                                               Text="{Binding Box_Id, FallbackValue='(none)'}"
+                                               Text="{Binding Box_Id, FallbackValue='—'}"
                                                IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                                               HorizontalTextAlignment="Center" FontSize="14" TextColor="{AppThemeBinding Dark=White, Light=Black}" />
+                                               HorizontalTextAlignment="Center" FontSize="13" TextColor="#A066FF" />
                                         <Label Grid.Column="5"
                                                Text="{Binding UpdatedAt, StringFormat='{0:dd/MM HH:mm:ss}'}"
-                                               FontSize="13"
-                                               TextColor="{AppThemeBinding Dark=#94A3B8, Light=#64748B}"
+                                               FontSize="12"
+                                               TextColor="#3D4A5C"
                                                HorizontalTextAlignment="End" />
                                     </Grid>
                                 </Border>
@@ -330,7 +333,7 @@
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
         </VerticalStackLayout>
     </ScrollView>

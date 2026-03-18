@@ -5,7 +5,8 @@
              x:Class="ZebraSCannerTest1.UI.Views.LogsPage"
              xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
              x:Name="RootPage"
-             Title="Logs">
+             Title="Logs"
+             BackgroundColor="#0A0A0F">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -14,103 +15,130 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <VerticalStackLayout Padding="2" Spacing="0">
+    <VerticalStackLayout Padding="4" Spacing="0">
 
-        <!-- Header -->
-        <HorizontalStackLayout HorizontalOptions="Center" Padding="6" Spacing="12">
-            <Button Text="Barcode" Command="{Binding FilterByBarcodeCommand}" />
-            <Button Text="Filter Time" Command="{Binding FilterTimeCommand}" />
-            <Button Text="Clear" Command="{Binding ClearFilterCommand}" />
-        </HorizontalStackLayout>
+        <!-- Filter Toolbar -->
+        <Border StrokeShape="RoundRectangle 0"
+                Stroke="#3300D4FF"
+                StrokeThickness="0"
+                BackgroundColor="#0D0D22"
+                Padding="6">
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="8">
+                <Button Text="Barcode" Command="{Binding FilterByBarcodeCommand}"
+                        BackgroundColor="#1C1C38" TextColor="#00D4FF"
+                        CornerRadius="8" Padding="10,6" FontSize="13"/>
+                <Button Text="Filter Time" Command="{Binding FilterTimeCommand}"
+                        BackgroundColor="#1C1C38" TextColor="#A066FF"
+                        CornerRadius="8" Padding="10,6" FontSize="13"/>
+                <Button Text="Clear" Command="{Binding ClearFilterCommand}"
+                        BackgroundColor="#3A1A1F" TextColor="#FF4757"
+                        CornerRadius="8" Padding="10,6" FontSize="13"/>
+            </HorizontalStackLayout>
+        </Border>
 
         <!-- Column Titles -->
-        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="6,4" >
-            <Label Text="Barcode" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Text="was" Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Text="IncBy" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Text="Is" Grid.Column="3" HorizontalTextAlignment="Center" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Text="{Binding Mode, Converter={StaticResource InventoryModeToHeaderConverter}}" 
-               Grid.Column="4"
-               HorizontalTextAlignment="Center"
-               FontAttributes="Bold"
-               TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Text="Time" Grid.Column="5" HorizontalTextAlignment="End" FontAttributes="Bold" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="8,6"
+              BackgroundColor="#12122A">
+            <Label Text="Barcode" FontAttributes="Bold" FontSize="13" TextColor="#00D4FF"/>
+            <Label Text="Was" Grid.Column="1" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
+            <Label Text="IncBy" Grid.Column="2" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
+            <Label Text="Is" Grid.Column="3" HorizontalTextAlignment="Center" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
+            <Label Text="{Binding Mode, Converter={StaticResource InventoryModeToHeaderConverter}}"
+                   Grid.Column="4"
+                   HorizontalTextAlignment="Center"
+                   FontAttributes="Bold"
+                   FontSize="13"
+                   TextColor="#A066FF"/>
+            <Label Text="Time" Grid.Column="5" HorizontalTextAlignment="End" FontAttributes="Bold" FontSize="13" TextColor="#6B7A8D"/>
         </Grid>
 
-        <!-- Slots (10 rows) -->
-        <VerticalStackLayout Spacing="2">
-            <ActivityIndicator 
+        <!-- Log Rows -->
+        <VerticalStackLayout Spacing="1">
+            <ActivityIndicator
                 IsRunning="True"
                 IsVisible="{Binding IsLoading}"
                 VerticalOptions="Center"
                 HorizontalOptions="Center"
-                Color="#0078D7"/>
+                Color="#00D4FF"/>
 
             <CollectionView ItemsSource="{Binding Slots}" SelectionMode="None">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="4,0"
-                  BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}">
+                        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="8,5"
+                              BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}">
                             <Label Grid.Column="0"
-                       Text="{Binding Barcode}"
-                       VerticalTextAlignment="Center"
-                       TextColor="{AppThemeBinding Dark=white, Light=black}">
+                                   Text="{Binding Barcode}"
+                                   VerticalTextAlignment="Center"
+                                   FontSize="13"
+                                   TextColor="#E8EAED">
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.CopyBarcodeCommand}"
-                                              CommandParameter="{Binding Barcode}" />
+                                                          CommandParameter="{Binding Barcode}" />
                                 </Label.GestureRecognizers>
                             </Label>
 
-                            <Label Grid.Column="1" Text="{Binding Was}" 
-                       HorizontalTextAlignment="Center"
-                       VerticalTextAlignment="Center"
-                       TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                            <Label Grid.Column="1" Text="{Binding Was}"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   FontSize="13"
+                                   TextColor="#6B7A8D"/>
 
                             <Label Grid.Column="2" Text="{Binding IncrementBy}"
-                       HorizontalTextAlignment="Center"
-                       VerticalTextAlignment="Center"
-                       TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   FontSize="13"
+                                   TextColor="#00D4FF"/>
 
                             <Label Grid.Column="3" Text="{Binding IsValue}"
-                       HorizontalTextAlignment="Center"
-                       VerticalTextAlignment="Center"
-                       TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   FontSize="13"
+                                   TextColor="#E8EAED"/>
 
                             <Label Grid.Column="4"
-                                Text="{Binding Section}"
-                               HorizontalTextAlignment="Center"
-                               VerticalTextAlignment="Center"
-                               MaxLines="1"
-                               LineBreakMode="TailTruncation"
-                               TextColor="{AppThemeBinding Dark=white, Light=black}">   
+                                   Text="{Binding Section}"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   MaxLines="1"
+                                   LineBreakMode="TailTruncation"
+                                   FontSize="13"
+                                   TextColor="#A066FF">
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.ShowFullSectionTextCommand}"
-                                              CommandParameter="{Binding Section}" />
+                                                          CommandParameter="{Binding Section}" />
                                 </Label.GestureRecognizers>
                             </Label>
 
                             <Label Grid.Column="5"
-                       Text="{Binding UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}"
-                       HorizontalTextAlignment="End"
-                       VerticalTextAlignment="Center"
-                       TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+                                   Text="{Binding UpdatedAt, StringFormat='{0:dd/MM/yy HH:mm:ss}'}"
+                                   HorizontalTextAlignment="End"
+                                   VerticalTextAlignment="Center"
+                                   FontSize="12"
+                                   TextColor="#3D4A5C"/>
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
-
-
-
         </VerticalStackLayout>
 
-        <!-- Pagination controls -->
-        <HorizontalStackLayout HorizontalOptions="Center" Spacing="12" Margin="0,6,0,0">
-            <Button Text="Prev" Command="{Binding PrevPageCommand}" />
-            <Label Text="{Binding CurrentPage}" VerticalOptions="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Text="/" VerticalOptions="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Label Text="{Binding TotalPages}" VerticalOptions="Center" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
-            <Button Text="Next" Command="{Binding NextPageCommand}" />
-        </HorizontalStackLayout>
+        <!-- Pagination -->
+        <Border StrokeShape="RoundRectangle 0"
+                Stroke="#3300D4FF"
+                StrokeThickness="0"
+                BackgroundColor="#0D0D22"
+                Padding="6">
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10" Margin="0,4,0,0">
+                <Button Text="◀ Prev" Command="{Binding PrevPageCommand}"
+                        BackgroundColor="#1C1C38" TextColor="#00D4FF"
+                        CornerRadius="8" Padding="12,6" FontSize="13"/>
+                <Label Text="{Binding CurrentPage}" VerticalOptions="Center" TextColor="#E8EAED" FontSize="14"/>
+                <Label Text="/" VerticalOptions="Center" TextColor="#3D4A5C" FontSize="14"/>
+                <Label Text="{Binding TotalPages}" VerticalOptions="Center" TextColor="#6B7A8D" FontSize="14"/>
+                <Button Text="Next ▶" Command="{Binding NextPageCommand}"
+                        BackgroundColor="#1C1C38" TextColor="#00D4FF"
+                        CornerRadius="8" Padding="12,6" FontSize="13"/>
+            </HorizontalStackLayout>
+        </Border>
 
     </VerticalStackLayout>
 </ContentPage>

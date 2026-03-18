@@ -4,29 +4,33 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="ZebraSCannerTest1.Views.Popups.ExportProgressPopup">
 
-    <Frame Padding="20"
-           BackgroundColor="White"
-           CornerRadius="12"
-           HasShadow="True"
-           WidthRequest="320">
+    <Border StrokeShape="RoundRectangle 16"
+            Stroke="#3300D4FF"
+            StrokeThickness="1"
+            BackgroundColor="#1C1C38"
+            Padding="24"
+            WidthRequest="320">
 
-        <VerticalStackLayout Spacing="12">
+        <VerticalStackLayout Spacing="14">
 
             <Label x:Name="TitleLabel"
                    Text="Exporting Data..."
-                   FontSize="20"
+                   FontSize="18"
                    FontAttributes="Bold"
+                   TextColor="#00D4FF"
                    HorizontalOptions="Center"/>
 
             <ProgressBar x:Name="ProgressBar"
                          Progress="0"
-                         HeightRequest="8"/>
+                         ProgressColor="#00D4FF"
+                         HeightRequest="6"/>
 
             <Label x:Name="StatusLabel"
                    Text="Preparing..."
-                   FontSize="14"
+                   FontSize="13"
+                   TextColor="#6B7A8D"
                    HorizontalOptions="Center"/>
 
         </VerticalStackLayout>
-    </Frame>
+    </Border>
 </ContentView>

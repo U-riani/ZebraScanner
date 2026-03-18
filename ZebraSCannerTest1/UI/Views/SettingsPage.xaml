@@ -5,69 +5,79 @@
              x:Class="ZebraSCannerTest1.UI.Views.SettingsPage"
              x:DataType="viewmodels:SettingsViewModel"
              Title="Settings"
-             BackgroundColor="{AppThemeBinding Dark=#0A0F1A, Light=#F8FAFC}">
+             BackgroundColor="#0A0A0F">
 
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="24">
+        <VerticalStackLayout Padding="20" Spacing="20">
 
             <!-- Title -->
-            <Label Text="Settings"
-                   FontSize="28"
+            <Label Text="SETTINGS"
+                   FontSize="13"
                    FontAttributes="Bold"
-                   TextColor="{AppThemeBinding Dark=White, Light=Black}"
+                   TextColor="#6B7A8D"
+                   LetterSpacing="3"
                    HorizontalOptions="Center"
-                   Margin="0,20,0,10" />
+                   Margin="0,20,0,4" />
 
             <!-- App version -->
             <Label Text="App version: 1.0.0"
-                   FontSize="16"
-                   TextColor="{AppThemeBinding Dark=#94A3B8, Light=#64748B}"
+                   FontSize="14"
+                   TextColor="#3D4A5C"
                    HorizontalOptions="Center" />
 
-            <!-- Loots-specific buttons – visible only when IsLootsMode = true -->
-            <Frame CornerRadius="16"
-                   Padding="12"
-                   IsVisible="{Binding IsLootsMode}"
-                   HasShadow="True"
-                   BorderColor="{AppThemeBinding Dark=#1F2937, Light=#E2E8F0}"
-                   BackgroundColor="{AppThemeBinding Dark=#111827, Light=White}">
-                <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
-                    <Button Text="📊 Stats"
-                            Command="{Binding GoToScannedProductsCommand}"
-                            CornerRadius="10"
-                            HeightRequest="48"
-                            FontSize="14"
-                            BackgroundColor="#3B82F6"
-                            TextColor="White" />
+            <!-- Loots-specific buttons -->
+            <Border StrokeShape="RoundRectangle 16"
+                    Stroke="#3300D4FF"
+                    StrokeThickness="1"
+                    BackgroundColor="#1C1C38"
+                    Padding="16"
+                    IsVisible="{Binding IsLootsMode}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="TOOLS"
+                           FontSize="11"
+                           FontAttributes="Bold"
+                           TextColor="#6B7A8D"
+                           LetterSpacing="2"
+                           HorizontalOptions="Center" />
+                    <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                        <Button Text="📊 Stats"
+                                Command="{Binding GoToScannedProductsCommand}"
+                                CornerRadius="10"
+                                HeightRequest="48"
+                                FontSize="14"
+                                BackgroundColor="#00D4FF"
+                                TextColor="#0A0A0F" />
 
-                    <Button Text="📋 Logs"
-                            Command="{Binding GoToLogsCommand}"
-                            CornerRadius="10"
-                            HeightRequest="48"
-                            FontSize="14"
-                            BackgroundColor="#6B7280"
-                            TextColor="White" />
+                        <Button Text="📋 Logs"
+                                Command="{Binding GoToLogsCommand}"
+                                CornerRadius="10"
+                                HeightRequest="48"
+                                FontSize="14"
+                                BackgroundColor="#1C1C38"
+                                TextColor="#6B7A8D" />
 
-                    <Button Text="📈 Results"
-                            Command="{Binding ShowResultsCommand}"
-                            CornerRadius="10"
-                            HeightRequest="48"
-                            FontSize="14"
-                            BackgroundColor="#10B981"
-                            TextColor="White" />
-                </HorizontalStackLayout>
-            </Frame>
+                        <Button Text="📈 Results"
+                                Command="{Binding ShowResultsCommand}"
+                                CornerRadius="10"
+                                HeightRequest="48"
+                                FontSize="14"
+                                BackgroundColor="#7B2FFF"
+                                TextColor="White" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
 
             <!-- Back button -->
-            <Button Text="Back"
+            <Button Text="← Back"
                     Command="{Binding BackCommand}"
                     CornerRadius="12"
                     HeightRequest="52"
                     FontSize="16"
-                    BackgroundColor="#EF4444"
+                    FontAttributes="Bold"
+                    BackgroundColor="#FF4757"
                     TextColor="White"
                     HorizontalOptions="Center"
-                    Margin="0,20,0,0" />
+                    Margin="0,16,0,0" />
 
         </VerticalStackLayout>
     </ScrollView>

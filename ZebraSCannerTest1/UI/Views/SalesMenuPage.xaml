@@ -3,23 +3,52 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ZebraSCannerTest1.UI.Views.SalesMenuPage"
              xmlns:viewModel="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
-             Title="SalesMenuPage">
-    <FlexLayout Direction="Column" AlignItems="Center" JustifyContent="Center" x:DataType="viewModel:SalesMenuViewModel">
-        <Button Text="Continue"
-            FontSize="20"
-            BackgroundColor="MediumSeaGreen"
-            TextColor="Black"
-            WidthRequest="200"
-            HeightRequest="60"
-            Margin="0,0,0,10"
-            Command="{Binding NavigateToSalesPageCommand}"/>
-        <Button Text="Import"
-            FontSize="20"
-            BackgroundColor="#FFC107"
-            TextColor="Black"
-            WidthRequest="200"
-            HeightRequest="60"
-            Margin="0,10,0,0"
-            Command="{Binding OnImportSalesDataCommand}"/>
-    </FlexLayout>
+             Title="Sales"
+             BackgroundColor="#0A0A0F">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="14"
+                             VerticalOptions="Center"
+                             x:DataType="viewModel:SalesMenuViewModel">
+
+            <Label Text="SALES"
+                   FontSize="13"
+                   FontAttributes="Bold"
+                   TextColor="#6B7A8D"
+                   LetterSpacing="3"
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,8" />
+
+            <!-- CONTINUE -->
+            <Border StrokeShape="RoundRectangle 14"
+                    Stroke="#3300C97B"
+                    StrokeThickness="1"
+                    BackgroundColor="#1A3A2A"
+                    Padding="0">
+                <Button Text="▶  CONTINUE"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        BackgroundColor="Transparent"
+                        TextColor="#00C97B"
+                        HeightRequest="60"
+                        Command="{Binding NavigateToSalesPageCommand}"/>
+            </Border>
+
+            <!-- IMPORT -->
+            <Border StrokeShape="RoundRectangle 14"
+                    Stroke="#33FFC107"
+                    StrokeThickness="1"
+                    BackgroundColor="#3A2E00"
+                    Padding="0">
+                <Button Text="↓  IMPORT"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        BackgroundColor="Transparent"
+                        TextColor="#FFC107"
+                        HeightRequest="60"
+                        Command="{Binding OnImportSalesDataCommand}"/>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

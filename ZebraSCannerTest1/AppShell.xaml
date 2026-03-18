@@ -6,16 +6,16 @@
     xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views"
     Shell.FlyoutBehavior="Flyout"
     Shell.NavBarIsVisible="True"
-    Shell.BackgroundColor="#0026B7"
-    Shell.TitleColor="White"
+    Shell.BackgroundColor="#0D0D22"
+    Shell.TitleColor="#E8EAED"
     Shell.NavBarHasShadow="False"
-    Shell.FlyoutBackgroundColor="{AppThemeBinding Dark=#0A0F1A, Light=#FFFFFF}">
+    Shell.FlyoutBackgroundColor="#0A0A0F">
 
     <!-- Custom burger menu icon on RIGHT side -->
     <Shell.ToolbarItems>
         <ToolbarItem IconImageSource="menu.png"
-                     Order="Secondary" 
-            Priority="0"
+                     Order="Secondary"
+                     Priority="0"
                      Command="{Binding OpenMenuCommand}" />
     </Shell.ToolbarItems>
 
@@ -27,11 +27,11 @@
                    FontAttributes="Bold"
                    FontSize="18"
                    VerticalOptions="Center"
-                   TextColor="White" />
+                   TextColor="#00D4FF" />
         </HorizontalStackLayout>
     </Shell.TitleView>
 
-    <!-- Flyout Menu Items (side menu content) -->
+    <!-- Flyout Menu Items -->
     <FlyoutItem Title="Home"
                 Icon="home.svg">
         <ShellContent Route="Home" ContentTemplate="{DataTemplate views:HomePage}" />
@@ -42,17 +42,11 @@
         <ShellContent Route="LootsScanning" ContentTemplate="{DataTemplate views:LootsScanningPage}" />
     </FlyoutItem>
 
-    <!-- Add more FlyoutItems as needed (e.g. Settings) -->
-    <!-- <FlyoutItem Title="Settings" Icon="gearshape.svg">
-        <ShellContent Route="Settings" ContentTemplate="{DataTemplate views:SettingsPage}" />
-    </FlyoutItem> -->
-
-    <!-- Optional: Bottom TabBar – only if you want tabs at the bottom -->
+    <!-- Optional: Bottom TabBar -->
     <TabBar>
         <Tab Title="Scanning" Icon="qrcode_viewfinder.svg">
             <ShellContent Route="LootsScanning" ContentTemplate="{DataTemplate views:LootsScanningPage}" />
         </Tab>
-        <!-- Add more tabs if needed -->
     </TabBar>
 
 </Shell>
