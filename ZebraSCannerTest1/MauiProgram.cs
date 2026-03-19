@@ -35,6 +35,7 @@ public static class MauiProgram
 
 
         // === Core services & repositories ===
+        builder.Services.AddSingleton<AuthService>();
         builder.Services.AddSingleton<IProductRepository, ProductRepository>();
         builder.Services.AddSingleton<IScanLogRepository, ScanLogRepository>();
         builder.Services.AddSingleton<ILootsProductRepository, LootsProductRepository>();
@@ -76,6 +77,9 @@ public static class MauiProgram
 
 
         // === Views ===
+        builder.Services.AddSingleton<AppShell>();
+        builder.Services.AddTransient<LoginPage>();
+
         builder.Services.AddSingleton<InventorizationPage>();
         builder.Services.AddTransient<DetailsPage>();
         builder.Services.AddTransient<LogsPage>();

@@ -10,7 +10,7 @@
         <VerticalStackLayout Padding="16" Spacing="12">
 
             <!-- INVENTORIZATION -->
-            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+            <Frame IsVisible="{Binding InventorizationVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
                    BorderColor="#D0D0D8" HasShadow="True">
                 <Frame.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
@@ -29,7 +29,7 @@
             </Frame>
 
             <!-- TRANSFER -->
-            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+            <Frame     IsVisible="{Binding TransferVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
                    BorderColor="#D0D0D8" HasShadow="True">
                 <Frame.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
@@ -53,7 +53,7 @@
             </Frame>
 
             <!-- RECEIVE -->
-            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+            <Frame IsVisible="{Binding ReceiveVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
                    BorderColor="#D0D0D8" HasShadow="True">
                 <Frame.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
@@ -77,7 +77,7 @@
             </Frame>
 
             <!-- SALES -->
-            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+            <Frame  IsVisible="{Binding SalesVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
                    BorderColor="#D0D0D8" HasShadow="True">
                 <Frame.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding NavigateToSalesCommand}" />

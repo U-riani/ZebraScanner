@@ -74,23 +74,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<MauiIcon Include="Resources\AppIcon\appicon.svg"
-				  ForegroundFile="Resources\AppIcon\appiconfg.svg"
-				  Color="#512BD4" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
 
-		<MauiSplashScreen Include="Resources\Splash\splash.svg"
-						  Color="#512BD4"
-						  BaseSize="128,128" />
+		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
 
 		<MauiImage Include="Resources\Images\*" />
-		<MauiImage Update="Resources\Images\dotnet_bot.png"
-				   Resize="True"
-				   BaseSize="300,185" />
+		<MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
 
 		<MauiFont Include="Resources\Fonts\*" />
 
-		<MauiAsset Include="Resources\Raw\**"
-				   LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -111,6 +104,9 @@
 		<MauiXaml Update="UI\Views\InventorizationByLootsPage.xaml" Generator="MSBuild:Compile" />
 		<MauiXaml Update="UI\Views\InventorizationMenuPage.xaml" Generator="MSBuild:Compile" />
 		<MauiXaml Update="UI\Views\InventoryMenuPage.xaml" Generator="MSBuild:Compile" />
+		<MauiXaml Update="UI\Views\LoginPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="UI\Views\LootsScanningPage.xaml" Generator="MSBuild:Compile" />
 		<MauiXaml Update="UI\Views\Popups\ExportProgressPopup.xaml" Generator="MSBuild:Compile" />
 		<MauiXaml Update="UI\Views\LogsPage.xaml" Generator="MSBuild:Compile" />
@@ -131,10 +127,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Update="UI\Views\InventorizationPage.xaml.cs"
-				 DependentUpon="InventorizationPage.xaml" />
-		<Compile Update="UI\Views\InventoryMenuPage.xaml.cs"
-				 DependentUpon="InventoryMenuPage.xaml" />
+		<Compile Update="UI\Views\InventorizationPage.xaml.cs" DependentUpon="InventorizationPage.xaml" />
+		<Compile Update="UI\Views\InventoryMenuPage.xaml.cs" DependentUpon="InventoryMenuPage.xaml" />
 	</ItemGroup>
 
 </Project>

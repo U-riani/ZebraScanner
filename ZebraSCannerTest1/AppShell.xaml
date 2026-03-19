@@ -9,7 +9,7 @@
     Shell.BackgroundColor="#00A8CC"
     Shell.TitleColor="White"
     Shell.NavBarHasShadow="True"
-    Shell.FlyoutBackgroundColor="#F5F5F7">
+    Shell.FlyoutBackgroundColor="Black">
 
     <Shell.ToolbarItems>
         <ToolbarItem IconImageSource="menu.png"

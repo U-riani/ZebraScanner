@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.Maui.Storage;
+using ZebraSCannerTest1.UI.Views;
 
 namespace ZebraSCannerTest1.UI.Services
 {
@@ -20,11 +21,29 @@ namespace ZebraSCannerTest1.UI.Services
                 case "Settings":
                     await Shell.Current.DisplayAlert("Settings", "Settings coming soon.", "OK");
                     break;
+
                 case "About":
                     await Shell.Current.DisplayAlert("About", "ScanMate v1.0", "OK");
                     break;
+
                 case "Logout":
-                    await Shell.Current.DisplayAlert("Logout", "You’ve been logged out.", "OK");
+
+                    bool confirm = await Shell.Current.DisplayAlert(
+                        "Logout",
+                        "Are you sure you want to logout?",
+                        "Yes",
+                        "Cancel");
+
+                    if (!confirm)
+                        return;
+
+                    // remove token
+                    SecureStorage.Remove("token");
+
+                    // go back to login page
+                    var loginPage = MauiProgram.ServiceProvider.GetRequiredService<LoginPage>();
+                    Application.Current.MainPage = loginPage;
+
                     break;
             }
         }

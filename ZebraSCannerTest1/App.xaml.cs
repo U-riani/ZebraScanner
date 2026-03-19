@@ -9,12 +9,12 @@ namespace ZebraSCannerTest1
         {
             InitializeComponent();
 
-            var shell = new AppShell(vm);
+            //var shell = new AppShell(vm);
 
             // REMOVE OR COMMENT THIS LINE – it disables the flyout and custom icon won't show properly
             // shell.FlyoutBehavior = FlyoutBehavior.Disabled;
 
-            MainPage = shell;
+            MainPage = MauiProgram.ServiceProvider.GetRequiredService<LoginPage>();
         }
     }
 }
