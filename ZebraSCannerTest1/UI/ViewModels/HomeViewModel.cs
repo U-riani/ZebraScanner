@@ -21,7 +21,7 @@ namespace ZebraSCannerTest1.UI.ViewModels
 
         public IRelayCommand NavigateToInventoryCommand { get; }
         public IRelayCommand NavigateToSalesCommand { get; }
-
+        public IRelayCommand NavigateToTasksCommand { get; }
         public HomeViewModel()
         {
             //LoadPermissions();
@@ -35,6 +35,12 @@ namespace ZebraSCannerTest1.UI.ViewModels
             {
                 await Shell.Current.GoToAsync(nameof(SalesMenuPage));
             });
+
+            NavigateToTasksCommand = new RelayCommand(async () =>
+            {
+                await Shell.Current.GoToAsync(nameof(TasksPage));
+            });
+
         }
 
         public void LoadPermissions()

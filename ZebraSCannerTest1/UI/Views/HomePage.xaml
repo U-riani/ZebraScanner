@@ -9,6 +9,24 @@
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
 
+            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+                BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToTasksCommand}" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="MY TASKS"
+               FontSize="22"
+               FontAttributes="Bold"
+               TextColor="#00A8CC"
+               HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory"
+               FontSize="16"
+               TextColor="#555555"
+               HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Frame>
+            
             <!-- INVENTORIZATION -->
             <Frame IsVisible="{Binding InventorizationVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
                    BorderColor="#D0D0D8" HasShadow="True">

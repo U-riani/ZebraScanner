@@ -117,6 +117,9 @@
 		<MauiXaml Update="UI\Views\SalesPage.xaml" Generator="MSBuild:Compile" />
 		<MauiXaml Update="UI\Views\ScannedProductsPage.xaml" Generator="MSBuild:Compile" />
 		<MauiXaml Update="UI\Views\SettingsPage.xaml" Generator="MSBuild:Compile" />
+		<MauiXaml Update="UI\Views\TasksPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 	</ItemGroup>
 
 	<ItemGroup>

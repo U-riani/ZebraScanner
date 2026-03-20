@@ -53,6 +53,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IApiService, ApiService>();
         builder.Services.AddSingleton<IServerImportService, ServerImportService>();
         builder.Services.AddSingleton<SalesExcelImportService>();
+        builder.Services.AddSingleton<ApiInventoryService>();
 
         // === UI helpers ===
         builder.Services.AddSingleton<IDialogService, MauiDialogService>();
@@ -91,6 +92,7 @@ public static class MauiProgram
         builder.Services.AddTransient<SalesMenuPage>();
         builder.Services.AddTransient<SalesPage>();
         builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddSingleton<TasksPage>();
 
         var app = builder.Build();
 
