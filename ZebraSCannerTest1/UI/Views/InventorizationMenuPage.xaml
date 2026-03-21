@@ -45,6 +45,13 @@
                     BackgroundColor="#DC2626" TextColor="White"
                     CornerRadius="8" HeightRequest="60"
                     Command="{Binding ClearCommand}"/>
+            <Button Text="Test Api" 
+                    FontSize="20" 
+                    FontAttributes="Bold"
+                    BackgroundColor="#DC2626" 
+                    TextColor="White" 
+                    CornerRadius="8" HeightRequest="60" 
+                    Command="{Binding TestDocLinesCommand}"/>
 
         </VerticalStackLayout>
     </ScrollView>

@@ -36,4 +36,21 @@ public class ApiInventoryService
             return null;
         }
     }
+
+    public async Task<List<InventorizationDocumentLinesDto>?> GetDocumentLines(string token, int doc_id) 
+    { 
+        try 
+        { 
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); 
+            var response = await _http.GetAsync($"inventorization/{doc_id}/lines"); 
+            Console.WriteLine("STATUS: " + response.StatusCode); 
+            if (!response.IsSuccessStatusCode) 
+                return null; 
+            return await response.Content.ReadFromJsonAsync<List<InventorizationDocumentLinesDto>>(); 
+        } catch (Exception ex) 
+        {
+            Console.WriteLine("Document fetch error: " + ex.Message); 
+            return null; 
+        } 
+    }
 }

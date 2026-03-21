@@ -4,12 +4,15 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Maui.Storage;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ZebraSCannerTest1.Core.Dtos;
 using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
+using ZebraSCannerTest1.Core.Services;
 using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Messages;
 using ZebraSCannerTest1.UI.Services;
@@ -32,6 +35,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
     public IRelayCommand ExportCommand { get; }
     public IRelayCommand ImportCommand { get; }
     public IRelayCommand ClearCommand { get; }
+    public IRelayCommand TestDocLinesCommand { get; }
+
 
     private readonly IDataImportService _importer;
     private readonly IExcelExportService _exporter;
@@ -40,6 +45,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
     private readonly ILoggerService<InventorizationMenuViewModel> _logger;
     private readonly PopupService _popup;
     private readonly IProductService _productService;
+    private readonly ApiInventoryService _inventoryService = new();
 
     private readonly IJsonExportService _jsonExporter;
     private readonly IJsonExportLogsService _jsonLogExporter;
@@ -47,6 +53,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
     private readonly IServerImportService _serverImporter;
     private IScanLogRepository _scanLogRepository;
 
+    public ObservableCollection<InventorizationDocumentLinesDto> DocumentLines { get; set; }
+       = new();
 
     private bool _importLocked = false;
 
@@ -79,6 +87,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
         ExportCommand = new AsyncRelayCommand(OnExportAsync);
         ImportCommand = new AsyncRelayCommand(OnImportAsync);
         ClearCommand = new AsyncRelayCommand(OnClearAsync);
+        TestDocLinesCommand = new AsyncRelayCommand(OnTestDocLinesCommand);
+
         _apiService = apiService;
         _serverImporter = serverImporter;
         _scanLogRepository = scanLogRepository;
@@ -494,4 +504,33 @@ public partial class InventorizationMenuViewModel : ObservableObject
         await _dialogs.ShowMessageAsync("Not Implemented", "Clear data functionality not yet available.");
     }
 
+    private async Task OnTestDocLinesCommand()
+    {
+        Console.WriteLine("++++++++++============");
+
+        var token = await SecureStorage.GetAsync("token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Console.WriteLine("TOKEN NOT FOUND");
+            return;
+        }
+
+        var docLines = await _inventoryService.GetDocumentLines(token, documentId);
+
+        if (docLines == null)
+            return;
+
+        DocumentLines.Clear();
+
+        foreach (var line in docLines)
+        {
+            Console.WriteLine("++++++++ " + line.barcode); // or any field
+            DocumentLines.Add(line);
+        }
+
+        Console.WriteLine($"Loaded {DocumentLines.Count} document lines.");
+    }
 }
+
+
