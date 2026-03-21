@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
+    x:Name="TasksRootPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="ZebraSCannerTest1.UI.Views.TasksPage"
@@ -9,6 +10,11 @@
         <CollectionView.ItemTemplate>
             <DataTemplate>
                 <Frame  Margin="10" Padding="10" BorderColor="Gray">
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding BindingContext.NavigateToScanningProcessCommand, Source={x:Reference TasksRootPage}}"
+                            CommandParameter="{Binding .}" />
+                    </Frame.GestureRecognizers>
                     <VerticalStackLayout>
                         <FlexLayout JustifyContent="SpaceBetween" Direction="Row" >
                             <Label
@@ -18,15 +24,21 @@
                                 FontAttributes="Bold" />
                             <Label
                                 
-                                Text="{Binding doc_type}"
+                                Text="{Binding warehouse_name}"
                                 TextColor="PaleVioletRed"
                                 FontSize="18"
                                 FontAttributes="Bold" />
                         </FlexLayout>
-                        <Label
-                            Text="{Binding status}"
-                            FontSize="14"
-                            TextColor="Gray" />
+                        <FlexLayout JustifyContent="SpaceBetween" Direction="Row" >
+                            <Label
+                                Text="{Binding status}"
+                                FontSize="14"
+                                TextColor="Gray" />
+                            <Label
+                                Text="{Binding doc_type}"
+                                TextColor="black"
+                                FontSize="18" />
+                        </FlexLayout>
 
                         <Label
                             Text="{Binding created_at}"

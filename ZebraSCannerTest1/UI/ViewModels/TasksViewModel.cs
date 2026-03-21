@@ -3,6 +3,8 @@ using ZebraSCannerTest1.UI.Services;
 using ZebraSCannerTest1.Core.Services;
 using ZebraSCannerTest1.Core.Dtos;
 using CommunityToolkit.Mvvm.Input;
+using ZebraSCannerTest1.UI.Views;
+using ZebraSCannerTest1.Core.Enums;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
@@ -13,7 +15,27 @@ public class TasksViewModel
     public ObservableCollection<InventorizationDocumentDto> Documents { get; set; }
         = new();
 
-    public IRelayCommand NavigateToScanningProcessCommand { get; }
+    public IRelayCommand<InventorizationDocumentDto> NavigateToScanningProcessCommand { get; }
+
+    public TasksViewModel()
+    {
+        NavigateToScanningProcessCommand = new RelayCommand<InventorizationDocumentDto>(async (doc) =>
+        {
+            if (doc == null)
+                return;
+
+            InventoryMode mode = doc.doc_type == "loots"
+                ? InventoryMode.Loots
+                : InventoryMode.Standard;
+
+            await Shell.Current.GoToAsync(nameof(InventorizationMenuPage),
+                new Dictionary<string, object>
+                {
+                    ["Mode"] = mode,
+                    ["DocumentId"] = doc.id
+                });
+        });
+    }
     public async Task LoadDocuments(string token)
     {
         var docs = await _inventoryService.GetDocuments(token);

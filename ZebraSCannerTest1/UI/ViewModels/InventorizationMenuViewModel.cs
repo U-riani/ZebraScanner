@@ -18,10 +18,14 @@ using ZebraSCannerTest1.UI.Views;
 namespace ZebraSCannerTest1.UI.ViewModels;
 
 [QueryProperty(nameof(Mode), "Mode")]
+[QueryProperty(nameof(DocumentId), "DocumentId")]
 public partial class InventorizationMenuViewModel : ObservableObject
 {
     [ObservableProperty]
     private InventoryMode mode;
+
+    [ObservableProperty]
+    private int documentId;
 
     public IRelayCommand NavigateToContinueCommand { get; }
     public IRelayCommand NavigateToResultCommand { get; }
@@ -94,6 +98,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
     {
         try
         {
+            Console.WriteLine("----DOcument is here amigo" + documentId);
             await _popup.ShowProgressAsync($"Calculating totals for {Mode}...");
             var (totalInitial, totalScanned, totalBarcodes, scannedBarcodes) =
                 _productService.GetInventoryStats(Mode);
