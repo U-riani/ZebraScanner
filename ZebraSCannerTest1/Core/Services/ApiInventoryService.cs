@@ -14,7 +14,7 @@ public class ApiInventoryService
         _http.BaseAddress = new Uri("http://10.0.2.2:8000/api/");
     }
 
-    public async Task<List<InventorizationDocumentDto>?> GetDocuments(string token)
+    public async Task<List<PocketDocumentDto>?> GetDocuments(string token)
     {
         try
         {
@@ -28,7 +28,7 @@ public class ApiInventoryService
             if (!response.IsSuccessStatusCode)
                 return null;
 
-            return await response.Content.ReadFromJsonAsync<List<InventorizationDocumentDto>>();
+            return await response.Content.ReadFromJsonAsync<List<PocketDocumentDto>>();
         }
         catch (Exception ex)
         {
@@ -37,20 +37,29 @@ public class ApiInventoryService
         }
     }
 
-    public async Task<List<InventorizationDocumentLinesDto>?> GetDocumentLines(string token, int doc_id) 
-    { 
-        try 
-        { 
-            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token); 
-            var response = await _http.GetAsync($"inventorization/{doc_id}/lines"); 
-            Console.WriteLine("STATUS: " + response.StatusCode); 
-            if (!response.IsSuccessStatusCode) 
-                return null; 
-            return await response.Content.ReadFromJsonAsync<List<InventorizationDocumentLinesDto>>(); 
-        } catch (Exception ex) 
+    public async Task<List<PocketDocumentLinesDto>?> GetDocumentLines(
+     string token,
+     int doc_id,
+     string module)
+    {
+        try
         {
-            Console.WriteLine("Document fetch error: " + ex.Message); 
-            return null; 
-        } 
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _http.GetAsync($"pocket-api/{doc_id}/lines?module={module}");
+
+            Console.WriteLine("STATUS: " + response.StatusCode);
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            return await response.Content.ReadFromJsonAsync<List<PocketDocumentLinesDto>>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Document fetch error: " + ex.Message);
+            return null;
+        }
     }
 }

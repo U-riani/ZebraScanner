@@ -12,19 +12,19 @@ public class TasksViewModel
 {
     private readonly ApiInventoryService _inventoryService = new();
 
-    public ObservableCollection<InventorizationDocumentDto> Documents { get; set; }
+    public ObservableCollection<PocketDocumentDto> Documents { get; set; }
         = new();
 
-    public IRelayCommand<InventorizationDocumentDto> NavigateToScanningProcessCommand { get; }
+    public IRelayCommand<PocketDocumentDto> NavigateToScanningProcessCommand { get; }
 
     public TasksViewModel()
     {
-        NavigateToScanningProcessCommand = new RelayCommand<InventorizationDocumentDto>(async (doc) =>
+        NavigateToScanningProcessCommand = new RelayCommand<PocketDocumentDto>(async (doc) =>
         {
             if (doc == null)
                 return;
 
-            InventoryMode mode = doc.doc_type == "loots"
+            InventoryMode mode = doc.scan_type == "loots"
                 ? InventoryMode.Loots
                 : InventoryMode.Standard;
 
@@ -32,7 +32,8 @@ public class TasksViewModel
                 new Dictionary<string, object>
                 {
                     ["Mode"] = mode,
-                    ["DocumentId"] = doc.id
+                    ["DocumentId"] = doc.id,
+                    ["ServerDbModule"] = doc.doc_module
                 });
         });
     }

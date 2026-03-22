@@ -6,14 +6,15 @@ using System.Threading.Tasks;
 
 namespace ZebraSCannerTest1.Core.Dtos
 {
-    public class InventorizationDocumentLinesDto
+    public class PocketDocumentLinesDto
     {
-        public int item_id { get; set; }
+        public int id { get; set; }
         public int document_id { get; set; }
 
         public string barcode { get; set; }
-        public string article_code { get; set; }
-        public string product_name { get; set; }
+        public string? article_code { get; set; }
+        public string? product_name { get; set; }
+
         public string? color { get; set; }
         public string? size { get; set; }
 

@@ -22,6 +22,7 @@ namespace ZebraSCannerTest1.UI.ViewModels;
 
 [QueryProperty(nameof(Mode), "Mode")]
 [QueryProperty(nameof(DocumentId), "DocumentId")]
+[QueryProperty(nameof(ServerDbModule), "ServerDbModule")]
 public partial class InventorizationMenuViewModel : ObservableObject
 {
     [ObservableProperty]
@@ -29,6 +30,9 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
     [ObservableProperty]
     private int documentId;
+
+    [ObservableProperty]
+    private string serverDbModule;
 
     public IRelayCommand NavigateToContinueCommand { get; }
     public IRelayCommand NavigateToResultCommand { get; }
@@ -53,7 +57,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
     private readonly IServerImportService _serverImporter;
     private IScanLogRepository _scanLogRepository;
 
-    public ObservableCollection<InventorizationDocumentLinesDto> DocumentLines { get; set; }
+    public ObservableCollection<PocketDocumentLinesDto> DocumentLines { get; set; }
        = new();
 
     private bool _importLocked = false;
@@ -516,7 +520,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
             return;
         }
 
-        var docLines = await _inventoryService.GetDocumentLines(token, documentId);
+        var docLines = await _inventoryService.GetDocumentLines(token, documentId, serverDbModule);
 
         if (docLines == null)
             return;
