@@ -8,7 +8,7 @@ namespace ZebraSCannerTest1.Core.Dtos
 {
     public class InventorizationDocumentLinesDto
     {
-        public int id { get; set; }
+        public int item_id { get; set; }
         public int document_id { get; set; }
 
         public string barcode { get; set; }
@@ -23,9 +23,6 @@ namespace ZebraSCannerTest1.Core.Dtos
 
         public int expected_qty { get; set; }
         public int? counted_qty { get; set; }
-        public int? recount_qty { get; set; }
-
-        public bool recount_requested { get; set; }
 
         public int? employee_id { get; set; }
     }
