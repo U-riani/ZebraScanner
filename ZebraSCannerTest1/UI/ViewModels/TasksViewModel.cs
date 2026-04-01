@@ -33,7 +33,8 @@ public class TasksViewModel
                 {
                     ["Mode"] = mode,
                     ["DocumentId"] = doc.id,
-                    ["ServerDbModule"] = doc.doc_module
+                    ["ServerDbModule"] = doc.doc_module,
+                    ["DocumentStatus"] = doc.status
                 });
         });
     }

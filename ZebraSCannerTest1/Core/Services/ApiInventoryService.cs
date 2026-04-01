@@ -62,4 +62,30 @@ public class ApiInventoryService
             return null;
         }
     }
+
+    public async Task<bool> UpdateDocumentStatus(string token, int documentId, string module, string newStatus)
+    {
+        try
+        {
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var payload = new
+            {
+                status = newStatus
+            };
+
+            var response = await _http.PostAsJsonAsync(
+                $"pocket-api/document/{documentId}/{module}/status-change",
+                payload);
+
+            Console.WriteLine("STATUS UPDATE: " + response.StatusCode);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Status update error: " + ex.Message);
+            return false;
+        }
+    }
 }

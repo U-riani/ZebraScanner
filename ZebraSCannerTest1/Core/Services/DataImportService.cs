@@ -21,6 +21,97 @@ namespace ZebraSCannerTest1.Core.Services
             _excelImport = new ExcelImportService(db);
         }
 
+        public async Task<int> ImportBackendDocumentLinesAsync(
+            IEnumerable<PocketDocumentLinesDto> items,
+            InventoryMode mode = InventoryMode.Standard)
+        {
+            using var conn = _db.Inventorization(mode);
+
+            string table = mode == InventoryMode.Loots ? "LootsProducts" : "Products";
+            bool isLoots = mode == InventoryMode.Loots;
+
+            var list = items?.ToList() ?? new List<PocketDocumentLinesDto>();
+            if (!list.Any())
+                throw new Exception("No document lines received from backend.");
+
+            // optional: clear old data first
+            using (var clear = conn.CreateCommand())
+            {
+                clear.CommandText = $"DELETE FROM {table};";
+                clear.ExecuteNonQuery();
+                Console.WriteLine($"[IMPORT] Cleared old data from {table}");
+            }
+
+            using var tx = conn.BeginTransaction();
+            using var insert = conn.CreateCommand();
+            insert.Transaction = tx;
+
+            insert.CommandText = isLoots
+                ? $@"
+                    INSERT OR REPLACE INTO {table}
+                    (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+                    VALUES ($barcode, $box, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);"
+                : $@"
+                    INSERT OR REPLACE INTO {table}
+                    (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+                    VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);";
+
+            insert.Parameters.Add("$barcode", SqliteType.Text);
+            insert.Parameters.Add("$box", SqliteType.Text);
+            insert.Parameters.Add("$initial", SqliteType.Integer);
+            insert.Parameters.Add("$scanned", SqliteType.Integer);
+            insert.Parameters.Add("$created", SqliteType.Text);
+            insert.Parameters.Add("$updated", SqliteType.Text);
+            insert.Parameters.Add("$name", SqliteType.Text);
+            insert.Parameters.Add("$color", SqliteType.Text);
+            insert.Parameters.Add("$size", SqliteType.Text);
+            insert.Parameters.Add("$price", SqliteType.Text);
+            insert.Parameters.Add("$artic", SqliteType.Text);
+
+            int processed = 0;
+            var now = DateTime.UtcNow.ToString("o");
+
+            try
+            {
+                foreach (var p in list)
+                {
+                    if (string.IsNullOrWhiteSpace(p.barcode))
+                        continue;
+
+                    insert.Parameters["$barcode"].Value = p.barcode.Trim();
+                    insert.Parameters["$initial"].Value = p.expected_qty;
+                    insert.Parameters["$scanned"].Value = p.counted_qty ?? 0;
+                    insert.Parameters["$created"].Value = now;
+                    insert.Parameters["$updated"].Value = now;
+                    insert.Parameters["$name"].Value = p.product_name ?? "";
+                    insert.Parameters["$color"].Value = p.color ?? "";
+                    insert.Parameters["$size"].Value = p.size ?? "";
+                    insert.Parameters["$price"].Value = p.price?.ToString() ?? "";
+                    insert.Parameters["$artic"].Value = p.article_code ?? "";
+
+                    if (isLoots)
+                    {
+                        insert.Parameters["$box"].Value = p.box_id ?? "UnknownBox";
+                    }
+
+                    insert.ExecuteNonQuery();
+                    processed++;
+                }
+
+                tx.Commit();
+            }
+            catch (Exception ex)
+            {
+                tx.Rollback();
+                Console.WriteLine($"❌ Backend import failed after {processed} rows → {ex.Message}");
+                throw;
+            }
+
+            Console.WriteLine($"[IMPORT] ✅ Backend lines import complete → {processed} rows ({mode})");
+            await Task.CompletedTask;
+            return processed;
+        }
+
         // ✅ Import Excel (already uses MiniExcel)
         public async Task ImportExcelAsync(Stream stream, InventoryMode mode = InventoryMode.Standard, string? fileName = null)
         {

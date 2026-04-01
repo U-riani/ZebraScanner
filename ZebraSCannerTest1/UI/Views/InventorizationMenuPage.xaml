@@ -16,6 +16,13 @@
                    HorizontalOptions="Center"
                    Margin="0,20,0,12" />
 
+            <Button Text="LOAD DATA"
+                FontSize="20" FontAttributes="Bold"
+                BackgroundColor="LightSeaGreen" TextColor="White"
+                CornerRadius="8" HeightRequest="60"
+                Command="{Binding LoadDataFromServerCommand}"
+                IsVisible="{Binding ShowLoadDataButton}"/>
+            
             <Button Text="CONTINUE"
                     FontSize="20" FontAttributes="Bold"
                     BackgroundColor="#16A34A" TextColor="White"

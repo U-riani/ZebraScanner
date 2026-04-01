@@ -131,6 +131,11 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
     private async Task LoadRecentAsync()
     {
         var recent = await _productService.GetRecentAsync(SlotCount);
+
+        // clear all slots first
+        foreach (var slot in Slots)
+            slot.Set(string.Empty, 0, 0);
+
         int i = 0;
         foreach (var p in recent)
         {

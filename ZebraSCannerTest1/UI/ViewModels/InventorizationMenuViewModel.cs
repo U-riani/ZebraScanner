@@ -23,6 +23,7 @@ namespace ZebraSCannerTest1.UI.ViewModels;
 [QueryProperty(nameof(Mode), "Mode")]
 [QueryProperty(nameof(DocumentId), "DocumentId")]
 [QueryProperty(nameof(ServerDbModule), "ServerDbModule")]
+[QueryProperty(nameof(DocumentStatus), "DocumentStatus")]
 public partial class InventorizationMenuViewModel : ObservableObject
 {
     [ObservableProperty]
@@ -34,6 +35,19 @@ public partial class InventorizationMenuViewModel : ObservableObject
     [ObservableProperty]
     private string serverDbModule;
 
+    [ObservableProperty]
+    private string documentStatus;
+
+    public bool ShowLoadDataButton =>
+        DocumentStatus?.Equals("waiting_to_start", StringComparison.OrdinalIgnoreCase) == true
+        || DocumentStatus?.Contains("recount_requested", StringComparison.OrdinalIgnoreCase) == true;
+
+    partial void OnDocumentStatusChanged(string value)
+    {
+        OnPropertyChanged(nameof(ShowLoadDataButton));
+    }
+
+    public IRelayCommand LoadDataFromServerCommand { get; }
     public IRelayCommand NavigateToContinueCommand { get; }
     public IRelayCommand NavigateToResultCommand { get; }
     public IRelayCommand ExportCommand { get; }
@@ -86,6 +100,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
         _jsonExporter = jsonExporter;
         _jsonLogExporter = jsonLogExporter;
 
+
+        LoadDataFromServerCommand = new AsyncRelayCommand(OnLoadDataFromServerCommand);
         NavigateToContinueCommand = new AsyncRelayCommand(OnContinueAsync);
         NavigateToResultCommand = new AsyncRelayCommand(OnResultAsync);
         ExportCommand = new AsyncRelayCommand(OnExportAsync);
@@ -96,6 +112,102 @@ public partial class InventorizationMenuViewModel : ObservableObject
         _apiService = apiService;
         _serverImporter = serverImporter;
         _scanLogRepository = scanLogRepository;
+    }
+
+    private string? GetNextStatusAfterLoad()
+    {
+        var status = DocumentStatus?.Trim().ToLower();
+
+        return status switch
+        {
+            "waiting_to_start" => "in_progress",
+            "recount_requested" => "recount_in_progress",
+            "sender_recount_requested" => "sender_recount_in_progress",
+            "receive_recount_requested" => "receive_recount_in_progress",
+            _ => null
+        };
+    }
+
+    private async Task OnLoadDataFromServerCommand()
+    {
+        bool popupOpened = false;
+
+        try
+        {
+            var token = await SecureStorage.GetAsync("token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                await _dialogs.ShowMessageAsync("Error", "Token not found.");
+                return;
+            }
+
+            await _popup.ShowProgressAsync("Loading document lines from server...");
+            popupOpened = true;
+
+            var docLines = await _inventoryService.GetDocumentLines(token, documentId, serverDbModule);
+
+            if (docLines == null || !docLines.Any())
+            {
+                _popup.Close();
+                popupOpened = false;
+                await _dialogs.ShowMessageAsync("No Data", "No document lines were returned from server.");
+                return;
+            }
+
+            DocumentLines.Clear();
+            foreach (var line in docLines)
+                DocumentLines.Add(line);
+
+            _popup.UpdateMessage("Importing into local database...");
+
+            int imported = await _importer.ImportBackendDocumentLinesAsync(docLines, Mode);
+
+            var nextStatus = GetNextStatusAfterLoad();
+
+            if (!string.IsNullOrWhiteSpace(nextStatus))
+            {
+                _popup.UpdateMessage("Updating document status...");
+
+                var updated = await _inventoryService.UpdateDocumentStatus(
+                    token,
+                    DocumentId,
+                    ServerDbModule,
+                    nextStatus);
+
+                if (!updated)
+                {
+                    _popup.Close();
+                    popupOpened = false;
+                    await _dialogs.ShowMessageAsync(
+                        "Warning",
+                        $"Data loaded successfully, but failed to update document status to '{nextStatus}'.");
+                    return;
+                }
+
+                DocumentStatus = nextStatus;
+            }
+
+            await _scanLogRepository.ClearAsync(Mode);
+            WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(new Product()));
+
+            _popup.Close();
+            popupOpened = false;
+
+            await _dialogs.ShowMessageAsync(
+                "Success",
+                $"Loaded {docLines.Count} lines from server and imported {imported} rows into {Mode} database.");
+
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("LoadDataFromServer failed", ex);
+
+            if (popupOpened)
+                _popup.Close();
+
+            await _dialogs.ShowMessageAsync("Import Error", ex.Message);
+        }
     }
 
     private async Task OnContinueAsync()
@@ -526,6 +638,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
             return;
 
         DocumentLines.Clear();
+
+        Console.WriteLine("-------" + documentStatus);
 
         foreach (var line in docLines)
         {

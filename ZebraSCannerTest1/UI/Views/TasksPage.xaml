@@ -24,7 +24,7 @@
                                 FontAttributes="Bold" />
                             <Label
                                 
-                                Text="{Binding warehouse_name}"
+                                Text="{Binding WarehouseDisplay}"
                                 TextColor="PaleVioletRed"
                                 FontSize="18"
                                 FontAttributes="Bold" />
@@ -39,11 +39,18 @@
                                 TextColor="black"
                                 FontSize="18" />
                         </FlexLayout>
+                        <FlexLayout JustifyContent="SpaceBetween" Direction="Row" >
 
-                        <Label
+                            <Label
                             Text="{Binding created_at}"
                             TextColor="Black"
                             FontSize="12" />
+                            
+                            <Label
+                                Text="{Binding scan_type}"
+                                TextColor="Black"
+                                FontSize="12" />
+                        </FlexLayout>
 
                         <Label
                             Text="{Binding description}"

@@ -32,4 +32,10 @@ public class PocketDocumentDto
 
     public DateTime created_at { get; set; }
     public DateTime? updated_at { get; set; }
+
+    public string WarehouseDisplay =>
+    doc_module == "transfer"
+        ? $"{from_warehouse_name ?? "?"} → {to_warehouse_name ?? "?"}"
+        : warehouse_name ?? "";
 }
+
