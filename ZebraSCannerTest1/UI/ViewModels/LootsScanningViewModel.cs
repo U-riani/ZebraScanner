@@ -213,7 +213,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     private async Task ShowResultsAsync()
     {
         await _popup.ShowProgressAsync("Calculating loots totals...");
-        var (initial, scanned, total, scannedCount) = _productService.GetInventoryStats(InventoryMode.Loots);
+        var (initial, scanned, total, scannedCount) = await _productService.GetInventoryStats(InventoryMode.Loots);
         _popup.Close();
 
         string msg = $"📦 Loots Summary\n\n" +

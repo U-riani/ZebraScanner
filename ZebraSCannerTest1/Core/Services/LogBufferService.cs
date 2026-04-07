@@ -33,7 +33,7 @@ namespace ZebraSCannerTest1.Core.Services
             }
         }
 
-        public void Flush(InventoryMode mode = InventoryMode.Standard)
+        public async void Flush(InventoryMode mode = InventoryMode.Standard)
         {
             List<ScanLog> toWrite;
             lock (_lock)
@@ -44,7 +44,7 @@ namespace ZebraSCannerTest1.Core.Services
             }
 
             var table = mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
-            using var conn = _db.Inventorization(mode);     // << correct
+            using var conn = await _db.Inventorization(mode);     // << correct
 
             conn.Open();
 

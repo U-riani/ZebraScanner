@@ -5,41 +5,61 @@ namespace ZebraSCannerTest1.Data
 {
     public static class DatabaseInitializer
     {
-        private const string StandardDb = "zebraScanner_standard.db";
-        private const string LootsDb = "zebraScanner_loots.db";
 
-        public static SqliteConnection GetConnection(InventoryMode mode)
+        public static string GetDatabasePath(
+        int userId,
+        InventoryMode mode,
+        string serverKey = "prod")
         {
-            var dbName = mode == InventoryMode.Loots
-                ? "zebraScanner_loots.db"
-                : "zebraScanner_standard.db";
+            var dbName = BuildDatabaseName(userId, mode, serverKey);
+            return Path.Combine(FileSystem.AppDataDirectory, dbName);
+        }
 
+        public static SqliteConnection GetConnection(
+            int userId,
+            InventoryMode mode,
+            string serverKey = "prod")
+        {
+            var dbName = BuildDatabaseName(userId, mode, serverKey);
             var dbPath = Path.Combine(FileSystem.AppDataDirectory, dbName);
-            //// 💣 optional reset — deletes old DB
-            //if (File.Exists(dbPath))
-            //{
-            //    try
-            //    {
-            //        File.Delete(dbPath);
-            //        Console.WriteLine($"🧹 Deleted old database at {dbPath}");
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Console.WriteLine($"⚠️ Failed to delete DB: {ex.Message}");
-            //    }
-            //}
+
             var conn = new SqliteConnection($"Data Source={dbPath}");
             conn.Open();
-            Initialize(conn, mode);
+
+            Initialize(conn, userId, mode, serverKey);
+
             return conn;
         }
 
+        private static string BuildDatabaseName(
+            int userId,
+            InventoryMode mode,
+            string serverKey)
+        {
+            var modePart = mode == InventoryMode.Loots ? "loots" : "standard";
 
-        public static void Initialize(SqliteConnection conn, InventoryMode mode)
+            return $"zebraScanner_{serverKey}_user_{userId}_{modePart}.db";
+        }
+
+        public static void Initialize(
+            SqliteConnection conn,
+            int userId,
+            InventoryMode mode,
+            string serverKey)
         {
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
 PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS AppMetadata (
+    Id INTEGER PRIMARY KEY CHECK (Id = 1),
+    UserId INTEGER NOT NULL,
+    ServerKey TEXT NOT NULL,
+    InventoryMode TEXT NOT NULL,
+    SchemaVersion INTEGER NOT NULL,
+    CreatedAt TEXT NOT NULL,
+    UpdatedAt TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS Products (
     Barcode TEXT PRIMARY KEY,
@@ -93,6 +113,66 @@ CREATE TABLE IF NOT EXISTS LootsScanLogs (
 );
 ";
             cmd.ExecuteNonQuery();
+
+            EnsureMetadata(conn, userId, mode, serverKey);
+        }
+
+        private static void EnsureMetadata(
+            SqliteConnection conn,
+            int userId,
+            InventoryMode mode,
+            string serverKey)
+        {
+            var now = DateTime.UtcNow.ToString("o");
+            var modeValue = mode.ToString();
+            const int schemaVersion = 1;
+
+            using var checkCmd = conn.CreateCommand();
+            checkCmd.CommandText = "SELECT COUNT(*) FROM AppMetadata WHERE Id = 1;";
+            var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+
+            if (!exists)
+            {
+                using var insertCmd = conn.CreateCommand();
+                insertCmd.CommandText = @"
+INSERT INTO AppMetadata
+    (Id, UserId, ServerKey, InventoryMode, SchemaVersion, CreatedAt, UpdatedAt)
+VALUES
+    (1, $userId, $serverKey, $inventoryMode, $schemaVersion, $createdAt, $updatedAt);";
+
+                insertCmd.Parameters.AddWithValue("$userId", userId);
+                insertCmd.Parameters.AddWithValue("$serverKey", serverKey);
+                insertCmd.Parameters.AddWithValue("$inventoryMode", modeValue);
+                insertCmd.Parameters.AddWithValue("$schemaVersion", schemaVersion);
+                insertCmd.Parameters.AddWithValue("$createdAt", now);
+                insertCmd.Parameters.AddWithValue("$updatedAt", now);
+
+                insertCmd.ExecuteNonQuery();
+            }
+            else
+            {
+                using var validateCmd = conn.CreateCommand();
+                validateCmd.CommandText = @"
+SELECT UserId, ServerKey, InventoryMode
+FROM AppMetadata
+WHERE Id = 1;";
+                using var reader = validateCmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    var existingUserId = reader.GetInt32(0);
+                    var existingServerKey = reader.GetString(1);
+                    var existingMode = reader.GetString(2);
+
+                    if (existingUserId != userId ||
+                        existingServerKey != serverKey ||
+                        existingMode != modeValue)
+                    {
+                        throw new InvalidOperationException(
+                            "Database metadata does not match the current user/session.");
+                    }
+                }
+            }
         }
     }
 }

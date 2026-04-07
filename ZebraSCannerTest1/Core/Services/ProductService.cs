@@ -36,14 +36,14 @@ namespace ZebraSCannerTest1.Core.Services
             }
         }
 
-        public (int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes) GetInventoryStats(InventoryMode mode = InventoryMode.Standard)
+        public async Task<(int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes)> GetInventoryStats(InventoryMode mode = InventoryMode.Standard)
         {
             try
             {
                 if (mode == InventoryMode.Loots)
-                    return _lootsRepo.GetInventoryStats(mode);
+                    return await _lootsRepo.GetInventoryStats(mode);
 
-                return _repository.GetInventoryStats(mode);
+                return await _repository.GetInventoryStats(mode);
             }
             catch (Exception ex)
             {

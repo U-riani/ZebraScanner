@@ -27,11 +27,19 @@ namespace ZebraSCannerTest1.UI.ViewModels
         }
 
         [RelayCommand]
-        private async Task Logout()
+        private Task Logout()
         {
-            // Your logout logic
-            await Shell.Current.GoToAsync("///LoginPage");
+            SecureStorage.Remove("token");
+            SecureStorage.Remove("user_id");
+            SecureStorage.Remove("username");
+            Preferences.Remove("modules");
+
+            var loginPage = MauiProgram.ServiceProvider.GetRequiredService<LoginPage>();
+            Application.Current.MainPage = loginPage;
+
+            return Task.CompletedTask;
         }
+
         public ShellViewModel(IMenuService menu)
         {
             _menu = menu;

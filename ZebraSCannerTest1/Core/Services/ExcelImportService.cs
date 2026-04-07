@@ -6,6 +6,7 @@ using ZebraSCannerTest1.Core.Enums;
 using Microsoft.Maui.Storage;
 using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Core.Interfaces;
+using ZebraSCannerTest1.Helpers;
 
 namespace ZebraSCannerTest1.Core.Services
 {
@@ -90,9 +91,10 @@ namespace ZebraSCannerTest1.Core.Services
 
             int processed = 0;
             var now = DateTime.UtcNow.ToString("o");
+            int userId = await SessionHelper.GetCurrentUserIdAsync();
 
-            using var conn = _db.Inventorization(mode);
-            DatabaseInitializer.Initialize(conn, mode);
+            using var conn = await _db.Inventorization(mode);
+            DatabaseInitializer.Initialize(conn, userId, mode, "prod");
 
             using var tx = conn.BeginTransaction();
 

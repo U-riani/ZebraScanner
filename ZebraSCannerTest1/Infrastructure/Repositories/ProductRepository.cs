@@ -45,7 +45,7 @@ public class ProductRepository : IProductRepository
 
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var conn = _db.Inventorization(mode);
+        using var conn = await _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $@"
@@ -86,7 +86,7 @@ public class ProductRepository : IProductRepository
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var conn = _db.Inventorization(mode);
+        using var conn = await _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = isLoots
@@ -127,7 +127,7 @@ public class ProductRepository : IProductRepository
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
 
-        using var conn = _db.Inventorization(mode);
+        using var conn = await _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = isLoots
@@ -164,7 +164,7 @@ public class ProductRepository : IProductRepository
     {
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
-        using var conn = _db.Inventorization(mode);
+        using var conn =await _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
 
@@ -193,7 +193,7 @@ public class ProductRepository : IProductRepository
     {
         string table = GetTableName(mode);
         bool isLoots = mode == InventoryMode.Loots;
-        using var conn = _db.Inventorization(mode);
+        using var conn = await _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
 
@@ -217,10 +217,10 @@ public class ProductRepository : IProductRepository
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public (int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes) GetInventoryStats(InventoryMode mode = InventoryMode.Standard)
+    public async  Task<(int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes)> GetInventoryStats(InventoryMode mode = InventoryMode.Standard)
     {
         string table = GetTableName(mode);
-        using var conn = _db.Inventorization(mode);
+        using var conn = await _db.Inventorization(mode);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $@"

@@ -383,7 +383,7 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
             await _popup.ShowProgressAsync("Calculating totals...");
             popupShown = true;
 
-            var (totalInitial, totalScanned, totalBarcodes, scannedBarcodes) = _productService.GetInventoryStats();
+            var (totalInitial, totalScanned, totalBarcodes, scannedBarcodes) =await _productService.GetInventoryStats();
 
             _popup.Close();
             popupShown = false;

@@ -9,7 +9,7 @@ public class AuthService
     public AuthService()
     {
         _http = new HttpClient();
-        _http.BaseAddress = new Uri("http://10.0.2.2:8000/api/");
+        _http.BaseAddress = new Uri("http://192.168.1.112:8000/api/");
     }
 
     public async Task<LoginResponse?> Login(string username, string password)
@@ -21,6 +21,8 @@ public class AuthService
                 username = username,
                 password = password
             };
+
+            Console.WriteLine("--------------------------login clicked------------------");
 
             var response = await _http.PostAsJsonAsync("pocket-users/login", request);
 

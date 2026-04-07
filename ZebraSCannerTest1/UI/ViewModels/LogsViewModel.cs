@@ -11,6 +11,8 @@ using ZebraSCannerTest1.UI.Helpers;
 using ZebraSCannerTest1.UI.Views;
 using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
+using ZebraSCannerTest1.Helpers;
+using ZebraSCannerTest1.Data;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
@@ -57,9 +59,9 @@ public partial class LogsViewModel : ObservableObject
         string whereClause = "";
 
         // ✅ open correct database
-        using var conn = _db.Inventorization(Mode);
+        using var conn = await _db.Inventorization(Mode);
 
-        conn.Open();
+        //conn.Open();
 
         var table = Mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
         var hasBox = Mode == InventoryMode.Loots;
@@ -296,12 +298,16 @@ public partial class LogsViewModel : ObservableObject
                 var table = Mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
                 var column = Mode == InventoryMode.Loots ? "Box_Id" : "Section";
 
-                using (var conn = new SqliteConnection($"Data Source={Path.Combine(FileSystem.AppDataDirectory,
-                Mode == InventoryMode.Loots ? "zebraScanner_loots.db" : "zebraScanner_standard.db")}"))
+                int userId = await SessionHelper.GetCurrentUserIdAsync();
+                string dbPath = DatabaseInitializer.GetDatabasePath(userId, Mode);
+
+                using (var conn = new SqliteConnection($"Data Source={dbPath}"))
                 {
                     conn.Open();
+
                     using var cmd = conn.CreateCommand();
                     cmd.CommandText = $"SELECT DISTINCT {column} FROM {table} WHERE TRIM({column}) != '' ORDER BY {column} ASC";
+
                     using var reader = cmd.ExecuteReader();
                     while (reader.Read())
                     {

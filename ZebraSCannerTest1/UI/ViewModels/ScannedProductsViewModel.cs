@@ -81,11 +81,11 @@ public partial class ScannedProductsViewModel : ObservableObject
                     : $"{where} AND {extra}";
             }
 
-            var (temp, total) = await Task.Run(() =>
+            var (temp, total) = await Task.Run(async () =>
             {
                 var list = new List<StatsProduct>();
 
-                using var conn = _db.Inventorization(CurrentMode);
+                using var conn = await _db.Inventorization(CurrentMode);
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = CurrentMode == InventoryMode.Loots
                     ? $@"

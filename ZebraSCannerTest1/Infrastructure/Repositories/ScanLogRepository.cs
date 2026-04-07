@@ -17,13 +17,16 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
         private static string GetTable(InventoryMode mode)
             => mode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
 
-        private SqliteConnection Conn(InventoryMode mode) => _db.Inventorization(mode);
+        private async Task<SqliteConnection> Conn(InventoryMode mode)
+        {
+            return await _db.Inventorization(mode);
+        }
 
         public async Task InsertAsync(ScanLog log, InventoryMode mode = InventoryMode.Standard)
         {
             var table = GetTable(mode);
 
-            using var conn = Conn(mode);
+            using var conn = await Conn(mode);
             using var cmd = conn.CreateCommand();
 
             if (mode == InventoryMode.Loots)
@@ -58,7 +61,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             var logs = new List<ScanLog>();
             var table = GetTable(mode);
 
-            using var conn = Conn(mode);
+            using var conn = await Conn(mode);
             using var cmd = conn.CreateCommand();
 
             cmd.CommandText = $@"
@@ -97,7 +100,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
         {
             var table = GetTable(mode);
 
-            using var conn = Conn(mode);
+            using var conn = await Conn(mode);
             using var cmd = conn.CreateCommand();
 
             cmd.CommandText = $"DELETE FROM {table}";

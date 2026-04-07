@@ -31,7 +31,7 @@ namespace ZebraSCannerTest1.Core.Services
             int count = 0;
             int totalCount = 0;
 
-            using var conn = _db.Inventorization(mode);
+            using var conn = await _db.Inventorization(mode);
             using (var countCmd = conn.CreateCommand())
             {
                 countCmd.CommandText = $"SELECT COUNT(*) FROM {table}";

@@ -29,7 +29,7 @@ namespace ZebraSCannerTest1.Core.Services
 
             var logs = new List<ScanLog>();
 
-            using (var conn = _db.Inventorization(mode))
+            using (var conn = await _db.Inventorization(mode))
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = mode == InventoryMode.Loots

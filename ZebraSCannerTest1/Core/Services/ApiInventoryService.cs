@@ -11,7 +11,7 @@ public class ApiInventoryService
     public ApiInventoryService()
     {
         _http = new HttpClient();
-        _http.BaseAddress = new Uri("http://10.0.2.2:8000/api/");
+        _http.BaseAddress = new Uri("http://192.168.1.112:8000/api/");
     }
 
     public async Task<List<PocketDocumentDto>?> GetDocuments(string token)
@@ -63,7 +63,12 @@ public class ApiInventoryService
         }
     }
 
-    public async Task<bool> UpdateDocumentStatus(string token, int documentId, string module, string newStatus)
+    public async Task<DocumentStatusChangeResponseDto?> UpdateDocumentStatus(
+        string token, 
+        int documentId, 
+        string module, 
+        string currentStatus, 
+        string? role = null)
     {
         try
         {
@@ -72,7 +77,8 @@ public class ApiInventoryService
 
             var payload = new
             {
-                status = newStatus
+                current_status = currentStatus,
+                role = role
             };
 
             var response = await _http.PostAsJsonAsync(
@@ -80,12 +86,45 @@ public class ApiInventoryService
                 payload);
 
             Console.WriteLine("STATUS UPDATE: " + response.StatusCode);
-            return response.IsSuccessStatusCode;
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            return await response.Content.ReadFromJsonAsync<DocumentStatusChangeResponseDto>();
         }
         catch (Exception ex)
         {
             Console.WriteLine("Status update error: " + ex.Message);
-            return false;
+            return null;
+        }
+    }
+
+    public async Task<SubmitDocumentLinesResponseDto?> SubmitDocumentLines(
+    string token,
+    int documentId,
+    string module,
+    SubmitDocumentLinesRequestDto payload)
+    {
+        try
+        {
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _http.PostAsJsonAsync(
+                $"pocket-api/document/{documentId}/{module}/submit-lines",
+                payload);
+
+            Console.WriteLine("SUBMIT LINES STATUS: " + response.StatusCode);
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            return await response.Content.ReadFromJsonAsync<SubmitDocumentLinesResponseDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Submit lines error: " + ex.Message);
+            return null;
         }
     }
 }

@@ -27,7 +27,6 @@ namespace ZebraSCannerTest1.UI.Services
                     break;
 
                 case "Logout":
-
                     bool confirm = await Shell.Current.DisplayAlert(
                         "Logout",
                         "Are you sure you want to logout?",
@@ -37,13 +36,13 @@ namespace ZebraSCannerTest1.UI.Services
                     if (!confirm)
                         return;
 
-                    // remove token
                     SecureStorage.Remove("token");
+                    SecureStorage.Remove("user_id");
+                    SecureStorage.Remove("username");
+                    Preferences.Remove("modules");
 
-                    // go back to login page
                     var loginPage = MauiProgram.ServiceProvider.GetRequiredService<LoginPage>();
                     Application.Current.MainPage = loginPage;
-
                     break;
             }
         }

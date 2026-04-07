@@ -4,6 +4,7 @@ using ZebraSCannerTest1.Core.Dtos;
 using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Data;
+using ZebraSCannerTest1.Helpers;
 
 namespace ZebraSCannerTest1.Core.Services
 {
@@ -25,7 +26,7 @@ namespace ZebraSCannerTest1.Core.Services
             IEnumerable<PocketDocumentLinesDto> items,
             InventoryMode mode = InventoryMode.Standard)
         {
-            using var conn = _db.Inventorization(mode);
+            using var conn = await _db.Inventorization(mode);
 
             string table = mode == InventoryMode.Loots ? "LootsProducts" : "Products";
             bool isLoots = mode == InventoryMode.Loots;
@@ -124,12 +125,16 @@ namespace ZebraSCannerTest1.Core.Services
         {
             try
             {
-                // ✅ pick correct file for each mode
-                var fileName = mode == InventoryMode.Loots
-                    ? "zebraScanner_loots.db"
-                    : "zebraScanner_standard.db";
+                int userId = await SessionHelper.GetCurrentUserIdAsync();
 
-                var targetPath = Path.Combine(FileSystem.AppDataDirectory, fileName);
+                // ✅ pick correct file for each mode
+                //var fileName = mode == InventoryMode.Loots
+                //    ? "zebraScanner_loots.db"
+                //    : "zebraScanner_standard.db";
+
+                //var targetPath = Path.Combine(FileSystem.AppDataDirectory, fileName);
+
+                var targetPath = DatabaseInitializer.GetDatabasePath(userId, mode);
 
                 // ✅ optional: backup before overwrite
                 if (File.Exists(targetPath))
@@ -143,8 +148,8 @@ namespace ZebraSCannerTest1.Core.Services
                     await dbStream.CopyToAsync(dst);
 
                 // ✅ reconnect only to that mode’s DB
-                using var conn = _db.Inventorization(mode);
-                DatabaseInitializer.Initialize(conn, mode);
+                using var conn = await  _db.Inventorization(mode);
+                //DatabaseInitializer.Initialize(conn, userId, mode, "prod");
 
                 Console.WriteLine($"[DB] Imported {mode} database.");
             }
@@ -158,7 +163,7 @@ namespace ZebraSCannerTest1.Core.Services
         // ✅ Import JSON via Stream
         public async Task<int> ImportJsonAsync(Stream jsonStream, InventoryMode mode = InventoryMode.Standard)
         {
-            using var conn = _db.Inventorization(mode);
+            using var conn = await _db.Inventorization(mode);
             string table = mode == InventoryMode.Loots ? "LootsProducts" : "Products";
             bool isLoots = mode == InventoryMode.Loots;
 

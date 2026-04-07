@@ -21,7 +21,7 @@ namespace ZebraSCannerTest1.Core.Services
         {
             string table = mode == InventoryMode.Loots ? "LootsProducts" : "Products";
 
-            using var conn = _db.Inventorization(mode);
+            using var conn = await _db.Inventorization(mode);
 
             // Count rows for progress
             int totalCount = 0;

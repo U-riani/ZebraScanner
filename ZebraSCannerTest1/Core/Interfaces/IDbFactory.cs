@@ -10,7 +10,7 @@ namespace ZebraSCannerTest1.Core.Interfaces
 {
     public interface IDbFactory
     {
-        SqliteConnection Inventorization(InventoryMode mode);
+        Task<SqliteConnection> Inventorization(InventoryMode mode);
         SqliteConnection Sales();
     }
 

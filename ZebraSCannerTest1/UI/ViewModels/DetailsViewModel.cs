@@ -120,7 +120,7 @@ public partial class DetailsViewModel : ObservableObject
         int previousQty = previousValue ?? 0;
         var table = CurrentMode == InventoryMode.Loots ? "LootsProducts" : "Products";
 
-        using var conn = _db.Inventorization(CurrentMode);
+        using var conn = await _db.Inventorization(CurrentMode);
 
         // read last quantity if not given
         if (previousValue == null)
@@ -342,7 +342,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
         Logs.Clear();
         string table = CurrentMode == InventoryMode.Loots ? "LootsScanLogs" : "ScanLogs";
 
-        using var conn = _db.Inventorization(CurrentMode);
+        using var conn = await _db.Inventorization(CurrentMode);
 
         // Check column availability dynamically
         bool hasIsManual = false;
@@ -425,7 +425,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
             return;
 
         var table = CurrentMode == InventoryMode.Loots ? "LootsProducts" : "Products";
-        using var conn = _db.Inventorization(CurrentMode);
+        using var conn = await _db.Inventorization(CurrentMode);
 
         using var cmd = conn.CreateCommand();
 

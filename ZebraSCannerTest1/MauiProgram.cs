@@ -31,27 +31,27 @@ public static class MauiProgram
             });
 
         // === Database connection ===
-        builder.Services.AddSingleton<IDbFactory, DbFactory>();
+        builder.Services.AddTransient<IDbFactory, DbFactory>();
 
 
         // === Core services & repositories ===
         builder.Services.AddSingleton<AuthService>();
-        builder.Services.AddSingleton<IProductRepository, ProductRepository>();
-        builder.Services.AddSingleton<IScanLogRepository, ScanLogRepository>();
-        builder.Services.AddSingleton<ILootsProductRepository, LootsProductRepository>();
+        builder.Services.AddTransient<IProductRepository, ProductRepository>();
+        builder.Services.AddTransient<IScanLogRepository, ScanLogRepository>();
+        builder.Services.AddTransient<ILootsProductRepository, LootsProductRepository>();
         builder.Services.AddSingleton<SalesRepository>();
-        builder.Services.AddSingleton<IDataImportService, DataImportService>();
-        builder.Services.AddSingleton<IExcelExportService, ExcelExportService>();
-        builder.Services.AddSingleton<IExcelExportLogsService, ExcelExportLogsService>(); // ✅ Add this line
+        builder.Services.AddTransient<IDataImportService, DataImportService>();
+        builder.Services.AddTransient<IExcelExportService, ExcelExportService>();
+        builder.Services.AddTransient<IExcelExportLogsService, ExcelExportLogsService>(); // ✅ Add this line
         builder.Services.AddSingleton<LogBufferService>();
         builder.Services.AddSingleton<ClipboardService>();
-        builder.Services.AddSingleton<IScanningService, ScanningService>();
-        builder.Services.AddSingleton<IProductService, ProductService>();
-        builder.Services.AddSingleton<IMenuService, MenuService>();
-        builder.Services.AddSingleton<IJsonExportService, JsonExportService>();
-        builder.Services.AddSingleton<IJsonExportLogsService, JsonExportLogsService>();
+        builder.Services.AddTransient<IScanningService, ScanningService>();
+        builder.Services.AddTransient<IProductService, ProductService>();
+        builder.Services.AddTransient<IMenuService, MenuService>();
+        builder.Services.AddTransient<IJsonExportService, JsonExportService>();
+        builder.Services.AddTransient<IJsonExportLogsService, JsonExportLogsService>();
         builder.Services.AddSingleton<IApiService, ApiService>();
-        builder.Services.AddSingleton<IServerImportService, ServerImportService>();
+        builder.Services.AddTransient<IServerImportService, ServerImportService>();
         builder.Services.AddSingleton<SalesExcelImportService>();
         builder.Services.AddSingleton<ApiInventoryService>();
 
@@ -67,7 +67,7 @@ public static class MauiProgram
         builder.Services.AddTransient<DetailsViewModel>();
         builder.Services.AddTransient<LogsViewModel>();
         builder.Services.AddTransient<ScannedProductsViewModel>();
-        builder.Services.AddSingleton<ShellViewModel>();
+        builder.Services.AddTransient<ShellViewModel>();
         builder.Services.AddTransient<InventorizationByLootsMenuViewModel>();
         builder.Services.AddTransient<InventorizationByLootsViewModel>();
         builder.Services.AddTransient<LootsScanningViewModel>();
@@ -78,10 +78,10 @@ public static class MauiProgram
 
 
         // === Views ===
-        builder.Services.AddSingleton<AppShell>();
+        builder.Services.AddTransient<AppShell>();
         builder.Services.AddTransient<LoginPage>();
 
-        builder.Services.AddSingleton<InventorizationPage>();
+        builder.Services.AddTransient<InventorizationPage>();
         builder.Services.AddTransient<DetailsPage>();
         builder.Services.AddTransient<LogsPage>();
         builder.Services.AddTransient<ScannedProductsPage>();
@@ -92,7 +92,7 @@ public static class MauiProgram
         builder.Services.AddTransient<SalesMenuPage>();
         builder.Services.AddTransient<SalesPage>();
         builder.Services.AddTransient<SettingsPage>();
-        builder.Services.AddSingleton<TasksPage>();
+        builder.Services.AddTransient<TasksPage>();
 
         var app = builder.Build();
 

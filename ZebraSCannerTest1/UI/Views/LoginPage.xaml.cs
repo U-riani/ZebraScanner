@@ -36,6 +36,9 @@ public partial class LoginPage : ContentPage
 
         // save token
         await SecureStorage.SetAsync("token", result.access_token);
+        await SecureStorage.SetAsync("user_id", result.user_id.ToString());
+        await SecureStorage.SetAsync("username", result.username);
+
         Preferences.Set("modules", JsonSerializer.Serialize(result.modules));
 
         Console.WriteLine("Saved modules: " + Preferences.Get("modules", "EMPTY"));        // open main app

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ZebraSCannerTest1.Core.Dtos;
@@ -39,8 +40,9 @@ public partial class InventorizationMenuViewModel : ObservableObject
     private string documentStatus;
 
     public bool ShowLoadDataButton =>
-        DocumentStatus?.Equals("waiting_to_start", StringComparison.OrdinalIgnoreCase) == true
-        || DocumentStatus?.Contains("recount_requested", StringComparison.OrdinalIgnoreCase) == true;
+    DocumentStatus?.Equals("waiting_to_start", StringComparison.OrdinalIgnoreCase) == true
+    || DocumentStatus?.Contains("recount_requested", StringComparison.OrdinalIgnoreCase) == true
+    || DocumentStatus?.Equals("sender_recount_completed", StringComparison.OrdinalIgnoreCase) == true;
 
     partial void OnDocumentStatusChanged(string value)
     {
@@ -54,7 +56,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
     public IRelayCommand ImportCommand { get; }
     public IRelayCommand ClearCommand { get; }
     public IRelayCommand TestDocLinesCommand { get; }
-
+    public IRelayCommand FinishScanningCommand { get; }
 
     private readonly IDataImportService _importer;
     private readonly IExcelExportService _exporter;
@@ -108,24 +110,71 @@ public partial class InventorizationMenuViewModel : ObservableObject
         ImportCommand = new AsyncRelayCommand(OnImportAsync);
         ClearCommand = new AsyncRelayCommand(OnClearAsync);
         TestDocLinesCommand = new AsyncRelayCommand(OnTestDocLinesCommand);
+        FinishScanningCommand = new AsyncRelayCommand(OnFinishScanningCommand);
 
         _apiService = apiService;
         _serverImporter = serverImporter;
         _scanLogRepository = scanLogRepository;
     }
 
-    private string? GetNextStatusAfterLoad()
-    {
-        var status = DocumentStatus?.Trim().ToLower();
+    //private string? GetNextStatusAfterLoad()
+    //{
+    //    var status = DocumentStatus?.Trim().ToLower();
 
-        return status switch
-        {
-            "waiting_to_start" => "in_progress",
-            "recount_requested" => "recount_in_progress",
-            "sender_recount_requested" => "sender_recount_in_progress",
-            "receive_recount_requested" => "receive_recount_in_progress",
-            _ => null
-        };
+    //    return status switch
+    //    {
+    //        "waiting_to_start" => "in_progress",
+    //        "recount_requested" => "recount_in_progress",
+    //        "sender_recount_requested" => "sender_recount_in_progress",
+    //        "receive_recount_requested" => "receive_recount_in_progress",
+    //        _ => null
+    //    };
+    //}
+    private string? ResolveTransferRole()
+    {
+        if (!string.Equals(ServerDbModule, "transfer", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var status = DocumentStatus?.Trim().ToLowerInvariant();
+
+        if (status == "waiting_to_start" || status == "sender_recount_requested")
+            return "sender";
+
+        if (status == "sender_recount_completed" || status == "receive_recount_requested")
+            return "receiver";
+
+        return null;
+    }
+
+    private async Task<List<SubmitDocumentLineRowDto>> BuildSubmitRowsAsync()
+    {
+        // TODO:
+        // Replace this with your real local DB query/service method.
+        // You need to read scanned results from local SQLite for current Mode.
+        //
+        // Standard mode:
+        //   row should include line_id if you store it locally, otherwise barcode + quantity
+        //
+        // Loots mode:
+        //   row should include barcode + box_id + quantity
+
+        var rows = new List<SubmitDocumentLineRowDto>();
+
+        // Example shape only:
+        // var localRows = await _productService.GetRowsForUploadAsync(Mode);
+
+        // foreach (var item in localRows)
+        // {
+        //     rows.Add(new SubmitDocumentLineRowDto
+        //     {
+        //         line_id = item.LineId,       // nullable if not stored
+        //         barcode = item.Barcode,
+        //         quantity = item.Quantity,
+        //         box_id = item.BoxId
+        //     });
+        // }
+
+        return rows;
     }
 
     private async Task OnLoadDataFromServerCommand()
@@ -163,30 +212,44 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
             int imported = await _importer.ImportBackendDocumentLinesAsync(docLines, Mode);
 
-            var nextStatus = GetNextStatusAfterLoad();
+            string? role = null;
 
-            if (!string.IsNullOrWhiteSpace(nextStatus))
+            if (string.Equals(serverDbModule, "transfer", StringComparison.OrdinalIgnoreCase))
             {
-                _popup.UpdateMessage("Updating document status...");
+                var status = documentStatus?.Trim().ToLowerInvariant();
 
-                var updated = await _inventoryService.UpdateDocumentStatus(
-                    token,
-                    DocumentId,
-                    ServerDbModule,
-                    nextStatus);
-
-                if (!updated)
+                if (status == "waiting_to_start" || status == "sender_recount_requested")
                 {
-                    _popup.Close();
-                    popupOpened = false;
-                    await _dialogs.ShowMessageAsync(
-                        "Warning",
-                        $"Data loaded successfully, but failed to update document status to '{nextStatus}'.");
-                    return;
+                    role = "sender";
                 }
-
-                DocumentStatus = nextStatus;
+                else if (status == "sender_recount_completed" || status == "receive_recount_requested")
+                {
+                    role = "receiver";
+                }
             }
+
+            _popup.UpdateMessage("Updating document status...");
+
+            var updateResult = await _inventoryService.UpdateDocumentStatus(
+                token,
+                DocumentId,
+                ServerDbModule,
+                documentStatus,
+                role);
+
+            if (updateResult == null || !updateResult.ok)
+            {
+                _popup.Close();
+                popupOpened = false;
+                await _dialogs.ShowMessageAsync(
+                    "Warning",
+                    "Data loaded successfully, but failed to update document status on server.");
+                return;
+            }
+
+            DocumentStatus = updateResult.assignment_status;
+
+
 
             await _scanLogRepository.ClearAsync(Mode);
             WeakReferenceMessenger.Default.Send(new ProductUpdatedMessage(new Product()));
@@ -227,7 +290,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
             Console.WriteLine("----DOcument is here amigo" + documentId);
             await _popup.ShowProgressAsync($"Calculating totals for {Mode}...");
             var (totalInitial, totalScanned, totalBarcodes, scannedBarcodes) =
-                _productService.GetInventoryStats(Mode);
+                await _productService.GetInventoryStats(Mode);
 
             await MainThread.InvokeOnMainThreadAsync(() => _popup.Close());
 

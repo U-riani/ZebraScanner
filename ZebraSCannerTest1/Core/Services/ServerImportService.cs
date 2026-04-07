@@ -3,6 +3,7 @@ using System.Text;
 using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Data;
+using ZebraSCannerTest1.Helpers;
 
 namespace ZebraSCannerTest1.Core.Services
 {
@@ -23,6 +24,8 @@ namespace ZebraSCannerTest1.Core.Services
         {
             Console.WriteLine($"[SERVER IMPORT] Downloading {mode} JSON data...");
 
+            var userId = await SessionHelper.GetCurrentUserIdAsync();
+
             string json = await _apiService.DownloadInventoryJsonAsync("/download-inventory");
             if (string.IsNullOrWhiteSpace(json))
                 throw new InvalidOperationException("No JSON data received from server.");
@@ -31,13 +34,14 @@ namespace ZebraSCannerTest1.Core.Services
             int imported = await _importer.ImportJsonAsync(stream, mode);
 
             // 💣 Delete and rebuild DB file to flush caches completely
-            var dbFile = Path.Combine(FileSystem.AppDataDirectory,
-                mode == InventoryMode.Loots ? "zebraScanner_loots.db" : "zebraScanner_standard.db");
+            //var dbFile = Path.Combine(FileSystem.AppDataDirectory,
+            //    mode == InventoryMode.Loots ? "zebraScanner_loots.db" : "zebraScanner_standard.db");
+            var dbFile = DatabaseInitializer.GetDatabasePath(userId, mode);
             Console.WriteLine($"[SERVER IMPORT] ✅ DB at {dbFile} refreshed for {mode}");
 
             // 🔁 Force new connection globally
-            var newConn = DatabaseInitializer.GetConnection(mode);
-            DatabaseInitializer.Initialize(newConn, mode);
+            var newConn = DatabaseInitializer.GetConnection(userId, mode);
+            //DatabaseInitializer.Initialize(newConn, userId, mode, "prod");
 
             // Replace singleton connection in DI container (optional if needed)
             if (_provider.GetService(typeof(SqliteConnection)) is SqliteConnection oldConn)

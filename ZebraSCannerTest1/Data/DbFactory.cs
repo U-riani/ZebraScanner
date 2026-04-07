@@ -6,24 +6,18 @@ using System.Text;
 using System.Threading.Tasks;
 using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
+using ZebraSCannerTest1.Helpers;
 
-namespace ZebraSCannerTest1.Data
-{
+namespace ZebraSCannerTest1.Data;
+
+
     public class DbFactory : IDbFactory
     {
-        public SqliteConnection Inventorization(InventoryMode mode)
+        public async Task<SqliteConnection> Inventorization(InventoryMode mode)
         {
+            int userId = await SessionHelper.GetCurrentUserIdAsync();
 
-            var dbName = mode == InventoryMode.Loots
-                ? "zebraScanner_loots.db"
-                : "zebraScanner_standard.db";
-
-            var dbPath = Path.Combine(FileSystem.AppDataDirectory, dbName);
-
-            var conn = new SqliteConnection($"Data Source={dbPath}");
-            conn.Open();
-            DatabaseInitializer.Initialize(conn, mode);
-            return conn;
+            return DatabaseInitializer.GetConnection(userId, mode);
         }
 
         public SqliteConnection Sales()
@@ -35,6 +29,5 @@ namespace ZebraSCannerTest1.Data
             SalesDatabaseInitializer.InitializeConnection(conn);
             return conn;
         }
-    }
+    }    
 
-}

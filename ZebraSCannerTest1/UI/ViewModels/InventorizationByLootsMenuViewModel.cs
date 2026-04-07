@@ -9,6 +9,7 @@ using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Data;
+using ZebraSCannerTest1.Helpers;
 using ZebraSCannerTest1.UI.Services;
 using ZebraSCannerTest1.UI.Views;
 
@@ -68,7 +69,7 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
         {
             await _popup.ShowProgressAsync("Calculating results...");
             var (totalInitial, totalScanned, totalBarcodes, scannedBarcodes) =
-                _productService.GetInventoryStats(InventoryMode.Loots);
+                await _productService.GetInventoryStats(InventoryMode.Loots);
 
             _popup.Close();
 
@@ -143,6 +144,8 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
     {
         try
         {
+            var userId = await SessionHelper.GetCurrentUserIdAsync();
+
             var confirm = await Shell.Current.DisplayAlert(
                 "Import Loots Data?",
                 "This will overwrite existing Loots data. Continue?",
@@ -189,7 +192,7 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
             }
 
             _popup.Close();
-            Console.WriteLine($"[Loots] Using DB: {DatabaseInitializer.GetConnection(InventoryMode.Loots).DataSource}");
+            Console.WriteLine($"[Loots] Using DB: {DatabaseInitializer.GetConnection(userId, InventoryMode.Loots).DataSource}");
 
             await _dialogs.ShowMessageAsync("✅ Import Complete", $"Successfully imported Loots data from {result.FileName}");
             await Shell.Current.GoToAsync(nameof(InventorizationByLootsPage));
