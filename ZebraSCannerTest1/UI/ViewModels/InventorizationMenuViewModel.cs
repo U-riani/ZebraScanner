@@ -44,9 +44,17 @@ public partial class InventorizationMenuViewModel : ObservableObject
     || DocumentStatus?.Contains("recount_requested", StringComparison.OrdinalIgnoreCase) == true
     || DocumentStatus?.Equals("sender_recount_completed", StringComparison.OrdinalIgnoreCase) == true;
 
+    public bool ShowFinishScanningButton =>
+    DocumentStatus?.Equals("in_progress", StringComparison.OrdinalIgnoreCase) == true
+    || DocumentStatus?.Equals("sender_in_progress", StringComparison.OrdinalIgnoreCase) == true
+    || DocumentStatus?.Equals("sender_recount_in_progress", StringComparison.OrdinalIgnoreCase) == true
+    || DocumentStatus?.Equals("recount_in_progress", StringComparison.OrdinalIgnoreCase) == true
+    || DocumentStatus?.Equals("receive_recount_in_progress", StringComparison.OrdinalIgnoreCase) == true;
+
     partial void OnDocumentStatusChanged(string value)
     {
         OnPropertyChanged(nameof(ShowLoadDataButton));
+        OnPropertyChanged(nameof(ShowFinishScanningButton));
     }
 
     public IRelayCommand LoadDataFromServerCommand { get; }
@@ -146,33 +154,25 @@ public partial class InventorizationMenuViewModel : ObservableObject
         return null;
     }
 
+
     private async Task<List<SubmitDocumentLineRowDto>> BuildSubmitRowsAsync()
     {
-        // TODO:
-        // Replace this with your real local DB query/service method.
-        // You need to read scanned results from local SQLite for current Mode.
-        //
-        // Standard mode:
-        //   row should include line_id if you store it locally, otherwise barcode + quantity
-        //
-        // Loots mode:
-        //   row should include barcode + box_id + quantity
-
         var rows = new List<SubmitDocumentLineRowDto>();
+        var products = await _productService.GetProductsForUploadAsync(Mode);
 
-        // Example shape only:
-        // var localRows = await _productService.GetRowsForUploadAsync(Mode);
+        foreach (var item in products)
+        {
+            if (item.ScannedQuantity <= 0)
+                continue;
 
-        // foreach (var item in localRows)
-        // {
-        //     rows.Add(new SubmitDocumentLineRowDto
-        //     {
-        //         line_id = item.LineId,       // nullable if not stored
-        //         barcode = item.Barcode,
-        //         quantity = item.Quantity,
-        //         box_id = item.BoxId
-        //     });
-        // }
+            rows.Add(new SubmitDocumentLineRowDto
+            {
+                line_id = null, // current local DB does not store backend line id
+                barcode = item.Barcode,
+                quantity = item.ScannedQuantity,
+                box_id = Mode == InventoryMode.Loots ? item.Box_Id : null
+            });
+        }
 
         return rows;
     }
@@ -711,6 +711,97 @@ public partial class InventorizationMenuViewModel : ObservableObject
         }
 
         Console.WriteLine($"Loaded {DocumentLines.Count} document lines.");
+    }
+
+    private async Task OnFinishScanningCommand()
+    {
+        bool popupOpened = false;
+
+        try
+        {
+            var token = await SecureStorage.GetAsync("token");
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                await _dialogs.ShowMessageAsync("Error", "Token not found.");
+                return;
+            }
+
+            var role = ResolveTransferRole();
+
+            await _popup.ShowProgressAsync("Preparing scanned rows...");
+            popupOpened = true;
+
+            var rows = await BuildSubmitRowsAsync();
+
+            if (rows == null || rows.Count == 0)
+            {
+                _popup.Close();
+                popupOpened = false;
+                await _dialogs.ShowMessageAsync("No Data", "No scanned rows found to upload.");
+                return;
+            }
+
+            var payload = new SubmitDocumentLinesRequestDto
+            {
+                current_status = DocumentStatus,
+                role = role,
+                rows = rows
+            };
+
+            _popup.UpdateMessage("Uploading scanned rows to server...");
+
+            var submitResult = await _inventoryService.SubmitDocumentLines(
+                token,
+                DocumentId,
+                ServerDbModule,
+                payload);
+
+            if (submitResult == null || !submitResult.ok)
+            {
+                _popup.Close();
+                popupOpened = false;
+                await _dialogs.ShowMessageAsync("Upload Failed", "Could not upload scanned rows to server.");
+                return;
+            }
+
+            _popup.UpdateMessage("Advancing document status...");
+
+            var statusResult = await _inventoryService.FinishScanning(
+                token,
+                DocumentId,
+                ServerDbModule,
+                DocumentStatus,
+                role);
+
+            if (statusResult == null || !statusResult.ok)
+            {
+                _popup.Close();
+                popupOpened = false;
+                await _dialogs.ShowMessageAsync(
+                    "Partial Success",
+                    $"Uploaded {submitResult.updated_lines} rows, but failed to update status.");
+                return;
+            }
+
+            DocumentStatus = statusResult.assignment_status;
+
+            _popup.Close();
+            popupOpened = false;
+
+            await _dialogs.ShowMessageAsync(
+                "Success",
+                $"Uploaded {submitResult.updated_lines} rows and updated status to '{statusResult.assignment_status}'.");
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("FinishScanning failed", ex);
+
+            if (popupOpened)
+                _popup.Close();
+
+            await _dialogs.ShowMessageAsync("Error", ex.Message);
+        }
     }
 }
 

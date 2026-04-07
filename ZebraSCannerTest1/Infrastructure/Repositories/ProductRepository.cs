@@ -245,6 +245,48 @@ public class ProductRepository : IProductRepository
 
         return (0, 0, 0, 0);
     }
-    
+
+    public async Task<IEnumerable<Product>> GetProductsForUploadAsync(InventoryMode mode = InventoryMode.Standard)
+    {
+        var products = new List<Product>();
+        string table = GetTableName(mode);
+        bool isLoots = mode == InventoryMode.Loots;
+
+        using var conn = await _db.Inventorization(mode);
+        using var cmd = conn.CreateCommand();
+
+        cmd.CommandText = isLoots
+            ? $@"
+            SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
+            FROM {table}
+            WHERE ScannedQuantity > 0
+            ORDER BY UpdatedAt DESC"
+            : $@"
+            SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
+            FROM {table}
+            WHERE ScannedQuantity > 0
+            ORDER BY UpdatedAt DESC";
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var product = new Product
+            {
+                Barcode = reader.GetString(0),
+                InitialQuantity = reader.GetInt32(isLoots ? 2 : 1),
+                ScannedQuantity = reader.GetInt32(isLoots ? 3 : 2),
+                CreatedAt = DateTime.Parse(reader.GetString(isLoots ? 4 : 3)),
+                UpdatedAt = DateTime.Parse(reader.GetString(isLoots ? 5 : 4))
+            };
+
+            if (isLoots)
+                product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
+
+            products.Add(product);
+        }
+
+        return products;
+    }
+
 
 }

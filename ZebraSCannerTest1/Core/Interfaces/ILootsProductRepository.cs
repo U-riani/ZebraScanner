@@ -17,5 +17,6 @@ namespace ZebraSCannerTest1.Core.Interfaces
         Task<Product?> FindAsync(string barcode,  string boxId);
         Task UpdateAsync(Product product);
         Task<IEnumerable<Product>> GetByBoxAsync(string boxId);
+        Task<IEnumerable<Product>> GetProductsForUploadAsync();
     }
 }

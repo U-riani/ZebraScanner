@@ -123,5 +123,21 @@ namespace ZebraSCannerTest1.Core.Services
             }
         }
 
+        public async Task<IEnumerable<Product>> GetProductsForUploadAsync(InventoryMode mode = InventoryMode.Standard)
+        {
+            try
+            {
+                if (mode == InventoryMode.Loots)
+                    return await _lootsRepo.GetProductsForUploadAsync();
+
+                return await _repository.GetProductsForUploadAsync(mode);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Failed to get products for upload", ex);
+                return Array.Empty<Product>();
+            }
+        }
+
     }
 }

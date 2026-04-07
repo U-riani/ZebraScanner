@@ -245,5 +245,36 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
                 return dt;
             return DateTime.MinValue;
         }
+
+        public async Task<IEnumerable<Product>> GetProductsForUploadAsync()
+        {
+            var products = new List<Product>();
+
+            using var conn = await Conn();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+        SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
+        FROM LootsProducts
+        WHERE ScannedQuantity > 0
+        ORDER BY UpdatedAt DESC;";
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var product = new Product
+                {
+                    Barcode = reader.GetString(0),
+                    Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    InitialQuantity = reader.GetInt32(2),
+                    ScannedQuantity = reader.GetInt32(3),
+                    CreatedAt = DateTime.Parse(reader.GetString(4)),
+                    UpdatedAt = DateTime.Parse(reader.GetString(5))
+                };
+
+                products.Add(product);
+            }
+
+            return products;
+        }
     }
 }

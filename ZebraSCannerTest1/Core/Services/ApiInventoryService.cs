@@ -99,11 +99,48 @@ public class ApiInventoryService
         }
     }
 
+    
+
+    public async Task<DocumentStatusChangeResponseDto?> FinishScanning(
+        string token,
+        int documentId,
+        string module,
+        string currentStatus,
+        string? role = null)
+    {
+        try
+        {
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            var payload = new
+            {
+                current_status = currentStatus,
+                role = role
+            };
+
+            var response = await _http.PostAsJsonAsync(
+                $"pocket-api/document/{documentId}/{module}/finish-scanning",
+                payload);
+
+            Console.WriteLine("FINISH SCANNING STATUS: " + response.StatusCode);
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            return await response.Content.ReadFromJsonAsync<DocumentStatusChangeResponseDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Finish scanning error: " + ex.Message);
+            return null;
+        }
+    }
     public async Task<SubmitDocumentLinesResponseDto?> SubmitDocumentLines(
-    string token,
-    int documentId,
-    string module,
-    SubmitDocumentLinesRequestDto payload)
+        string token,
+        int documentId,
+        string module,
+        SubmitDocumentLinesRequestDto payload)
     {
         try
         {

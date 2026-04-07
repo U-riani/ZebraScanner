@@ -59,6 +59,15 @@
                     TextColor="White" 
                     CornerRadius="8" HeightRequest="60" 
                     Command="{Binding TestDocLinesCommand}"/>
+            <Button Text="FINISH SCANNING"
+                FontSize="20"
+                FontAttributes="Bold"
+                BackgroundColor="#2563EB"
+                TextColor="White"
+                CornerRadius="8"
+                HeightRequest="60"
+                Command="{Binding FinishScanningCommand}"
+                IsVisible="{Binding ShowFinishScanningButton}" />
 
         </VerticalStackLayout>
     </ScrollView>
