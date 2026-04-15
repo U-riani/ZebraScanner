@@ -194,7 +194,13 @@ public partial class InventorizationMenuViewModel : ObservableObject
             await _popup.ShowProgressAsync("Loading document lines from server...");
             popupOpened = true;
 
-            var docLines = await _inventoryService.GetDocumentLines(token, documentId, serverDbModule);
+            string? role = ResolveTransferRole();
+
+            var docLines = await _inventoryService.GetDocumentLines(
+                token,
+                documentId,
+                serverDbModule,
+                role);
 
             if (docLines == null || !docLines.Any())
             {
@@ -212,21 +218,21 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
             int imported = await _importer.ImportBackendDocumentLinesAsync(docLines, Mode);
 
-            string? role = null;
+            //string? role = null;
 
-            if (string.Equals(serverDbModule, "transfer", StringComparison.OrdinalIgnoreCase))
-            {
-                var status = documentStatus?.Trim().ToLowerInvariant();
+            //if (string.Equals(serverDbModule, "transfer", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    var status = documentStatus?.Trim().ToLowerInvariant();
 
-                if (status == "waiting_to_start" || status == "sender_recount_requested")
-                {
-                    role = "sender";
-                }
-                else if (status == "sender_recount_completed" || status == "receive_recount_requested")
-                {
-                    role = "receiver";
-                }
-            }
+            //    if (status == "waiting_to_start" || status == "sender_recount_requested")
+            //    {
+            //        role = "sender";
+            //    }
+            //    else if (status == "sender_recount_completed" || status == "receive_recount_requested")
+            //    {
+            //        role = "receiver";
+            //    }
+            //}
 
             _popup.UpdateMessage("Updating document status...");
 
@@ -695,7 +701,13 @@ public partial class InventorizationMenuViewModel : ObservableObject
             return;
         }
 
-        var docLines = await _inventoryService.GetDocumentLines(token, documentId, serverDbModule);
+        var role = ResolveTransferRole();
+
+        var docLines = await _inventoryService.GetDocumentLines(
+            token,
+            documentId,
+            serverDbModule,
+            role);
 
         if (docLines == null)
             return;

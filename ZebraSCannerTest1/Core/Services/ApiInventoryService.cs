@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using ZebraSCannerTest1.Core.Dtos;
 
 namespace ZebraSCannerTest1.UI.Services;
-
+ 
 public class ApiInventoryService
 {
     private readonly HttpClient _http;
@@ -11,7 +11,9 @@ public class ApiInventoryService
     public ApiInventoryService()
     {
         _http = new HttpClient();
-        _http.BaseAddress = new Uri("http://192.168.1.112:8000/api/");
+        //_http.BaseAddress = new Uri("http://192.168.1.112:8000/api/");
+        _http.BaseAddress = new Uri("http://10.0.2.2:8000/api/");
+    
     }
 
     public async Task<List<PocketDocumentDto>?> GetDocuments(string token)
@@ -38,16 +40,22 @@ public class ApiInventoryService
     }
 
     public async Task<List<PocketDocumentLinesDto>?> GetDocumentLines(
-     string token,
-     int doc_id,
-     string module)
+        string token,
+        int doc_id,
+        string module,
+        string? role = null)
     {
         try
         {
             _http.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await _http.GetAsync($"pocket-api/{doc_id}/lines?module={module}");
+            var url = $"pocket-api/{doc_id}/lines?module={module}";
+
+            if (!string.IsNullOrWhiteSpace(role))
+                url += $"&role={Uri.EscapeDataString(role)}";
+
+            var response = await _http.GetAsync(url);
 
             Console.WriteLine("STATUS: " + response.StatusCode);
 
