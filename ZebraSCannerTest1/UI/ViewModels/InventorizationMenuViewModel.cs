@@ -42,13 +42,15 @@ public partial class InventorizationMenuViewModel : ObservableObject
     public bool ShowLoadDataButton =>
     DocumentStatus?.Equals("waiting_to_start", StringComparison.OrdinalIgnoreCase) == true
     || DocumentStatus?.Contains("recount_requested", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Equals("sender_recount_completed", StringComparison.OrdinalIgnoreCase) == true;
+    || DocumentStatus?.Equals("sender_recount_completed", StringComparison.OrdinalIgnoreCase) == true
+    || DocumentStatus?.Equals("waiting_receiver_to_start", StringComparison.OrdinalIgnoreCase) == true;
 
     public bool ShowFinishScanningButton =>
     DocumentStatus?.Equals("in_progress", StringComparison.OrdinalIgnoreCase) == true
     || DocumentStatus?.Equals("sender_in_progress", StringComparison.OrdinalIgnoreCase) == true
     || DocumentStatus?.Equals("sender_recount_in_progress", StringComparison.OrdinalIgnoreCase) == true
     || DocumentStatus?.Equals("recount_in_progress", StringComparison.OrdinalIgnoreCase) == true
+    || DocumentStatus?.Equals("receive_in_progress", StringComparison.OrdinalIgnoreCase) == true
     || DocumentStatus?.Equals("receive_recount_in_progress", StringComparison.OrdinalIgnoreCase) == true;
 
     partial void OnDocumentStatusChanged(string value)
@@ -145,10 +147,20 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
         var status = DocumentStatus?.Trim().ToLowerInvariant();
 
-        if (status == "waiting_to_start" || status == "sender_recount_requested")
+        if (status is "waiting_to_start"
+            or "sender_in_progress"
+            or "sender_recount_requested"
+            or "sender_recount_in_progress"
+            or "sender_completed"
+            or "sender_recount_completed")
             return "sender";
 
-        if (status == "sender_recount_completed" || status == "receive_recount_requested")
+        if (status is "waiting_receiver_to_start"
+            or "receive_in_progress"
+            or "receive_recount_requested"
+            or "receive_recount_in_progress"
+            or "receive_completed"
+            or "receive_recount_completed")
             return "receiver";
 
         return null;
