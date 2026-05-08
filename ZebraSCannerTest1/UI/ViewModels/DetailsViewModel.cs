@@ -9,6 +9,7 @@ using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Core.Services;
 using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.Messages;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
@@ -107,7 +108,17 @@ public partial class DetailsViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    private async Task ShowFullValue(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            await Shell.Current.DisplayAlert("Full value", "—", "OK");
+            return;
+        }
 
+        await Shell.Current.DisplayAlert("Full value", value, "OK");
+    }
 
     // === Shared logic for saving and logging every quantity change ===
 

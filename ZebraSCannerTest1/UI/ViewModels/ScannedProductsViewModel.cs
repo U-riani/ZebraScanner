@@ -8,6 +8,7 @@ using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Core.Services;
 using ZebraSCannerTest1.Data;
 using ZebraSCannerTest1.UI.Views;
+using ZebraSCannerTest1.Views.Popups;
 
 namespace ZebraSCannerTest1.UI.ViewModels;
 
@@ -39,6 +40,7 @@ public partial class ScannedProductsViewModel : ObservableObject
     [ObservableProperty] private bool needsReload = true;
     [ObservableProperty] private string currentBoxId = string.Empty;
     [ObservableProperty] private InventoryMode currentMode = InventoryMode.Standard; // 👈 new
+    [ObservableProperty] private bool isManualFilterOpen;
 
     public ObservableCollection<StatsProduct> ScannedProductsStats { get; private set; } = new();
 
@@ -245,9 +247,9 @@ public partial class ScannedProductsViewModel : ObservableObject
             "Not Updated Recently (7+ days)",
             "Created Today",
             "",
-            "Search by Barcode",
             "Search by Name",
-            "Search by ArticCode"
+            "Search by ArticCode",
+            "Manual Filter"
         );
 
 
@@ -305,15 +307,15 @@ public partial class ScannedProductsViewModel : ObservableObject
             case "Created Today": _currentFilter = "DATE(CreatedAt) = DATE('now')"; CurrentFilterDescription = "Filter: Created Today"; break;
 
             // Search
-            case "Search by Barcode":
-                var barcode = await Shell.Current.DisplayPromptAsync("Search", "Enter part of barcode:", "OK", "Cancel");
-                if (!string.IsNullOrWhiteSpace(barcode))
-                {
-                    _currentFilter = $"Barcode LIKE '%{barcode}%'";
-                    CurrentFilterDescription = $"Filter: Code~{barcode}";
-                }
-                else return;
-                break;
+            //case "Search by Barcode":
+            //    var barcode = await Shell.Current.DisplayPromptAsync("Search", "Enter part of barcode:", "OK", "Cancel");
+            //    if (!string.IsNullOrWhiteSpace(barcode))
+            //    {
+            //        _currentFilter = $"Barcode LIKE '%{barcode}%'";
+            //        CurrentFilterDescription = $"Filter: Code~{barcode}";
+            //    }
+            //    else return;
+            //    break;
 
             case "Search by Name":
                 var name = await Shell.Current.DisplayPromptAsync("Search", "Enter part of name:", "OK", "Cancel");
@@ -334,6 +336,11 @@ public partial class ScannedProductsViewModel : ObservableObject
                 }
                 else return;
                 break;
+
+            // Manual Filter
+            case "Manual Filter":
+                await ManualFilter();
+                return;
 
             default: _currentFilter = ""; CurrentFilterDescription = "Filter: All"; break;
         }
@@ -388,8 +395,8 @@ public partial class ScannedProductsViewModel : ObservableObject
     }
 
 
-    [RelayCommand]
-    private async Task CopyBarcode(string barcode) => await _clipboard.CopyAsync(barcode);
+    //[RelayCommand]
+    //private async Task CopyBarcode(string barcode) => await _clipboard.CopyAsync(barcode);
 
     public async void ApplyManualFilter(string filter)
     {
@@ -419,6 +426,63 @@ public partial class ScannedProductsViewModel : ObservableObject
         await Shell.Current.GoToAsync(nameof(DetailsPage), query);
     }
 
+    [RelayCommand]
+    private async Task ManualFilter()
+    {
+        try
+        {
+            IsLoading = true;
+            IsManualFilterOpen = true;
+
+            var popup = new ManualFilterPopup();
+
+            await Shell.Current.Navigation.PushModalAsync(popup);
+
+            var result = await popup.Result;
+
+            if (string.IsNullOrWhiteSpace(result))
+                return;
+
+            ApplyManualFilter(result);
+
+            await Shell.Current.DisplayAlert("✅ Manual Filter Applied", result, "OK");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
+        }
+        finally
+        {
+            IsLoading = false;
+            IsManualFilterOpen = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task SearchBarcode()
+    {
+        var barcode = await Shell.Current.DisplayPromptAsync(
+            "Search Barcode",
+            "Enter full or partial barcode:",
+            "Search",
+            "Cancel");
+
+        if (string.IsNullOrWhiteSpace(barcode))
+            return;
+
+        var safeBarcode = barcode.Trim().Replace("'", "''");
+
+        _currentFilter = $"Barcode LIKE '%{safeBarcode}%'";
+        CurrentFilterDescription = $"Filter: Barcode~{barcode.Trim()}";
+
+        await LoadProductsAsync(reset: true);
+    }
+
+    [RelayCommand]
+    private async Task CopyText(string inputText)
+    {
+        await _clipboard.CopyAsync(inputText);
+    }
     //public async Task LoadAsync(bool reset = true, CancellationToken token = default)
     //{
     //    // already loading? skip

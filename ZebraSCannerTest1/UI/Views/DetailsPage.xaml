@@ -3,8 +3,10 @@
              xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
              xmlns:models="clr-namespace:ZebraSCannerTest1.Core.Models"
              xmlns:converters="clr-namespace:ZebraSCannerTest1.UI.Converters"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="ZebraSCannerTest1.UI.Views.DetailsPage"
              x:DataType="viewmodel:DetailsViewModel"
+             x:Name="DetailsRoot"
              Title="Details"
              BackgroundColor="#F5F5F7">
 
@@ -14,6 +16,7 @@
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
             <converters:EnumEqualsConverter x:Key="EnumEqualsConverter" />
             <converters:DifferenceToColorConverter x:Key="DifferenceToColorConverter" />
+            <converters:TruncateTextConverter x:Key="TruncateTextConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 
@@ -59,7 +62,12 @@
                     <Label Text="{Binding BoxId}"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="#6D28D9" />
+                           TextColor="#6D28D9" >
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                         CommandParameter="{Binding BoxId}" />
+                        </Label.GestureRecognizers>
+                    </Label>
                 </HorizontalStackLayout>
             </Frame>
 
@@ -94,15 +102,30 @@
                     </HorizontalStackLayout>
                     <HorizontalStackLayout Spacing="10">
                         <Label Text="Name" FontSize="16" TextColor="#555555" />
-                        <Label Text="{Binding ProductName}" FontSize="17" FontAttributes="Bold" TextColor="#111111" />
+                        <Label Text="{Binding ProductName}" FontSize="17" FontAttributes="Bold" TextColor="#111111" >
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                    CommandParameter="{Binding ProductName}" />
+                            </Label.GestureRecognizers>
+                        </Label>
                     </HorizontalStackLayout>
                     <HorizontalStackLayout Spacing="10">
                         <Label Text="Color" FontSize="16" TextColor="#555555" />
-                        <Label Text="{Binding ProductColor}" FontSize="17" FontAttributes="Bold" TextColor="#111111" />
+                        <Label Text="{Binding ProductColor}" FontSize="17" FontAttributes="Bold" TextColor="#111111" >
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                    CommandParameter="{Binding ProductColor}" />
+                            </Label.GestureRecognizers>
+                        </Label>
                     </HorizontalStackLayout>
                     <HorizontalStackLayout Spacing="10">
                         <Label Text="Size" FontSize="16" TextColor="#555555" />
-                        <Label Text="{Binding ProductSize}" FontSize="17" FontAttributes="Bold" TextColor="#111111" />
+                        <Label Text="{Binding ProductSize}" FontSize="17" FontAttributes="Bold" TextColor="#111111" >
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                    CommandParameter="{Binding ProductSize}" />
+                            </Label.GestureRecognizers>
+                        </Label>
                     </HorizontalStackLayout>
                     <HorizontalStackLayout Spacing="10">
                         <Label Text="Price" FontSize="16" TextColor="#555555" />
@@ -155,7 +178,9 @@
             </Frame>
 
             <!-- Action Buttons -->
-            <Frame IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
+            <!-- old version when actions button was hide in stats page -->
+            <!-- <Frame IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}" -->
+            <Frame 
                    CornerRadius="8" Padding="16" HasShadow="True"
                    BorderColor="#D0D0D8" BackgroundColor="White">
                 <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
@@ -186,7 +211,7 @@
                     HeightRequest="54"
                     FontSize="18"
                     FontAttributes="Bold"
-                    IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
+                    
                     BackgroundColor="#00A8CC"
                     TextColor="White" />
 
@@ -202,7 +227,7 @@
                 <VerticalStackLayout Spacing="0">
 
                     <!-- Table Header -->
-                    <Grid ColumnDefinitions="3*, 60, 60, 60, 80, 80"
+                    <Grid ColumnDefinitions="3*, 40, 35, 40, 80, 60"
                           Padding="12,10"
                           BackgroundColor="#EAEAF0">
                         <Label Text="Barcode" FontSize="14" FontAttributes="Bold" TextColor="#111111" />
@@ -230,19 +255,68 @@
                                         StrokeThickness="0"
                                         BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}"
                                         Padding="12,8">
-                                    <Grid ColumnDefinitions="3*,60,60,60,80,80">
-                                        <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="#111111" />
+                                    <Grid ColumnDefinitions="3*,40,30,40,80,60">
+                                        <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="#111111" >
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                                    CommandParameter="{Binding Barcode}" />
+                                            </Label.GestureRecognizers>
+                                        </Label>
                                         <Label Grid.Column="1" Text="{Binding Was}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#555555" />
                                         <Label Grid.Column="2" Text="{Binding IncrementBy}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#00A8CC" FontAttributes="Bold" />
                                         <Label Grid.Column="3" Text="{Binding IsValue}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#111111" />
-                                        <Label Grid.Column="4"
-                                               Text="{Binding Section, FallbackValue='—'}"
+                                        <Label x:Name="SectionValueLabel"
+                                               Grid.Column="4"
+                                               Text="{Binding Section, Converter={StaticResource TruncateTextConverter}, ConverterParameter=7}"
                                                IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
-                                               HorizontalTextAlignment="Center" FontSize="14" TextColor="#6D28D9" />
-                                        <Label Grid.Column="4"
-                                               Text="{Binding Box_Id, FallbackValue='—'}"
+                                               HorizontalTextAlignment="Center"
+                                               FontSize="14"
+                                               TextColor="#6D28D9"
+                                               LineBreakMode="NoWrap"
+                                               MaxLines="1">
+
+                                            <!-- Single tap = copy full Section value -->
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding BindingContext.CopyBarcodeCommand, Source={x:Reference DetailsRoot}}"
+                                                    CommandParameter="{Binding Section}" />
+                                            </Label.GestureRecognizers>
+
+                                            <!-- Long press = show full Section value -->
+                                            <Label.Behaviors>
+                                                <toolkit:TouchBehavior
+                                                    BindingContext="{Binding Source={x:Reference SectionValueLabel}, Path=BindingContext}"
+                                                    LongPressDuration="500"
+                                                    LongPressCommand="{Binding BindingContext.ShowFullValueCommand, Source={x:Reference DetailsRoot}}"
+                                                    LongPressCommandParameter="{Binding Section}" />
+                                            </Label.Behaviors>
+                                        </Label>
+                                        <Label x:Name="BoxValueLabel"
+                                               Grid.Column="4"
+                                               Text="{Binding Box_Id, Converter={StaticResource TruncateTextConverter}, ConverterParameter=7}"
                                                IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
-                                               HorizontalTextAlignment="Center" FontSize="14" TextColor="#6D28D9" />
+                                               HorizontalTextAlignment="Center"
+                                               FontSize="14"
+                                               TextColor="#6D28D9"
+                                               LineBreakMode="NoWrap"
+                                               MaxLines="1">
+
+                                            <!-- Single tap = copy full Box_Id value -->
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                        Command="{Binding BindingContext.CopyBarcodeCommand, Source={x:Reference DetailsRoot}}"
+                                                        CommandParameter="{Binding Box_Id}" />
+                                            </Label.GestureRecognizers>
+
+                                            <!-- Long press = show full Box_Id value -->
+                                            <Label.Behaviors>
+                                                <toolkit:TouchBehavior
+                                                        BindingContext="{Binding Source={x:Reference BoxValueLabel}, Path=BindingContext}"
+                                                        LongPressDuration="500"
+                                                        LongPressCommand="{Binding BindingContext.ShowFullValueCommand, Source={x:Reference DetailsRoot}}"
+                                                        LongPressCommandParameter="{Binding Box_Id}" />
+                                            </Label.Behaviors>
+                                        </Label>
                                         <Label Grid.Column="5"
                                                Text="{Binding UpdatedAt, StringFormat='{0:dd/MM HH:mm:ss}'}"
                                                FontSize="13"

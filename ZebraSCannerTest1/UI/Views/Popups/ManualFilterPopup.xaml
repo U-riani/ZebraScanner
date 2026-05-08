@@ -27,6 +27,7 @@
                     <Picker.ItemsSource>
                         <x:Array Type="{x:Type x:String}">
                             <x:String>Barcode</x:String>
+                            <x:String>ArticCode</x:String>
                             <x:String>Name</x:String>
                             <x:String>Color</x:String>
                             <x:String>Size</x:String>

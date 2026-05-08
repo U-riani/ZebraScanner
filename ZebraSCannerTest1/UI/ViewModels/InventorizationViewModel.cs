@@ -90,19 +90,19 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
         ShowResultsCommand = new AsyncRelayCommand(ShowResultsAsync);
 
         GoToLogsCommand = new AsyncRelayCommand(() =>
-     _navigation.NavigateToAsync(nameof(LogsPage),
-         new Dictionary<string, object>
-         {
-             ["Mode"] = InventoryMode.Standard
-         }));
+             _navigation.NavigateToAsync(nameof(LogsPage),
+                 new Dictionary<string, object>
+                 {
+                     ["Mode"] = InventoryMode.Standard
+                 }));
 
         GoToScannedProductsCommand = new AsyncRelayCommand(() =>
-    NavigateSafelyAsync(() =>
-        _navigation.NavigateToAsync(nameof(ScannedProductsPage),
-            new Dictionary<string, object>
-            {
-                ["Mode"] = InventoryMode.Standard
-            })));
+            NavigateSafelyAsync(() =>
+                _navigation.NavigateToAsync(nameof(ScannedProductsPage),
+                    new Dictionary<string, object>
+                    {
+                        ["Mode"] = InventoryMode.Standard
+                    })));
 
 
         GoToDetailsCommand = new AsyncRelayCommand<ProductSlot>(OnSlotTappedAsync);

@@ -735,12 +735,12 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
         try
         {
-            var choce = await Shell.Current.DisplayActionSheet(
+            var choice = await Shell.Current.DisplayActionSheet(
                 "Finish Scanning",
                 "Cancel", null,
                 "Yes, finish and upload to server");
 
-            if (choce != "Yes, finish and upload to server")
+            if (choice != "Yes, finish and upload to server")
                 return;
 
             var token = await SecureStorage.GetAsync("token");
@@ -819,6 +819,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
             await _dialogs.ShowMessageAsync(
                 "Success",
                 $"Uploaded {submitResult.updated_lines} rows and updated status to '{statusResult.assignment_status}'.");
+
+            await Shell.Current.GoToAsync("..");
         }
         catch (Exception ex)
         {

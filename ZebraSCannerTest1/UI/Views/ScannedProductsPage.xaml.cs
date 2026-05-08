@@ -22,39 +22,39 @@ public partial class ScannedProductsPage : ContentPage
         BindingContext = vm;
     }
 
-    private async void OnManualFilterClicked(object sender, EventArgs e)
-    {
-        try
-        {
-            // mark page as busy while modal is open
-            _vm.IsLoading = true;
-            _manualFilterOpen = true; // ✅ mark as active
+    //private async void OnManualFilterClicked(object sender, EventArgs e)
+    //{
+    //    try
+    //    {
+    //        // mark page as busy while modal is open
+    //        _vm.IsLoading = true;
+    //        _manualFilterOpen = true; // ✅ mark as active
 
-            // open popup
-            var popup = new ManualFilterPopup();
-            await Navigation.PushModalAsync(popup);
+    //        // open popup
+    //        var popup = new ManualFilterPopup();
+    //        await Navigation.PushModalAsync(popup);
 
-            var result = await popup.Result;
+    //        var result = await popup.Result;
 
-            // if user canceled — just exit quietly
-            if (string.IsNullOrWhiteSpace(result))
-            {
-                return;
-            }
+    //        // if user canceled — just exit quietly
+    //        if (string.IsNullOrWhiteSpace(result))
+    //        {
+    //            return;
+    //        }
 
-            // apply filter normally
-            _vm.ApplyManualFilter(result);
-            await DisplayAlert("✅ Manual Filter Applied", result, "OK");
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("Error", ex.Message, "OK");
-        }
-        finally
-        {
-            _vm.IsLoading = false;
-        }
-    }
+    //        // apply filter normally
+    //        _vm.ApplyManualFilter(result);
+    //        await DisplayAlert("✅ Manual Filter Applied", result, "OK");
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        await DisplayAlert("Error", ex.Message, "OK");
+    //    }
+    //    finally
+    //    {
+    //        _vm.IsLoading = false;
+    //    }
+    //}
 
     protected override async void OnAppearing()
     {

@@ -5,6 +5,7 @@
              xmlns:converters="clr-namespace:ZebraSCannerTest1.UI.Converters"
              x:Class="ZebraSCannerTest1.UI.Views.ScannedProductsPage"
              x:DataType="viewmodel:ScannedProductsViewModel"
+             x:Name="ScannedProductsRoot"
              Title="Scanned Products"
              BackgroundColor="#F5F5F7">
 
@@ -63,9 +64,14 @@
                 <Button Text="Clear"  Command="{Binding ClearFilterCommand}"
                         Padding="10,4" FontSize="14" CornerRadius="6" HeightRequest="40"
                         BackgroundColor="#EAEAF0" TextColor="#111111"/>
-                <Button Text="⊟ Filter" Clicked="OnManualFilterClicked"
-                        Padding="10,4" FontSize="14" CornerRadius="6" HeightRequest="40"
-                        BackgroundColor="#00A8CC" TextColor="White" />
+                <Button Text="Barcode"
+                        Command="{Binding SearchBarcodeCommand}"
+                        Padding="10,4"
+                        FontSize="14"
+                        CornerRadius="6"
+                        HeightRequest="40"
+                        BackgroundColor="#00A8CC"
+                        TextColor="White" />
             </HorizontalStackLayout>
         </FlexLayout>
 
@@ -110,18 +116,53 @@
                                 <Grid Padding="4"
                                       ColumnDefinitions="110,110,50,50,50,100,110,140,80,80,30"
                                       BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}">
-                                    <Label Grid.Column="0"  Text="{Binding Barcode}"         Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="0"  Text="{Binding Barcode}"         Style="{StaticResource CellStyle}" >
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.CopyTextCommand, Source={x:Reference ScannedProductsRoot}}"
+                                                 CommandParameter="{Binding Barcode}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
                                     <Label Grid.Column="1"  Text="{Binding BoxId}"
                                            Style="{StaticResource CellStyle}"
-                                           IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:ScannedProductsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" />
+                                           IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:ScannedProductsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" >
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.CopyTextCommand, Source={x:Reference ScannedProductsRoot}}"
+                                                 CommandParameter="{Binding BoxId}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
                                     <Label Grid.Column="2"  Text="{Binding ScannedQuantity}" Style="{StaticResource CellStyle}" />
                                     <Label Grid.Column="3"  Text="{Binding InitialQuantity}" Style="{StaticResource CellStyle}" />
                                     <Label Grid.Column="4"  Text="{Binding Difference}"      Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="5"  Text="{Binding ArticCode}"       Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="6"  Text="{Binding Name}"            Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="7"  Text="{Binding Color}"           Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="8"  Text="{Binding Size}"            Style="{StaticResource CellStyle}" />
-                                    <Label Grid.Column="9"  Text="{Binding Price}"           Style="{StaticResource CellStyle}" />
+                                    <Label Grid.Column="5"  Text="{Binding ArticCode}"       Style="{StaticResource CellStyle}" >
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.CopyTextCommand, Source={x:Reference ScannedProductsRoot}}"
+                                                 CommandParameter="{Binding ArticCode}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                    <Label Grid.Column="6"  Text="{Binding Name}"            Style="{StaticResource CellStyle}" >
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.CopyTextCommand, Source={x:Reference ScannedProductsRoot}}"
+                                                 CommandParameter="{Binding Name}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                    <Label Grid.Column="7"  Text="{Binding Color}"           Style="{StaticResource CellStyle}" >
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.CopyTextCommand, Source={x:Reference ScannedProductsRoot}}"
+                                                 CommandParameter="{Binding Color}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                    <Label Grid.Column="8"  Text="{Binding Size}"            Style="{StaticResource CellStyle}" >
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.CopyTextCommand, Source={x:Reference ScannedProductsRoot}}"
+                                                 CommandParameter="{Binding Size}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                    <Label Grid.Column="9"  Text="{Binding Price}"           Style="{StaticResource CellStyle}" >
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.CopyTextCommand, Source={x:Reference ScannedProductsRoot}}"
+                                                 CommandParameter="{Binding Price}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
                                     <Button Grid.Column="10"
                                             Text="→"
                                             BackgroundColor="#00A8CC"
