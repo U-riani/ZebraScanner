@@ -28,13 +28,21 @@ public class TasksViewModel
                 ? InventoryMode.Loots
                 : InventoryMode.Standard;
 
+            var effectiveStatus = !string.IsNullOrWhiteSpace(doc.assignment_status)
+                ? doc.assignment_status
+                : doc.status;
+
+            Console.WriteLine($"[TASK NAV] doc.status = '{doc.status}'");
+            Console.WriteLine($"[TASK NAV] doc.assignment_status = '{doc.assignment_status}'");
+            Console.WriteLine($"[TASK NAV] effectiveStatus = '{effectiveStatus}'");
+
             await Shell.Current.GoToAsync(nameof(InventorizationMenuPage),
                 new Dictionary<string, object>
                 {
                     ["Mode"] = mode,
                     ["DocumentId"] = doc.id,
                     ["ServerDbModule"] = doc.doc_module,
-                    ["DocumentStatus"] = doc.status
+                    ["DocumentStatus"] = effectiveStatus
                 });
         });
     }

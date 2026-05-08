@@ -8,8 +8,8 @@ namespace ZebraSCannerTest1
     {
         public AppShell(ShellViewModel vm)
         {
-            FlyoutBehavior = FlyoutBehavior.Disabled;
             InitializeComponent();
+            FlyoutBehavior = FlyoutBehavior.Disabled;
 
 
             Routing.RegisterRoute(nameof(LoginPage), typeof(LoginPage));
@@ -26,6 +26,7 @@ namespace ZebraSCannerTest1
             Routing.RegisterRoute(nameof(SalesMenuPage), typeof(SalesMenuPage));
             Routing.RegisterRoute(nameof(SalesPage), typeof(SalesPage));
             Routing.RegisterRoute(nameof(TasksPage), typeof(TasksPage));
+            Routing.RegisterRoute(nameof(SettingsPage), typeof(SettingsPage));
 
             BindingContext = vm;
         }

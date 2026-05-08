@@ -1,50 +1,55 @@
-﻿using Microsoft.Maui.Storage;
+﻿using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Storage;
 using ZebraSCannerTest1.UI.Views;
 
 namespace ZebraSCannerTest1.UI.Services
 {
     public interface IMenuService
     {
-        Task ShowMenuAsync();
+        Task ShowSettingsAsync();
+        Task ShowAboutAsync();
+        Task LogoutAsync();
     }
 
     public class MenuService : IMenuService
     {
-        public async Task ShowMenuAsync()
+        public async Task ShowSettingsAsync()
         {
-            string choice = await Shell.Current.DisplayActionSheet(
-                "Menu", "Cancel", null,
-                "Settings", "About", "Logout");
+            await Shell.Current.DisplayAlert(
+                "Settings",
+                "Settings coming soon.",
+                "OK");
+        }
 
-            switch (choice)
-            {
-                case "Settings":
-                    await Shell.Current.DisplayAlert("Settings", "Settings coming soon.", "OK");
-                    break;
+        public async Task ShowAboutAsync()
+        {
+            string version = AppInfo.Current.VersionString;
+            string build = AppInfo.Current.BuildString;
 
-                case "About":
-                    await Shell.Current.DisplayAlert("About", "ScanMate v1.0", "OK");
-                    break;
+            await Shell.Current.DisplayAlert(
+                "About",
+                $"ScanMate\nVersion: {version}\nBuild: {build}",
+                "OK");
+        }
 
-                case "Logout":
-                    bool confirm = await Shell.Current.DisplayAlert(
-                        "Logout",
-                        "Are you sure you want to logout?",
-                        "Yes",
-                        "Cancel");
+        public async Task LogoutAsync()
+        {
+            bool confirm = await Shell.Current.DisplayAlert(
+                "Logout",
+                "Are you sure you want to logout?",
+                "Yes",
+                "Cancel");
 
-                    if (!confirm)
-                        return;
+            if (!confirm)
+                return;
 
-                    SecureStorage.Remove("token");
-                    SecureStorage.Remove("user_id");
-                    SecureStorage.Remove("username");
-                    Preferences.Remove("modules");
+            SecureStorage.Remove("token");
+            SecureStorage.Remove("user_id");
+            SecureStorage.Remove("username");
+            Preferences.Remove("modules");
 
-                    var loginPage = MauiProgram.ServiceProvider.GetRequiredService<LoginPage>();
-                    Application.Current.MainPage = loginPage;
-                    break;
-            }
+            var loginPage = MauiProgram.ServiceProvider.GetRequiredService<LoginPage>();
+            Application.Current.MainPage = loginPage;
         }
     }
 }

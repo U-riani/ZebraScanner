@@ -9,4 +9,13 @@ public partial class InventorizationMenuPage : ContentPage
         InitializeComponent();
         BindingContext = vm;
     }
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        if (BindingContext is InventorizationMenuViewModel vm)
+        {
+            vm.RestoreLocalLoadedStatusAndRefresh();
+        }
+    }
 }

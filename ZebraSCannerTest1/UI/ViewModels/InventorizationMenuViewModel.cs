@@ -39,24 +39,40 @@ public partial class InventorizationMenuViewModel : ObservableObject
     [ObservableProperty]
     private string documentStatus;
 
-    public bool ShowLoadDataButton =>
-    DocumentStatus?.Equals("waiting_to_start", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Contains("recount_requested", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Equals("sender_recount_completed", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Equals("waiting_receiver_to_start", StringComparison.OrdinalIgnoreCase) == true;
+    private string? _loadedFromStartStatus;
 
-    public bool ShowFinishScanningButton =>
-    DocumentStatus?.Equals("in_progress", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Equals("sender_in_progress", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Equals("sender_recount_in_progress", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Equals("recount_in_progress", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Equals("receive_in_progress", StringComparison.OrdinalIgnoreCase) == true
-    || DocumentStatus?.Equals("receive_recount_in_progress", StringComparison.OrdinalIgnoreCase) == true;
+    public bool ShowLoadDataButton =>
+        IsStartStatus(CurrentStatus);
+
+    public bool ShowContinueButton =>
+    CurrentStatus is "in_progress"
+        or "sender_in_progress"
+        or "sender_recount_in_progress"
+        or "recount_in_progress"
+        or "receive_in_progress"
+        or "receive_recount_in_progress";
+
+    public bool ShowFinishScanningButton => ShowContinueButton;
+
+ 
+
+    private string CurrentStatus =>
+    DocumentStatus?.Trim().ToLowerInvariant() ?? string.Empty;
+
+
+    private bool IsStartStatus(string status)
+    {
+        return status is "waiting_to_start"
+            or "recount_requested"
+            or "sender_recount_requested"
+            or "receive_recount_requested"
+            or "sender_recount_completed"
+            or "waiting_receiver_to_start";
+    }
 
     partial void OnDocumentStatusChanged(string value)
     {
-        OnPropertyChanged(nameof(ShowLoadDataButton));
-        OnPropertyChanged(nameof(ShowFinishScanningButton));
+        RefreshButtonVisibility();
     }
 
     public IRelayCommand LoadDataFromServerCommand { get; }
@@ -252,7 +268,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
                 token,
                 DocumentId,
                 ServerDbModule,
-                documentStatus,
+                DocumentStatus,
                 role);
 
             if (updateResult == null || !updateResult.ok)
@@ -265,8 +281,15 @@ public partial class InventorizationMenuViewModel : ObservableObject
                 return;
             }
 
+
+            var loadedFromStatus = CurrentStatus;
+
             DocumentStatus = updateResult.assignment_status;
 
+            Console.WriteLine($"[LOAD DATA] Loaded from '{loadedFromStatus}' to '{DocumentStatus}'");
+
+            SaveLocalLoadedStatus(loadedFromStatus, DocumentStatus);
+            RefreshButtonVisibility();
 
 
             await _scanLogRepository.ClearAsync(Mode);
@@ -278,6 +301,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
             await _dialogs.ShowMessageAsync(
                 "Success",
                 $"Loaded {docLines.Count} lines from server and imported {imported} rows into {Mode} database.");
+
+            await OnContinueAsync();
 
         }
         catch (Exception ex)
@@ -346,7 +371,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
             var choice = await Shell.Current.DisplayActionSheet(
                 $"Export {Mode} Data",
                 "Cancel", null,
-                "Products (Excel)", "Logs (Excel)", "Products (JSON)", "Logs (JSON)");
+                "Products (Excel)", "Logs (Excel)");
 
             if (choice == "Cancel" || string.IsNullOrWhiteSpace(choice))
                 return;
@@ -361,7 +386,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
             var path = FileSystem.AppDataDirectory;
 #endif
 
-            string extension = choice.Contains("JSON") ? "json" : "xlsx";
+            string extension =  "xlsx";
             var fileName = $"{Mode}_{choice.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.{extension}";
             var fullPath = Path.Combine(path, fileName);
 
@@ -375,40 +400,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
                     await _exporter.ExportProductsAsync(fullPath, progress, Mode);
                 else if (choice == "Logs (Excel)")
                     await _logExporter.ExportLogsAsync(fullPath, progress, Mode);
-                else if (choice == "Products (JSON)")
-                {
-                    string json = await _jsonExporter.ExportProductsJsonAsync(null, progress, Mode);
-
-                    try
-                    {
-                        var allProducts = JsonSerializer.Deserialize<List<object>>(json) ?? new();
-                        const int batchSize = 5000;
-
-                        for (int i = 0; i < allProducts.Count; i += batchSize)
-                        {
-                            var batch = allProducts.Skip(i).Take(batchSize).ToList();
-                            var batchJson = JsonSerializer.Serialize(batch);
-
-                            await _apiService.UploadInventoryJsonAsync(batchJson);
-
-                            double percent = Math.Min((double)(i + batch.Count) / allProducts.Count, 1.0);
-                            _popup.UpdateMessage($"Uploading... {(int)(percent * 100)}%");
-                        }
-
-                        Console.WriteLine($"✅ Uploaded {allProducts.Count} products in chunks.");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"❌ Chunk upload failed: {ex.Message}");
-                        throw;
-                    }
-                }
-
-                else if (choice == "Logs (JSON)")
-                {
-                    string json = await _jsonLogExporter.ExportLogsJsonAsync(null, progress, Mode);
-                    await _apiService.UploadInventoryJsonAsync(json);
-                }
+                
             });
 
 
@@ -743,6 +735,14 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
         try
         {
+            var choce = await Shell.Current.DisplayActionSheet(
+                "Finish Scanning",
+                "Cancel", null,
+                "Yes, finish and upload to server");
+
+            if (choce != "Yes, finish and upload to server")
+                return;
+
             var token = await SecureStorage.GetAsync("token");
 
             if (string.IsNullOrWhiteSpace(token))
@@ -810,6 +810,9 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
             DocumentStatus = statusResult.assignment_status;
 
+            SaveLocalLoadedStatus(_loadedFromStartStatus, DocumentStatus);
+            RefreshButtonVisibility();
+
             _popup.Close();
             popupOpened = false;
 
@@ -827,6 +830,86 @@ public partial class InventorizationMenuViewModel : ObservableObject
             await _dialogs.ShowMessageAsync("Error", ex.Message);
         }
     }
+
+    public void RefreshButtonVisibility()
+    {
+        Console.WriteLine($"[MENU REFRESH] DocumentStatus = '{DocumentStatus}'");
+        Console.WriteLine($"[MENU REFRESH] ShowLoadDataButton = {ShowLoadDataButton}");
+        Console.WriteLine($"[MENU REFRESH] ShowContinueButton = {ShowContinueButton}");
+        Console.WriteLine($"[MENU REFRESH] ShowFinishScanningButton = {ShowFinishScanningButton}");
+
+        OnPropertyChanged(nameof(ShowLoadDataButton));
+        OnPropertyChanged(nameof(ShowContinueButton));
+        OnPropertyChanged(nameof(ShowFinishScanningButton));
+    }
+
+    private string? GetLocalLoadedStatusKey(string? startStatus)
+    {
+        if (DocumentId <= 0 || string.IsNullOrWhiteSpace(ServerDbModule))
+            return null;
+
+        if (string.IsNullOrWhiteSpace(startStatus))
+            return null;
+
+        return $"document_loaded_status:{ServerDbModule}:{DocumentId}:{startStatus.Trim().ToLowerInvariant()}";
+    }
+
+    private void SaveLocalLoadedStatus(string? startStatus, string? activeStatus)
+    {
+        if (string.IsNullOrWhiteSpace(startStatus) || string.IsNullOrWhiteSpace(activeStatus))
+            return;
+
+        var normalizedStartStatus = startStatus.Trim().ToLowerInvariant();
+
+        if (!IsStartStatus(normalizedStartStatus))
+            return;
+
+        var key = GetLocalLoadedStatusKey(normalizedStartStatus);
+
+        if (string.IsNullOrWhiteSpace(key))
+            return;
+
+        Preferences.Set(key, activeStatus);
+
+        _loadedFromStartStatus = normalizedStartStatus;
+
+        Console.WriteLine($"[LOCAL STATUS SAVE] {key} = '{activeStatus}'");
+    }
+
+    public void RestoreLocalLoadedStatusAndRefresh()
+    {
+        var currentStatus = CurrentStatus;
+
+        Console.WriteLine($"[LOCAL STATUS CHECK] Current DocumentStatus = '{DocumentStatus}'");
+
+        if (IsStartStatus(currentStatus))
+        {
+            var key = GetLocalLoadedStatusKey(currentStatus);
+
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                var savedStatus = Preferences.Get(key, string.Empty);
+
+                if (!string.IsNullOrWhiteSpace(savedStatus))
+                {
+                    Console.WriteLine($"[LOCAL STATUS RESTORE] {key}: '{DocumentStatus}' -> '{savedStatus}'");
+
+                    _loadedFromStartStatus = currentStatus;
+                    DocumentStatus = savedStatus;
+                }
+                else
+                {
+                    Console.WriteLine($"[LOCAL STATUS MISS] {key}. Keep START for '{DocumentStatus}'");
+                    _loadedFromStartStatus = null;
+                }
+            }
+        }
+
+        RefreshButtonVisibility();
+    }
+
+
+
 }
 
 

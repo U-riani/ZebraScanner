@@ -14,7 +14,7 @@ public class PocketDocumentDto
     public string doc_module { get; set; }
     public string scan_type { get; set; }
     public string status { get; set; }
-
+    public string? assignment_status { get; set; }
     public int? warehouse_id { get; set; }
     public string? warehouse_name { get; set; }
 

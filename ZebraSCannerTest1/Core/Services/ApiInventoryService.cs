@@ -11,7 +11,8 @@ public class ApiInventoryService
     public ApiInventoryService()
     {
         _http = new HttpClient();
-        //_http.BaseAddress = new Uri("http://192.168.1.112:8000/api/");
+        //_http.BaseAddress = new Uri("https://dev-scanmate.gtexshop.ge/api/");
+        //_http.BaseAddress = new Uri("http://192.168.1.132:8000/api/");
         _http.BaseAddress = new Uri("http://10.0.2.2:8000/api/");
         //_http.BaseAddress = new Uri("https://scanmate-admin-panel.onrender.com/api/");
 

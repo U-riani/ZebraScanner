@@ -16,53 +16,33 @@
                    HorizontalOptions="Center"
                    Margin="0,20,0,12" />
 
-            <Button Text="LOAD DATA"
+            <Button Text="START"
                 FontSize="20" FontAttributes="Bold"
-                BackgroundColor="LightSeaGreen" TextColor="White"
+                BackgroundColor="#F4C430" TextColor="White"
                 CornerRadius="8" HeightRequest="60"
                 Command="{Binding LoadDataFromServerCommand}"
                 IsVisible="{Binding ShowLoadDataButton}"/>
             
             <Button Text="CONTINUE"
                     FontSize="20" FontAttributes="Bold"
-                    BackgroundColor="#16A34A" TextColor="White"
+                    BackgroundColor="#009E60" TextColor="White"
                     CornerRadius="8" HeightRequest="60"
-                    Command="{Binding NavigateToContinueCommand}"/>
+                    Command="{Binding NavigateToContinueCommand}"
+                    IsVisible="{Binding ShowContinueButton}"/>
 
-            <Button Text="RESULT"
-                    FontSize="20" FontAttributes="Bold"
-                    BackgroundColor="#00A8CC" TextColor="White"
-                    CornerRadius="8" HeightRequest="60"
-                    Command="{Binding NavigateToResultCommand}"/>
+           
 
             <Button Text="EXPORT"
                     FontSize="20" FontAttributes="Bold"
-                    BackgroundColor="#6D28D9" TextColor="White"
+                    BackgroundColor="#4169E1" TextColor="White"
                     CornerRadius="8" HeightRequest="60"
-                    Command="{Binding ExportCommand}"/>
+                    Command="{Binding ExportCommand}"
+                    IsVisible="{Binding ShowContinueButton}"/>
 
-            <Button Text="IMPORT"
-                    FontSize="20" FontAttributes="Bold"
-                    BackgroundColor="#D97706" TextColor="White"
-                    CornerRadius="8" HeightRequest="60"
-                    Command="{Binding ImportCommand}"/>
-
-            <Button Text="CLEAR"
-                    FontSize="20" FontAttributes="Bold"
-                    BackgroundColor="#DC2626" TextColor="White"
-                    CornerRadius="8" HeightRequest="60"
-                    Command="{Binding ClearCommand}"/>
-            <Button Text="Test Api" 
-                    FontSize="20" 
-                    FontAttributes="Bold"
-                    BackgroundColor="#DC2626" 
-                    TextColor="White" 
-                    CornerRadius="8" HeightRequest="60" 
-                    Command="{Binding TestDocLinesCommand}"/>
             <Button Text="FINISH SCANNING"
                 FontSize="20"
                 FontAttributes="Bold"
-                BackgroundColor="#2563EB"
+                BackgroundColor="#E34234"
                 TextColor="White"
                 CornerRadius="8"
                 HeightRequest="60"
