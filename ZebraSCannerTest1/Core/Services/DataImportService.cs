@@ -134,7 +134,16 @@ namespace ZebraSCannerTest1.Core.Services
 
                 //var targetPath = Path.Combine(FileSystem.AppDataDirectory, fileName);
 
-                var targetPath = DatabaseInitializer.GetDatabasePath(userId, mode);
+                var context = SessionHelper.GetCurrentScanContext(mode);
+                var targetPath = context == null
+                    ? DatabaseInitializer.GetDatabasePath(userId, mode)
+                    : DatabaseInitializer.GetDatabasePath(
+                        userId,
+                        mode,
+                        serverKey: context.ServerKey,
+                        documentId: context.DocumentId,
+                        documentModule: context.Module,
+                        assignmentRole: context.Role);
 
                 // ✅ optional: backup before overwrite
                 if (File.Exists(targetPath))
@@ -148,7 +157,7 @@ namespace ZebraSCannerTest1.Core.Services
                     await dbStream.CopyToAsync(dst);
 
                 // ✅ reconnect only to that mode’s DB
-                using var conn = await  _db.Inventorization(mode);
+                using var conn = await _db.Inventorization(mode);
                 //DatabaseInitializer.Initialize(conn, userId, mode, "prod");
 
                 Console.WriteLine($"[DB] Imported {mode} database.");
@@ -177,7 +186,7 @@ namespace ZebraSCannerTest1.Core.Services
 
             if (items == null || items.Count == 0)
                 throw new Exception("No valid items found in JSON file.");
-            
+
             // 🔥 Delete old data for this mode first
             using (var clear = conn.CreateCommand())
             {
@@ -247,7 +256,8 @@ namespace ZebraSCannerTest1.Core.Services
                 }
 
                 tx.Commit();
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 tx.Rollback();
                 Console.WriteLine($"❌ JSON import failed after {processed} rows → {ex.Message}");

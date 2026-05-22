@@ -31,6 +31,36 @@
                 </HorizontalStackLayout>
             </Frame>
 
+            <!-- Toolbar -->
+            <HorizontalStackLayout Spacing="8" Padding="4" HorizontalOptions="CenterAndExpand">
+                <Button Text="Stats"
+                        Command="{Binding GoToScannedProductsCommand}"
+                        BackgroundColor="#00A8CC"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="48"
+                        FontSize="16"
+                        FontAttributes="Bold" />
+
+                <Button Text="Logs"
+                        Command="{Binding GoToLogsCommand}"
+                        BackgroundColor="#555555"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="48"
+                        FontSize="16"
+                        FontAttributes="Bold" />
+
+                <Button Text="Results"
+                        Command="{Binding ShowResultsCommand}"
+                        BackgroundColor="#6D28D9"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="48"
+                        FontSize="16"
+                        FontAttributes="Bold" />
+            </HorizontalStackLayout>
+
             <!-- Barcode Scanner Input -->
             <Frame CornerRadius="8" Padding="4,0" HasShadow="True"
                    BorderColor="#00A8CC" BackgroundColor="White">

@@ -111,8 +111,8 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
             popupOpened = true;
 
 #if ANDROID
-        var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
-            Android.OS.Environment.DirectoryDownloads).AbsolutePath;
+            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
+                Android.OS.Environment.DirectoryDownloads).AbsolutePath;
 #else
             var path = FileSystem.AppDataDirectory;
 #endif
@@ -192,7 +192,19 @@ public class InventorizationByLootsMenuViewModel : ObservableObject
             }
 
             _popup.Close();
-            Console.WriteLine($"[Loots] Using DB: {DatabaseInitializer.GetConnection(userId, InventoryMode.Loots).DataSource}");
+            var context = SessionHelper.GetCurrentScanContext(InventoryMode.Loots);
+            var debugConn = context == null
+                ? DatabaseInitializer.GetConnection(userId, InventoryMode.Loots)
+                : DatabaseInitializer.GetConnection(
+                    userId,
+                    InventoryMode.Loots,
+                    serverKey: context.ServerKey,
+                    documentId: context.DocumentId,
+                    documentModule: context.Module,
+                    assignmentRole: context.Role);
+
+            Console.WriteLine($"[Loots] Using DB: {debugConn.DataSource}");
+            debugConn.Dispose();
 
             await _dialogs.ShowMessageAsync("✅ Import Complete", $"Successfully imported Loots data from {result.FileName}");
             await Shell.Current.GoToAsync(nameof(InventorizationByLootsPage));

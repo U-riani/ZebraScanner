@@ -36,11 +36,29 @@ namespace ZebraSCannerTest1.Core.Services
             // 💣 Delete and rebuild DB file to flush caches completely
             //var dbFile = Path.Combine(FileSystem.AppDataDirectory,
             //    mode == InventoryMode.Loots ? "zebraScanner_loots.db" : "zebraScanner_standard.db");
-            var dbFile = DatabaseInitializer.GetDatabasePath(userId, mode);
+            var context = SessionHelper.GetCurrentScanContext(mode);
+            var dbFile = context == null
+                ? DatabaseInitializer.GetDatabasePath(userId, mode)
+                : DatabaseInitializer.GetDatabasePath(
+                    userId,
+                    mode,
+                    serverKey: context.ServerKey,
+                    documentId: context.DocumentId,
+                    documentModule: context.Module,
+                    assignmentRole: context.Role);
+
             Console.WriteLine($"[SERVER IMPORT] ✅ DB at {dbFile} refreshed for {mode}");
 
             // 🔁 Force new connection globally
-            var newConn = DatabaseInitializer.GetConnection(userId, mode);
+            var newConn = context == null
+                ? DatabaseInitializer.GetConnection(userId, mode)
+                : DatabaseInitializer.GetConnection(
+                    userId,
+                    mode,
+                    serverKey: context.ServerKey,
+                    documentId: context.DocumentId,
+                    documentModule: context.Module,
+                    assignmentRole: context.Role);
             //DatabaseInitializer.Initialize(newConn, userId, mode, "prod");
 
             // Replace singleton connection in DI container (optional if needed)

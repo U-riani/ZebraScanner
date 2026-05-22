@@ -15,6 +15,7 @@ using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Core.Services;
 using ZebraSCannerTest1.Data;
+using ZebraSCannerTest1.Helpers;
 using ZebraSCannerTest1.Messages;
 using ZebraSCannerTest1.UI.Services;
 using ZebraSCannerTest1.UI.Views;
@@ -40,6 +41,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
     private string documentStatus;
 
     private string? _loadedFromStartStatus;
+    private string? _activeTransferRole;
 
     public bool ShowLoadDataButton =>
         IsStartStatus(CurrentStatus);
@@ -54,7 +56,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
     public bool ShowFinishScanningButton => ShowContinueButton;
 
- 
+
 
     private string CurrentStatus =>
     DocumentStatus?.Trim().ToLowerInvariant() ?? string.Empty;
@@ -164,12 +166,20 @@ public partial class InventorizationMenuViewModel : ObservableObject
         var status = DocumentStatus?.Trim().ToLowerInvariant();
 
         if (status is "waiting_to_start"
+            or "in_progress"
+            or "recount_requested"
+            or "recount_in_progress"
+            or "completed"
+            or "recount_completed"
             or "sender_in_progress"
             or "sender_recount_requested"
             or "sender_recount_in_progress"
             or "sender_completed"
             or "sender_recount_completed")
-            return "sender";
+        {
+            _activeTransferRole = "sender";
+            return _activeTransferRole;
+        }
 
         if (status is "waiting_receiver_to_start"
             or "receive_in_progress"
@@ -177,9 +187,36 @@ public partial class InventorizationMenuViewModel : ObservableObject
             or "receive_recount_in_progress"
             or "receive_completed"
             or "receive_recount_completed")
-            return "receiver";
+        {
+            _activeTransferRole = "receiver";
+            return _activeTransferRole;
+        }
 
-        return null;
+        return _activeTransferRole;
+    }
+
+    private string ResolveLocalScanRole()
+    {
+        if (string.Equals(ServerDbModule, "transfer", StringComparison.OrdinalIgnoreCase))
+            return ResolveTransferRole() ?? "sender";
+
+        return "worker";
+    }
+
+    private async Task EnsureLocalScanContextAsync()
+    {
+        if (DocumentId <= 0 || string.IsNullOrWhiteSpace(ServerDbModule))
+            return;
+
+        var localRole = ResolveLocalScanRole();
+
+        await SessionHelper.SetCurrentScanContextAsync(
+            DocumentId,
+            ServerDbModule,
+            Mode,
+            localRole);
+
+        Console.WriteLine($"[SCAN CONTEXT] user document DB context = {ServerDbModule}/{DocumentId}/{localRole}/{Mode}");
     }
 
 
@@ -211,6 +248,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
         try
         {
+            await EnsureLocalScanContextAsync();
+
             var token = await SecureStorage.GetAsync("token");
 
             if (string.IsNullOrWhiteSpace(token))
@@ -318,6 +357,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
     private async Task OnContinueAsync()
     {
+        await EnsureLocalScanContextAsync();
+
         var targetPage = Mode == InventoryMode.Loots
             ? nameof(InventorizationByLootsPage)
             : nameof(InventorizationPage);
@@ -330,6 +371,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
     {
         try
         {
+            await EnsureLocalScanContextAsync();
+
             Console.WriteLine("----DOcument is here amigo" + documentId);
             await _popup.ShowProgressAsync($"Calculating totals for {Mode}...");
             var (totalInitial, totalScanned, totalBarcodes, scannedBarcodes) =
@@ -368,6 +411,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
         bool popupOpened = false;
         try
         {
+            await EnsureLocalScanContextAsync();
+
             var choice = await Shell.Current.DisplayActionSheet(
                 $"Export {Mode} Data",
                 "Cancel", null,
@@ -380,13 +425,13 @@ public partial class InventorizationMenuViewModel : ObservableObject
             popupOpened = true;
 
 #if ANDROID
-        var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
-            Android.OS.Environment.DirectoryDownloads).AbsolutePath;
+            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
+                Android.OS.Environment.DirectoryDownloads).AbsolutePath;
 #else
             var path = FileSystem.AppDataDirectory;
 #endif
 
-            string extension =  "xlsx";
+            string extension = "xlsx";
             var fileName = $"{Mode}_{choice.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.{extension}";
             var fullPath = Path.Combine(path, fileName);
 
@@ -400,7 +445,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
                     await _exporter.ExportProductsAsync(fullPath, progress, Mode);
                 else if (choice == "Logs (Excel)")
                     await _logExporter.ExportLogsAsync(fullPath, progress, Mode);
-                
+
             });
 
 
@@ -608,6 +653,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
         try
         {
+            await EnsureLocalScanContextAsync();
+
             await _popup.ShowProgressAsync("Preparing import...");
             popupOpened = true;
 
@@ -695,6 +742,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
     private async Task OnTestDocLinesCommand()
     {
+        await EnsureLocalScanContextAsync();
+
         Console.WriteLine("++++++++++============");
 
         var token = await SecureStorage.GetAsync("token");
@@ -735,6 +784,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
         try
         {
+            await EnsureLocalScanContextAsync();
+
             var choice = await Shell.Current.DisplayActionSheet(
                 "Finish Scanning",
                 "Cancel", null,
@@ -894,6 +945,8 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
     public async Task RestoreLocalLoadedStatusAndRefreshAsync()
     {
+        await EnsureLocalScanContextAsync();
+
         var currentStatus = CurrentStatus;
 
         Console.WriteLine($"[LOCAL STATUS CHECK] Current DocumentStatus = '{DocumentStatus}'");

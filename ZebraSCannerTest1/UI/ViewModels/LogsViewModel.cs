@@ -24,7 +24,7 @@ public partial class LogsViewModel : ObservableObject
     private readonly LogBufferService _logBuffer;
     private readonly ClipboardService _clipboard;
 
-    [ObservableProperty] private bool isLoading;  
+    [ObservableProperty] private bool isLoading;
     [ObservableProperty] private InventoryMode mode = InventoryMode.Standard;
     [ObservableProperty] private string? boxId;
 
@@ -299,7 +299,16 @@ public partial class LogsViewModel : ObservableObject
                 var column = Mode == InventoryMode.Loots ? "Box_Id" : "Section";
 
                 int userId = await SessionHelper.GetCurrentUserIdAsync();
-                string dbPath = DatabaseInitializer.GetDatabasePath(userId, Mode);
+                var context = SessionHelper.GetCurrentScanContext(Mode);
+                string dbPath = context == null
+                    ? DatabaseInitializer.GetDatabasePath(userId, Mode)
+                    : DatabaseInitializer.GetDatabasePath(
+                        userId,
+                        Mode,
+                        serverKey: context.ServerKey,
+                        documentId: context.DocumentId,
+                        documentModule: context.Module,
+                        assignmentRole: context.Role);
 
                 using (var conn = new SqliteConnection($"Data Source={dbPath}"))
                 {
@@ -361,7 +370,7 @@ public partial class LogsViewModel : ObservableObject
     }
 
 
-    
+
     [RelayCommand]
     private async Task NextPage()
     {
@@ -408,5 +417,5 @@ public partial class LogsViewModel : ObservableObject
     }
 
 
-    
+
 }
