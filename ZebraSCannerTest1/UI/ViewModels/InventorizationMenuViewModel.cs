@@ -288,7 +288,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
             Console.WriteLine($"[LOAD DATA] Loaded from '{loadedFromStatus}' to '{DocumentStatus}'");
 
-            SaveLocalLoadedStatus(loadedFromStatus, DocumentStatus);
+            await SaveLocalLoadedStatusAsync(loadedFromStatus, DocumentStatus);
             RefreshButtonVisibility();
 
 
@@ -810,7 +810,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
             DocumentStatus = statusResult.assignment_status;
 
-            SaveLocalLoadedStatus(_loadedFromStartStatus, DocumentStatus);
+            await SaveLocalLoadedStatusAsync(_loadedFromStartStatus, DocumentStatus);
             RefreshButtonVisibility();
 
             _popup.Close();
@@ -845,7 +845,17 @@ public partial class InventorizationMenuViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowFinishScanningButton));
     }
 
-    private string? GetLocalLoadedStatusKey(string? startStatus)
+    private async Task<string> GetCurrentUserKeyAsync()
+    {
+        var userId = await SecureStorage.GetAsync("user_id");
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return "unknown-user";
+
+        return userId.Trim();
+    }
+
+    private async Task<string?> GetLocalLoadedStatusKeyAsync(string? startStatus)
     {
         if (DocumentId <= 0 || string.IsNullOrWhiteSpace(ServerDbModule))
             return null;
@@ -853,10 +863,14 @@ public partial class InventorizationMenuViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(startStatus))
             return null;
 
-        return $"document_loaded_status:{ServerDbModule}:{DocumentId}:{startStatus.Trim().ToLowerInvariant()}";
+        var userKey = await GetCurrentUserKeyAsync();
+        var normalizedModule = ServerDbModule.Trim().ToLowerInvariant();
+        var normalizedStartStatus = startStatus.Trim().ToLowerInvariant();
+
+        return $"document_loaded_status:{userKey}:{normalizedModule}:{DocumentId}:{normalizedStartStatus}";
     }
 
-    private void SaveLocalLoadedStatus(string? startStatus, string? activeStatus)
+    private async Task SaveLocalLoadedStatusAsync(string? startStatus, string? activeStatus)
     {
         if (string.IsNullOrWhiteSpace(startStatus) || string.IsNullOrWhiteSpace(activeStatus))
             return;
@@ -866,7 +880,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
         if (!IsStartStatus(normalizedStartStatus))
             return;
 
-        var key = GetLocalLoadedStatusKey(normalizedStartStatus);
+        var key = await GetLocalLoadedStatusKeyAsync(normalizedStartStatus);
 
         if (string.IsNullOrWhiteSpace(key))
             return;
@@ -878,7 +892,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
         Console.WriteLine($"[LOCAL STATUS SAVE] {key} = '{activeStatus}'");
     }
 
-    public void RestoreLocalLoadedStatusAndRefresh()
+    public async Task RestoreLocalLoadedStatusAndRefreshAsync()
     {
         var currentStatus = CurrentStatus;
 
@@ -886,7 +900,7 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
         if (IsStartStatus(currentStatus))
         {
-            var key = GetLocalLoadedStatusKey(currentStatus);
+            var key = await GetLocalLoadedStatusKeyAsync(currentStatus);
 
             if (!string.IsNullOrWhiteSpace(key))
             {
@@ -909,7 +923,6 @@ public partial class InventorizationMenuViewModel : ObservableObject
 
         RefreshButtonVisibility();
     }
-
 
 
 }

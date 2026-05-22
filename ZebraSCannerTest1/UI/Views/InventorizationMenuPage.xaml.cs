@@ -15,7 +15,7 @@ public partial class InventorizationMenuPage : ContentPage
 
         if (BindingContext is InventorizationMenuViewModel vm)
         {
-            vm.RestoreLocalLoadedStatusAndRefresh();
+            vm.RestoreLocalLoadedStatusAndRefreshAsync();
         }
     }
 }
