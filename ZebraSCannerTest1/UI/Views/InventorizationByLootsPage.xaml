@@ -28,6 +28,15 @@
                        FontSize="18"
                        HeightRequest="48" />
             </Frame>
+
+            <Button Text="SCAN NEW BOX"
+                    Command="{Binding OpenNewLootCommand}"
+                    BackgroundColor="#6D28D9"
+                    TextColor="White"
+                    CornerRadius="8"
+                    FontSize="16"
+                    FontAttributes="Bold"
+                    HeightRequest="48" />
         </VerticalStackLayout>
 
         <!-- Loots List -->

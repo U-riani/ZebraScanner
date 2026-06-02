@@ -22,6 +22,7 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand<string> OpenLootCommand { get; }
     public IRelayCommand ApplyFilterCommand { get; }
+    public IAsyncRelayCommand OpenNewLootCommand { get; }
 
 
     public InventorizationByLootsViewModel(ILootsProductRepository repo)
@@ -29,6 +30,7 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
         _repo = repo;
         RefreshCommand = new AsyncRelayCommand(LoadLootsAsync);
         OpenLootCommand = new AsyncRelayCommand<string>(OpenLootAsync);
+        OpenNewLootCommand = new AsyncRelayCommand(OpenNewLootAsync);
         ApplyFilterCommand = new RelayCommand(ApplyFilter);
 
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
@@ -51,7 +53,8 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
             var items = await _repo.GetAllAsync();
 
             var grouped = items
-                .GroupBy(p => p.Box_Id ?? "Unknown")
+                .Where(p => !string.IsNullOrWhiteSpace(p.Box_Id))
+                .GroupBy(p => p.Box_Id!.Trim())
                 .Select(g => new LootBoxSummary
                 {
                     Box_Id = g.Key,
@@ -112,19 +115,20 @@ public partial class InventorizationByLootsViewModel : ObservableObject, IDispos
         if (string.IsNullOrWhiteSpace(boxId))
             return;
 
-        // Navigate to main InventorizationPage but pass the boxId
-        var parameters = new Dictionary<string, object>
-        {
-            ["BoxId"] = boxId
-        };
-
         await Shell.Current.GoToAsync(nameof(LootsScanningPage), true,
             new Dictionary<string, object>
             {
-                ["BoxId"] = boxId
+                ["BoxId"] = boxId.Trim()
             });
+    }
 
-
+    private async Task OpenNewLootAsync()
+    {
+        await Shell.Current.GoToAsync(nameof(LootsScanningPage), true,
+            new Dictionary<string, object>
+            {
+                ["BoxId"] = string.Empty
+            });
     }
 
     public void Dispose()

@@ -152,8 +152,8 @@ namespace ZebraSCannerTest1.Core.Services
                 UpdatedAt = DateTime.UtcNow,
                 Section = _mode == InventoryMode.Loots ? null : CurrentSection,
                 Box_Id = _mode == InventoryMode.Loots
-        ? (!string.IsNullOrWhiteSpace(_currentBoxId) ? _currentBoxId : "Unassigned")
-        : null
+                    ? (!string.IsNullOrWhiteSpace(_currentBoxId) ? _currentBoxId : null)
+                    : null
             }, _mode == InventoryMode.Loots ? InventoryMode.Loots : InventoryMode.Standard);
 
 
@@ -181,8 +181,8 @@ namespace ZebraSCannerTest1.Core.Services
                 UpdatedAt = DateTime.UtcNow,
                 Section = _mode == InventoryMode.Loots ? null : CurrentSection,
                 Box_Id = _mode == InventoryMode.Loots
-        ? (!string.IsNullOrWhiteSpace(_currentBoxId) ? _currentBoxId : "Unassigned")
-        : null
+                    ? (!string.IsNullOrWhiteSpace(_currentBoxId) ? _currentBoxId : null)
+                    : null
             }, _mode == InventoryMode.Loots ? InventoryMode.Loots : InventoryMode.Standard);
 
 

@@ -6,6 +6,7 @@ using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
 using ZebraSCannerTest1.Messages;
+using ZebraSCannerTest1.Helpers;
 using ZebraSCannerTest1.UI.Services;
 using ZebraSCannerTest1.UI.Views;
 
@@ -26,6 +27,9 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string currentBoxId = string.Empty;
     [ObservableProperty] private string currentBarcode = string.Empty;
     [ObservableProperty] private string lastScannedBarcode = string.Empty;
+    [ObservableProperty] private string currentBoxDisplay = "No box selected";
+    [ObservableProperty] private string boxScanHint = "Scan a box ID first. Product scans start after a box is selected.";
+    [ObservableProperty] private bool isWaitingForBoxScan = true;
     [ObservableProperty] private bool isBusy;
 
     public ObservableCollection<ProductSlot> Slots { get; } =
@@ -36,11 +40,14 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand ShowResultsCommand { get; }
     public IAsyncRelayCommand GoToLogsCommand { get; }
     public IAsyncRelayCommand GoToScannedProductsCommand { get; }
-    public IAsyncRelayCommand GoToDetailsCommand { get; }
+    public IAsyncRelayCommand<ProductSlot> GoToDetailsCommand { get; }
+    public IRelayCommand ScanBoxCommand { get; }
+    public IAsyncRelayCommand SetBoxCommand { get; }
+    public IRelayCommand ClearBoxCommand { get; }
 
     public LootsScanningViewModel(
         IProductService productService,
-   
+
     IDialogService dialogs,                   // injected
     INavigationService navigation,
     ILoggerService<LootsScanningViewModel> logger,
@@ -48,7 +55,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     IScanningService scanningService)
     {
         _productService = productService;
-        
+
         _dialogs = dialogs;                        // ← you forgot this
         _navigation = navigation;
         _logger = logger;
@@ -58,7 +65,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         //_scanningService.StartAsync();
 
         AddProductCommand = new AsyncRelayCommand<string>(AddProductAsync);
-       
+
         ShowResultsCommand = new AsyncRelayCommand(ShowResultsAsync);
 
         GoToLogsCommand = new AsyncRelayCommand(() =>
@@ -78,11 +85,11 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
         GoToDetailsCommand = new AsyncRelayCommand<ProductSlot>(async slot =>
         {
-            if (slot == null || string.IsNullOrWhiteSpace(slot.Barcode))
+            if (slot == null || string.IsNullOrWhiteSpace(slot.Barcode) || string.IsNullOrWhiteSpace(CurrentBoxId))
                 return;
 
-            // Try load product from DB first
-            var product = await _productService.GetByBarcodeAsync(slot.Barcode, InventoryMode.Loots, currentBoxId);
+            // Try load product from DB first, scoped by the active transfer box.
+            var product = await _productService.GetByBarcodeAsync(slot.Barcode, InventoryMode.Loots, CurrentBoxId);
             if (product == null)
                 return;
 
@@ -103,6 +110,10 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
                 });
         });
 
+        ScanBoxCommand = new RelayCommand(EnableBoxScanMode);
+        SetBoxCommand = new AsyncRelayCommand(SetBoxManuallyAsync);
+        ClearBoxCommand = new RelayCommand(ClearCurrentBox);
+
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadRecentAsync());
     }
@@ -114,14 +125,13 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadRecentAsync());
 
-
         if (string.IsNullOrWhiteSpace(CurrentBoxId))
-        {
-            // Try to re-fetch it from Preferences or scanning service
-            CurrentBoxId = Preferences.Get("CurrentBoxId", string.Empty);
-        }
+            CurrentBoxId = Preferences.Get(GetCurrentBoxPreferenceKey(), string.Empty);
 
-        _scanningService.SetMode(InventoryMode.Loots, CurrentBoxId);
+        SetCurrentBox(CurrentBoxId);
+        IsWaitingForBoxScan = string.IsNullOrWhiteSpace(CurrentBoxId);
+        RefreshBoxHint();
+
         _scanningService.StartAsync();
 
         await LoadRecentAsync();
@@ -130,19 +140,19 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
     public async Task LoadRecentAsync()
     {
-        //if (string.IsNullOrWhiteSpace(CurrentBoxId))
-        //{
-        //    //await _dialogs.ShowMessageAsync("No Box Selected", "Please choose a loot box first.");
-        //    return;
-        //}
+        if (string.IsNullOrWhiteSpace(CurrentBoxId))
+        {
+            ClearSlots();
+            return;
+        }
 
-        var products = await _productService.GetProductsByBoxAsync(CurrentBoxId, InventoryMode.Loots);
+        var products = (await _productService.GetProductsByBoxAsync(CurrentBoxId, InventoryMode.Loots)).ToList();
 
         for (int i = 0; i < Slots.Count; i++)
         {
-            if (i < products.Count())
+            if (i < products.Count)
             {
-                var p = products.ElementAt(i);
+                var p = products[i];
                 Slots[i].Set(p.Barcode, p.ScannedQuantity, p.InitialQuantity);
             }
             else
@@ -153,62 +163,137 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     }
 
 
-    public Task AddProductAsync(string? barcode)
+    public async Task AddProductAsync(string? barcode)
     {
         if (string.IsNullOrWhiteSpace(barcode))
-            return Task.CompletedTask;
+            return;
+
+        var value = barcode.Trim();
 
         try
         {
-            if (string.IsNullOrWhiteSpace(CurrentBoxId))
+            if (IsWaitingForBoxScan || string.IsNullOrWhiteSpace(CurrentBoxId))
             {
-                Console.WriteLine("[WARN] BoxId missing during scan. Ignoring scan.");
-                return Task.CompletedTask;
+                SetCurrentBox(value);
+                IsWaitingForBoxScan = false;
+                CurrentBarcode = string.Empty;
+                LastScannedBarcode = $"Box: {value}";
+                RefreshBoxHint();
+                await LoadRecentAsync();
+                return;
             }
 
-            _scanningService.Enqueue(barcode.Trim());
-            CurrentBarcode = barcode.Trim();
-            LastScannedBarcode = barcode;
+            _scanningService.SetMode(InventoryMode.Loots, CurrentBoxId);
+            _scanningService.Enqueue(value);
+            CurrentBarcode = value;
+            LastScannedBarcode = value;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[ERROR] Loot scan failed: {ex}");
         }
-
-        return Task.CompletedTask;
     }
 
 
-//    public async Task ExportDataAsync()
-//    {
-//        try
-//        {
-//            await _popup.ShowProgressAsync("Exporting Loots data...");
-//#if ANDROID
-//            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
-//                Android.OS.Environment.DirectoryDownloads).AbsolutePath;
-//#else
-//            var path = FileSystem.AppDataDirectory;
-//#endif
-//            var file = Path.Combine(path, $"Loots_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx");
-//            var progress = new Progress<double>(p => _popup.UpdateMessage($"Progress {p:P0}"));
-//            await _exporter.ExportProductsAsync(file, progress, InventoryMode.Loots);
-//            _popup?.Close();
-//            if (_dialogs != null)
-//                await _dialogs.ShowMessageAsync("✅ Export Complete", $"Saved to: {file}");
-//            else
-//                Console.WriteLine($"[INFO] Export Complete (no dialog service). Saved to: {file}");
-//        }
-//        catch (Exception ex)
-//        {
-//            _popup?.Close();
-//            _logger.Error("Loots export failed", ex);
-//            if (_dialogs != null)
-//                await _dialogs.ShowMessageAsync("❌ Export Error", ex.Message);
-//            else
-//                Console.WriteLine($"[ERROR] Export Error: {ex}");
-//        }
-//    }
+    private string GetCurrentBoxPreferenceKey()
+    {
+        var context = SessionHelper.GetCurrentScanContext(InventoryMode.Loots);
+
+        var role = context.Role ?? "worker";
+
+        return $"CurrentLootBoxId_{context.ServerKey}_{context.Module}_{context.DocumentId}_{role}";
+    }
+
+    private void SetCurrentBox(string? boxId)
+    {
+        var normalized = string.IsNullOrWhiteSpace(boxId) ? string.Empty : boxId.Trim();
+        CurrentBoxId = normalized;
+        CurrentBoxDisplay = string.IsNullOrWhiteSpace(normalized) ? "No box selected" : normalized;
+
+        if (string.IsNullOrWhiteSpace(normalized))
+            Preferences.Remove(GetCurrentBoxPreferenceKey());
+        else
+            Preferences.Set(GetCurrentBoxPreferenceKey(), normalized);
+
+        _scanningService.SetMode(InventoryMode.Loots, string.IsNullOrWhiteSpace(normalized) ? null : normalized);
+        RefreshBoxHint();
+    }
+
+    private void EnableBoxScanMode()
+    {
+        IsWaitingForBoxScan = true;
+        CurrentBarcode = string.Empty;
+        BoxScanHint = "Next scan will be used as the Box ID.";
+    }
+
+    private async Task SetBoxManuallyAsync()
+    {
+        var boxId = await Shell.Current.DisplayPromptAsync(
+            "Set Box",
+            "Enter or scan Box ID:",
+            "Set",
+            "Cancel",
+            initialValue: CurrentBoxId);
+
+        if (string.IsNullOrWhiteSpace(boxId))
+            return;
+
+        SetCurrentBox(boxId);
+        IsWaitingForBoxScan = false;
+        await LoadRecentAsync();
+    }
+
+    private void ClearCurrentBox()
+    {
+        SetCurrentBox(string.Empty);
+        IsWaitingForBoxScan = true;
+        ClearSlots();
+    }
+
+    private void ClearSlots()
+    {
+        foreach (var slot in Slots)
+            slot.Set(string.Empty, 0, 0);
+    }
+
+    private void RefreshBoxHint()
+    {
+        BoxScanHint = string.IsNullOrWhiteSpace(CurrentBoxId) || IsWaitingForBoxScan
+            ? "Scan a box ID first. Product scans start after a box is selected."
+            : "Product scans will be saved under this box. Tap Scan Box before the next box.";
+    }
+
+
+    //    public async Task ExportDataAsync()
+    //    {
+    //        try
+    //        {
+    //            await _popup.ShowProgressAsync("Exporting Loots data...");
+    //#if ANDROID
+    //            var path = Android.OS.Environment.GetExternalStoragePublicDirectory(
+    //                Android.OS.Environment.DirectoryDownloads).AbsolutePath;
+    //#else
+    //            var path = FileSystem.AppDataDirectory;
+    //#endif
+    //            var file = Path.Combine(path, $"Loots_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx");
+    //            var progress = new Progress<double>(p => _popup.UpdateMessage($"Progress {p:P0}"));
+    //            await _exporter.ExportProductsAsync(file, progress, InventoryMode.Loots);
+    //            _popup?.Close();
+    //            if (_dialogs != null)
+    //                await _dialogs.ShowMessageAsync("✅ Export Complete", $"Saved to: {file}");
+    //            else
+    //                Console.WriteLine($"[INFO] Export Complete (no dialog service). Saved to: {file}");
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            _popup?.Close();
+    //            _logger.Error("Loots export failed", ex);
+    //            if (_dialogs != null)
+    //                await _dialogs.ShowMessageAsync("❌ Export Error", ex.Message);
+    //            else
+    //                Console.WriteLine($"[ERROR] Export Error: {ex}");
+    //        }
+    //    }
 
     private async Task ShowResultsAsync()
     {
@@ -229,7 +314,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         if (slot == null || string.IsNullOrEmpty(slot.Barcode))
             return;
 
-        var product = await _productService.GetByBarcodeAsync(slot.Barcode);
+        var product = await _productService.GetByBarcodeAsync(slot.Barcode, InventoryMode.Loots, CurrentBoxId);
         if (product == null)
             return;
 

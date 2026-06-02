@@ -20,15 +20,53 @@
             <!-- Current Box -->
             <Frame CornerRadius="8" Padding="14" HasShadow="True"
                    BorderColor="#D0D0D8" BackgroundColor="White"
-                   HorizontalOptions="Center" Margin="0,8,0,4">
-                <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
-                    <Label Text="📦" FontSize="22" VerticalOptions="Center" />
-                    <Label Text="{Binding CurrentBoxId}"
-                           FontSize="22"
-                           FontAttributes="Bold"
-                           TextColor="#6D28D9"
-                           VerticalOptions="Center" />
-                </HorizontalStackLayout>
+                   Margin="0,8,0,4">
+                <VerticalStackLayout Spacing="8">
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center" HorizontalOptions="Center">
+                        <Label Text="📦" FontSize="22" VerticalOptions="Center" />
+                        <Label Text="{Binding CurrentBoxDisplay}"
+                               FontSize="22"
+                               FontAttributes="Bold"
+                               TextColor="#6D28D9"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+
+                    <Label Text="{Binding BoxScanHint}"
+                           FontSize="13"
+                           TextColor="#555555"
+                           HorizontalTextAlignment="Center" />
+
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                        <Button Text="Scan Box"
+                                Command="{Binding ScanBoxCommand}"
+                                BackgroundColor="#6D28D9"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                FontSize="14"
+                                FontAttributes="Bold" />
+
+                        <Button Grid.Column="1"
+                                Text="Set Box"
+                                Command="{Binding SetBoxCommand}"
+                                BackgroundColor="#00A8CC"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                FontSize="14"
+                                FontAttributes="Bold" />
+
+                        <Button Grid.Column="2"
+                                Text="Clear"
+                                Command="{Binding ClearBoxCommand}"
+                                BackgroundColor="#555555"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                FontSize="14"
+                                FontAttributes="Bold" />
+                    </Grid>
+                </VerticalStackLayout>
             </Frame>
 
             <!-- Toolbar -->
@@ -65,7 +103,7 @@
             <Frame CornerRadius="8" Padding="4,0" HasShadow="True"
                    BorderColor="#00A8CC" BackgroundColor="White">
                 <Entry x:Name="lootBarcodeEntry"
-                       Placeholder="Scan barcode..."
+                       Placeholder="Scan box first, then product barcode..."
                        PlaceholderColor="#888888"
                        TextColor="#111111"
                        FontSize="18"

@@ -13,7 +13,6 @@ public partial class LootsScanningPage : ContentPage
         BindingContext = _vm = vm;
 
         lootBarcodeEntry.Loaded += (s, e) => FocusScannerEntry();
-        lootBarcodeEntry.Completed += OnBarcodeCompleted;
     }
 
     private async void OnBarcodeCompleted(object sender, EventArgs e)

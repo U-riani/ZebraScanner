@@ -1,8 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
+using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
 using ZebraSCannerTest1.Core.Models;
-using ZebraSCannerTest1.Data;
-using ZebraSCannerTest1.Core.Enums;
 
 namespace ZebraSCannerTest1.Infrastructure.Repositories
 {
@@ -15,9 +14,44 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             _db = db;
         }
 
-        private async  Task<SqliteConnection> Conn()
+        private async Task<SqliteConnection> Conn()
         {
             return await _db.Inventorization(InventoryMode.Loots);
+        }
+
+        private static string? NormalizeBoxId(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            return value.Trim();
+        }
+
+        private static object ToDbTextOrNull(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
+
+        private static Product ReadProduct(SqliteDataReader reader, string? overrideBoxId = null, bool zeroInitialForDynamicBox = false)
+        {
+            var product = new Product
+            {
+                Barcode = reader.GetString(0),
+                Box_Id = overrideBoxId ?? (reader.IsDBNull(1) ? null : reader.GetString(1)),
+                InitialQuantity = zeroInitialForDynamicBox ? 0 : Convert.ToInt32(reader.GetValue(2)),
+                ScannedQuantity = Convert.ToInt32(reader.GetValue(3)),
+                CreatedAt = DateTime.Parse(reader.GetString(4)),
+                UpdatedAt = DateTime.Parse(reader.GetString(5))
+            };
+
+            if (reader.FieldCount > 6)
+            {
+                product.Name = reader.IsDBNull(6) ? null : reader.GetString(6);
+                product.Color = reader.IsDBNull(7) ? null : reader.GetString(7);
+                product.Size = reader.IsDBNull(8) ? null : reader.GetString(8);
+                product.Price = reader.IsDBNull(9) ? null : reader.GetString(9);
+                product.ArticCode = reader.IsDBNull(10) ? null : reader.GetString(10);
+            }
+
+            return product;
         }
 
         public async Task AddAsync(LootProduct p)
@@ -39,32 +73,51 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("$sz", p.Size ?? "");
             cmd.Parameters.AddWithValue("$p", p.Price ?? "");
             cmd.Parameters.AddWithValue("$a", p.ArticCode ?? "");
-            cmd.Parameters.AddWithValue("$box", string.IsNullOrWhiteSpace(p.Box_Id) ? DBNull.Value : p.Box_Id);
+            cmd.Parameters.AddWithValue("$box", ToDbTextOrNull(p.Box_Id));
 
             await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task UpdateAsync(Product product)
         {
-
             using var conn = await Conn();
+            var normalizedBoxId = NormalizeBoxId(product.Box_Id);
 
             using var cmd = conn.CreateCommand();
-
-            cmd.CommandText = $@"
-                UPDATE LootsProducts
-                SET ScannedQuantity=$s, UpdatedAt=$u
-                WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)";
-           
+            cmd.CommandText = normalizedBoxId is null
+                ? @"
+                    UPDATE LootsProducts
+                    SET ScannedQuantity = $s, UpdatedAt = $u
+                    WHERE Barcode = $b AND (Box_Id IS NULL OR TRIM(Box_Id) = '')"
+                : @"
+                    UPDATE LootsProducts
+                    SET ScannedQuantity = $s, UpdatedAt = $u
+                    WHERE Barcode = $b AND Box_Id = $box";
 
             cmd.Parameters.AddWithValue("$s", product.ScannedQuantity);
             cmd.Parameters.AddWithValue("$u", product.UpdatedAt.ToString("o"));
             cmd.Parameters.AddWithValue("$b", product.Barcode);
+            if (normalizedBoxId is not null)
+                cmd.Parameters.AddWithValue("$box", normalizedBoxId);
 
-            
-                cmd.Parameters.AddWithValue("$box", product.Box_Id is null ? DBNull.Value : product.Box_Id);
+            var updated = await cmd.ExecuteNonQueryAsync();
+            if (updated > 0)
+                return;
 
-            await cmd.ExecuteNonQueryAsync();
+            await AddAsync(new LootProduct
+            {
+                Barcode = product.Barcode,
+                Box_Id = normalizedBoxId,
+                InitialQuantity = product.InitialQuantity,
+                ScannedQuantity = product.ScannedQuantity,
+                CreatedAt = product.CreatedAt == default ? DateTime.UtcNow : product.CreatedAt,
+                UpdatedAt = product.UpdatedAt == default ? DateTime.UtcNow : product.UpdatedAt,
+                Name = product.Name,
+                Color = product.Color,
+                Size = product.Size,
+                Price = product.Price?.ToString(),
+                ArticCode = product.ArticCode
+            });
         }
 
         public async Task<IEnumerable<LootProduct>> GetAllAsync()
@@ -79,7 +132,6 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             {
                 try
                 {
-                    // Defensive index resolution (in case table order changes)
                     int id = SafeGetOrdinal(r, "Id");
                     int barcode = SafeGetOrdinal(r, "Barcode");
                     int boxId = SafeGetOrdinal(r, "Box_Id");
@@ -112,7 +164,6 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
                 catch (Exception ex)
                 {
                     Console.WriteLine($"⚠️ LootsProduct row skipped due to mismatch: {ex.Message}");
-                    continue;
                 }
             }
 
@@ -121,65 +172,95 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
 
         public async Task<Product?> FindAsync(string barcode, string boxId)
         {
-
             using var conn = await Conn();
+            var normalizedBoxId = NormalizeBoxId(boxId);
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM LootsProducts WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)";
-
-            cmd.Parameters.AddWithValue("$b", barcode);
-
-            cmd.Parameters.AddWithValue("$box", boxId ?? (object)DBNull.Value);
-
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+            if (normalizedBoxId is not null)
             {
-                var product = new Product
-                {
-                    Barcode = reader.GetString(0),
-                    InitialQuantity = Convert.ToInt32(reader.GetValue(2)),
-                    ScannedQuantity = Convert.ToInt32(reader.GetValue(3)),
-                    CreatedAt = DateTime.Parse(reader.GetString(4)),
-                    UpdatedAt = DateTime.Parse(reader.GetString(5))
-                };
-                product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
+                using var exact = conn.CreateCommand();
+                exact.CommandText = @"
+                    SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
+                           Name, Color, Size, Price, ArticCode
+                    FROM LootsProducts
+                    WHERE Barcode = $b AND Box_Id = $box
+                    ORDER BY UpdatedAt DESC
+                    LIMIT 1";
+                exact.Parameters.AddWithValue("$b", barcode);
+                exact.Parameters.AddWithValue("$box", normalizedBoxId);
 
-                return product;
+                using var exactReader = await exact.ExecuteReaderAsync();
+                if (await exactReader.ReadAsync())
+                    return ReadProduct(exactReader);
             }
+
+            using var template = conn.CreateCommand();
+            template.CommandText = @"
+                SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
+                       Name, Color, Size, Price, ArticCode
+                FROM LootsProducts
+                WHERE Barcode = $b AND (Box_Id IS NULL OR TRIM(Box_Id) = '')
+                ORDER BY UpdatedAt DESC
+                LIMIT 1";
+            template.Parameters.AddWithValue("$b", barcode);
+
+            using var templateReader = await template.ExecuteReaderAsync();
+            if (await templateReader.ReadAsync())
+            {
+                return ReadProduct(
+                    templateReader,
+                    overrideBoxId: normalizedBoxId,
+                    zeroInitialForDynamicBox: normalizedBoxId is not null);
+            }
+
+            // Same dynamic-box fallback as ProductRepository: if the only local row is
+            // barcode + another Box_Id, use it as metadata for the current new box.
+            if (normalizedBoxId is not null)
+            {
+                using var anySameBarcode = conn.CreateCommand();
+                anySameBarcode.CommandText = @"
+                    SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
+                           Name, Color, Size, Price, ArticCode
+                    FROM LootsProducts
+                    WHERE Barcode = $b
+                    ORDER BY UpdatedAt DESC
+                    LIMIT 1";
+                anySameBarcode.Parameters.AddWithValue("$b", barcode);
+
+                using var anyReader = await anySameBarcode.ExecuteReaderAsync();
+                if (await anyReader.ReadAsync())
+                {
+                    return ReadProduct(
+                        anyReader,
+                        overrideBoxId: normalizedBoxId,
+                        zeroInitialForDynamicBox: true);
+                }
+            }
+
             return null;
         }
 
         public async Task<IEnumerable<Product>> GetByBoxAsync(string boxId)
         {
             var products = new List<Product>();
+            var normalizedBoxId = NormalizeBoxId(boxId);
+
+            if (normalizedBoxId is null)
+                return products;
 
             using var conn = await Conn();
-
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = $@"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
-              FROM LootsProducts
-              WHERE Box_Id = $box
-              ORDER BY UpdatedAt DESC"; 
+            cmd.CommandText = @"
+                SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
+                       Name, Color, Size, Price, ArticCode
+                FROM LootsProducts
+                WHERE Box_Id = $box
+                ORDER BY UpdatedAt DESC";
 
-            cmd.Parameters.AddWithValue("$box", boxId);
+            cmd.Parameters.AddWithValue("$box", normalizedBoxId);
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-            {
-                var product = new Product
-                {
-                    Barcode = reader.GetString(0),
-                    InitialQuantity = reader.GetInt32( 2 ),
-                    ScannedQuantity = reader.GetInt32( 3),
-                    CreatedAt = DateTime.Parse(reader.GetString( 4)),
-                    UpdatedAt = DateTime.Parse(reader.GetString( 5 ))
-                };
-
-
-                product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
-
-                products.Add(product);
-            }
+                products.Add(ReadProduct(reader));
 
             return products;
         }
@@ -187,25 +268,24 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
         public async Task<(int TotalInitial, int TotalScanned, int TotalBarcodes, int ScannedBarcodes)> GetInventoryStats(InventoryMode mode = InventoryMode.Loots)
         {
             using var conn = await Conn();
-
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-        SELECT 
-            COALESCE(SUM(InitialQuantity), 0),
-            COALESCE(SUM(ScannedQuantity), 0),
-            COUNT(*) AS TotalBarcodes,
-            SUM(CASE WHEN ScannedQuantity > 0 THEN 1 ELSE 0 END) AS ScannedBarcodes
-        FROM LootsProducts;";
+                SELECT
+                    COALESCE(SUM(CASE WHEN Box_Id IS NULL OR TRIM(Box_Id) = '' THEN InitialQuantity ELSE 0 END), 0),
+                    COALESCE(SUM(ScannedQuantity), 0),
+                    COUNT(*) AS TotalBarcodes,
+                    COALESCE(SUM(CASE WHEN ScannedQuantity > 0 THEN 1 ELSE 0 END), 0) AS ScannedBarcodes
+                FROM LootsProducts;";
 
             using var reader = cmd.ExecuteReader();
 
             if (reader.Read())
             {
                 return (
-                    reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                    reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
-                    reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
-                    reader.IsDBNull(3) ? 0 : reader.GetInt32(3)
+                    reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader.GetValue(0)),
+                    reader.IsDBNull(1) ? 0 : Convert.ToInt32(reader.GetValue(1)),
+                    reader.IsDBNull(2) ? 0 : Convert.ToInt32(reader.GetValue(2)),
+                    reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3))
                 );
             }
 
@@ -214,13 +294,12 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
 
         public async Task ClearAsync()
         {
-            using var conn =await Conn();
+            using var conn = await Conn();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "DELETE FROM LootsProducts;";
             await cmd.ExecuteNonQueryAsync();
         }
 
-        // --- Safety helpers ---
         private static int SafeGetOrdinal(SqliteDataReader r, string name)
         {
             try { return r.GetOrdinal(name); }
@@ -253,26 +332,17 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             using var conn = await Conn();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-        SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt
-        FROM LootsProducts
-        WHERE ScannedQuantity > 0
-        ORDER BY UpdatedAt DESC;";
+                SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
+                       Name, Color, Size, Price, ArticCode
+                FROM LootsProducts
+                WHERE ScannedQuantity > 0
+                  AND Box_Id IS NOT NULL
+                  AND TRIM(Box_Id) <> ''
+                ORDER BY UpdatedAt DESC;";
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-            {
-                var product = new Product
-                {
-                    Barcode = reader.GetString(0),
-                    Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1),
-                    InitialQuantity = reader.GetInt32(2),
-                    ScannedQuantity = reader.GetInt32(3),
-                    CreatedAt = DateTime.Parse(reader.GetString(4)),
-                    UpdatedAt = DateTime.Parse(reader.GetString(5))
-                };
-
-                products.Add(product);
-            }
+                products.Add(ReadProduct(reader));
 
             return products;
         }

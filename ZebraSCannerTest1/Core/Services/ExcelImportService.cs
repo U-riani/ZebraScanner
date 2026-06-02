@@ -91,10 +91,7 @@ namespace ZebraSCannerTest1.Core.Services
 
             int processed = 0;
             var now = DateTime.UtcNow.ToString("o");
-            int userId = await SessionHelper.GetCurrentUserIdAsync();
-
             using var conn = await _db.Inventorization(mode);
-            DatabaseInitializer.Initialize(conn, userId, mode, "prod");
 
             using var tx = conn.BeginTransaction();
 
@@ -160,7 +157,7 @@ namespace ZebraSCannerTest1.Core.Services
                 cmd.Parameters["$artic"].Value = row.ArticCode ?? "";
 
                 if (isLoots)
-                    cmd.Parameters["$box"].Value = row.Box_Id ?? "UnknownBox";
+                    cmd.Parameters["$box"].Value = string.IsNullOrWhiteSpace(row.Box_Id) ? DBNull.Value : row.Box_Id.Trim();
 
                 cmd.ExecuteNonQuery();
                 processed++;
@@ -170,6 +167,6 @@ namespace ZebraSCannerTest1.Core.Services
             Debug.WriteLine($"[IMPORT] Excel import done. Rows: {processed}");
         }
 
-    
+
     }
 }

@@ -92,7 +92,7 @@ namespace ZebraSCannerTest1.Core.Services
 
                     if (isLoots)
                     {
-                        insert.Parameters["$box"].Value = p.box_id ?? "UnknownBox";
+                        insert.Parameters["$box"].Value = string.IsNullOrWhiteSpace(p.box_id) ? DBNull.Value : p.box_id.Trim();
                     }
 
                     insert.ExecuteNonQuery();
@@ -246,9 +246,10 @@ namespace ZebraSCannerTest1.Core.Services
 
                     if (isLoots)
                     {
-                        insert.Parameters["$box"].Value =
-                            p.GetType().GetProperty("Box_Id")?.GetValue(p)?.ToString()?.Trim()
-                            ?? "UnknownBox";
+                        var importedBoxId = p.GetType().GetProperty("Box_Id")?.GetValue(p)?.ToString()?.Trim();
+                        insert.Parameters["$box"].Value = string.IsNullOrWhiteSpace(importedBoxId)
+                            ? DBNull.Value
+                            : importedBoxId;
                     }
 
                     insert.ExecuteNonQuery();
