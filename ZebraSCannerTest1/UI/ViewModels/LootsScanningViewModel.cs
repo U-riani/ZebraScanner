@@ -146,14 +146,21 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var products = (await _productService.GetProductsByBoxAsync(CurrentBoxId, InventoryMode.Loots)).ToList();
+        var products = (await _productService.GetLootBarcodeProgressByBoxAsync(CurrentBoxId)).ToList();
 
         for (int i = 0; i < Slots.Count; i++)
         {
             if (i < products.Count)
             {
                 var p = products[i];
-                Slots[i].Set(p.Barcode, p.ScannedQuantity, p.InitialQuantity);
+                Slots[i].SetProgress(
+                    barcode: p.Barcode,
+                    currentBoxScanned: p.CurrentBoxScannedQuantity,
+                    currentBoxExpected: p.CurrentBoxExpectedQuantity,
+                    barcodeTotalScanned: p.BarcodeTotalScannedQuantity,
+                    barcodeTotalExpected: p.BarcodeTotalExpectedQuantity,
+                    usesBarcodeTotalFallback: p.UsesBarcodeTotalFallback,
+                    hasKnownExpectedQuantity: p.UsesBarcodeTotalFallback || p.CurrentBoxExpectedQuantity > 0);
             }
             else
             {

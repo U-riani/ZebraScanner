@@ -118,9 +118,9 @@
             <Grid ColumnDefinitions="3*, 1.2*, 1.2*, 1.2*"
                   Padding="10,8" BackgroundColor="#EAEAF0">
                 <Label Text="Barcode" FontSize="14" FontAttributes="Bold" TextColor="#111111" />
-                <Label Text="Scanned" Grid.Column="1" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#555555" />
-                <Label Text="Initial"  Grid.Column="2" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#555555" />
-                <Label Text="Diff"     Grid.Column="3" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="End" TextColor="#555555" />
+                <Label Text="Box / Total" Grid.Column="1" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#555555" />
+                <Label Text="Expected"  Grid.Column="2" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#555555" />
+                <Label Text="Remain"     Grid.Column="3" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="End" TextColor="#555555" />
             </Grid>
 
             <!-- Dynamic Slots -->
@@ -136,15 +136,15 @@
                             <Grid ColumnDefinitions="3*, 1.2*, 1.2*, 1.2*">
                                 <Label Grid.Column="0" Text="{Binding Barcode}"
                                        FontSize="15" TextColor="#111111" VerticalOptions="Center" />
-                                <Label Grid.Column="1" Text="{Binding ScannedQuantity}"
+                                <Label Grid.Column="1" Text="{Binding ScannedDisplay}"
                                        FontSize="17" FontAttributes="Bold"
                                        HorizontalTextAlignment="Center"
                                        TextColor="#00A8CC" VerticalOptions="Center" />
-                                <Label Grid.Column="2" Text="{Binding InitialQuantity}"
+                                <Label Grid.Column="2" Text="{Binding InitialDisplay}"
                                        FontSize="15" HorizontalTextAlignment="Center"
                                        TextColor="#555555" VerticalOptions="Center" />
-                                <Label Grid.Column="3" Text="{Binding Difference}"
-                                       FontSize="17" FontAttributes="Bold"
+                                <Label Grid.Column="3" Text="{Binding DifferenceDisplay}"
+                                       FontSize="15" FontAttributes="Bold"
                                        HorizontalTextAlignment="End"
                                        TextColor="#111111" VerticalOptions="Center" />
                             </Grid>
