@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ZebraSCannerTest1.UI.Views.SalesPage"
+             xmlns:viewModel="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:converters="clr-namespace:ZebraSCannerTest1.UI.Converters"
+             Title="Sales"
+             BackgroundColor="#F5F5F7">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:SaleConverter x:Key="BgColor"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="14" Spacing="12"
+                             x:DataType="viewModel:SalesViewModel">
+
+            <!-- Barcode scanner entry -->
+            <Frame CornerRadius="8" Padding="4,0" HasShadow="True"
+                   BorderColor="#00A8CC" BackgroundColor="White">
+                <Entry
+                    Placeholder="Scan or Write Barcode"
+                    PlaceholderColor="#888888"
+                    TextColor="#111111"
+                    ClearButtonVisibility="WhileEditing"
+                    Text="{Binding Barcode}"
+                    x:Name="BarcodeEntry"
+                    FontSize="18"
+                    HeightRequest="52"
+                    ReturnType="Done">
+                    <Entry.Behaviors>
+                        <toolkit:EventToCommandBehavior
+                            EventName="Completed"
+                            Command="{Binding BarcodeCompletedCommand}"
+                            CommandParameter="{Binding Text, Source={x:Reference Name=BarcodeEntry}}" />
+                    </Entry.Behaviors>
+                </Entry>
+            </Frame>
+
+            <Label Text="Last Scanned"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="#555555"
+                   HorizontalTextAlignment="Center" />
+
+            <!-- Product info card -->
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <VerticalStackLayout Spacing="10">
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                        <Label Text="Barcode:" FontSize="17" TextColor="#555555"/>
+                        <Label Text="{Binding LastScannedBarcode}" TextColor="#00A8CC" FontSize="17" FontAttributes="Bold"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                        <Label Text="Artic code:" FontSize="17" TextColor="#555555"/>
+                        <Label Text="{Binding ArticCode}" TextColor="#111111" FontSize="17"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                        <Label Text="Name:" FontSize="17" TextColor="#555555"/>
+                        <Label Text="{Binding Name}" TextColor="#111111" FontSize="17"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                        <Label Text="Color:" FontSize="17" TextColor="#555555"/>
+                        <Label Text="{Binding Color}" TextColor="#111111" FontSize="17"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                        <Label Text="Size:" FontSize="17" TextColor="#555555"/>
+                        <Label Text="{Binding Size}" TextColor="#111111" FontSize="17"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                        <Label Text="Sale type:" FontSize="17" TextColor="#555555"/>
+                        <Label Text="{Binding SaleType}" TextColor="#6D28D9" FontSize="17" FontAttributes="Bold"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Old Price -->
+            <Frame CornerRadius="8" Padding="14,10" HasShadow="False"
+                   BorderColor="#D0D0D8" BackgroundColor="#F0F0F4">
+                <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                    <Label Text="Old Price:" FontSize="18" TextColor="#888888"/>
+                    <Label Text="{Binding OldPrice}" TextColor="#888888" FontSize="18"
+                           TextDecorations="Strikethrough"/>
+                </HorizontalStackLayout>
+            </Frame>
+
+            <!-- New Price — dynamic background from converter -->
+            <Frame CornerRadius="8" Padding="14,14" HasShadow="True"
+                   BorderColor="#D0D0D8"
+                   BackgroundColor="{Binding SaleType, Converter={StaticResource BgColor}}">
+                <HorizontalStackLayout HorizontalOptions="Center" Spacing="6">
+                    <Label Text="New Price:" FontSize="24" FontAttributes="Bold" TextColor="#111111"/>
+                    <Label Text="{Binding NewPrice}" FontSize="24" FontAttributes="Bold" TextColor="#00A8CC"/>
+                </HorizontalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

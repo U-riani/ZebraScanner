@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ZebraSCannerTest1.Views.Popups.ManualFilterPopup"
+             Title="Manual Filter"
+             BackgroundColor="#F5F5F7">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <Label Text="Filter Builder"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="#111111"
+                   HorizontalOptions="Center"
+                   Margin="0,12,0,4"/>
+
+            <!-- Field -->
+            <Label Text="Select Field" FontAttributes="Bold" FontSize="16" TextColor="#555555"/>
+            <Frame CornerRadius="8" Padding="4,0" HasShadow="False"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <Picker x:Name="FieldPicker"
+                        Title="Choose column"
+                        TextColor="#111111"
+                        BackgroundColor="Transparent"
+                        FontSize="16">
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Barcode</x:String>
+                            <x:String>ArticCode</x:String>
+                            <x:String>Name</x:String>
+                            <x:String>Color</x:String>
+                            <x:String>Size</x:String>
+                            <x:String>Price</x:String>
+                            <x:String>InitialQuantity</x:String>
+                            <x:String>ScannedQuantity</x:String>
+                            <x:String>UpdatedAt</x:String>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
+            </Frame>
+
+            <!-- Operator -->
+            <Label Text="Select Operator" FontAttributes="Bold" FontSize="16" TextColor="#555555"/>
+            <Frame CornerRadius="8" Padding="4,0" HasShadow="False"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <Picker x:Name="OperatorPicker"
+                        Title="Choose condition"
+                        TextColor="#111111"
+                        BackgroundColor="Transparent"
+                        FontSize="16">
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>=</x:String>
+                            <x:String>&gt;</x:String>
+                            <x:String>&lt;</x:String>
+                            <x:String>&gt;=</x:String>
+                            <x:String>&lt;=</x:String>
+                            <x:String>!=</x:String>
+                            <x:String>LIKE</x:String>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
+            </Frame>
+
+            <!-- Value -->
+            <Label Text="Enter Value" FontAttributes="Bold" FontSize="16" TextColor="#555555"/>
+            <Frame CornerRadius="8" Padding="4,0" HasShadow="False"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <Entry x:Name="ValueEntry"
+                       Placeholder="e.g. BLUE or 10"
+                       PlaceholderColor="#888888"
+                       TextColor="#111111"
+                       BackgroundColor="Transparent"
+                       FontSize="16"
+                       HeightRequest="48"/>
+            </Frame>
+
+            <Button Text="+ Add Condition"
+                    Clicked="OnAddConditionClicked"
+                    BackgroundColor="#00A8CC"
+                    TextColor="White"
+                    CornerRadius="8"
+                    FontAttributes="Bold"
+                    FontSize="16"
+                    HeightRequest="52"/>
+
+            <!-- Added conditions -->
+            <Frame Padding="12" BackgroundColor="White"
+                   CornerRadius="8" BorderColor="#D0D0D8" HasShadow="False">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Added Conditions"
+                           FontAttributes="Bold"
+                           FontSize="15"
+                           TextColor="#555555" />
+                    <CollectionView x:Name="ConditionsList" HeightRequest="120">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="4">
+                                    <Label Text="{Binding}"
+                                           TextColor="#6D28D9"
+                                           FontSize="15"/>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Action Buttons -->
+            <HorizontalStackLayout Spacing="10" Padding="0,6,0,0" HorizontalOptions="Center">
+                <Button Text="✓ Apply Filter"
+                        Clicked="OnApplyFilterClicked"
+                        BackgroundColor="#16A34A"
+                        TextColor="White"
+                        CornerRadius="8"
+                        FontAttributes="Bold"
+                        FontSize="16"
+                        WidthRequest="160"
+                        HeightRequest="52"/>
+                <Button Text="✕ Cancel"
+                        Clicked="OnCancelClicked"
+                        BackgroundColor="#DC2626"
+                        TextColor="White"
+                        CornerRadius="8"
+                        FontAttributes="Bold"
+                        FontSize="16"
+                        WidthRequest="130"
+                        HeightRequest="52"/>
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

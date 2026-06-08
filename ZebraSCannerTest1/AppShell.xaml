@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="ZebraSCannerTest1.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:ZebraSCannerTest1.UI.Views"
+    Shell.FlyoutBehavior="Disabled"
+    Shell.NavBarIsVisible="True"
+    Shell.BackgroundColor="#00A8CC"
+    Shell.TitleColor="White"
+    Shell.NavBarHasShadow="True"
+    Shell.FlyoutBackgroundColor="White">
+
+    <Shell.ToolbarItems>
+        <ToolbarItem Text="Settings"
+                 Order="Secondary"
+                 Priority="0"
+                 Command="{Binding OpenSettingsCommand}" />
+
+        <ToolbarItem Text="About"
+                 Order="Secondary"
+                 Priority="1"
+                 Command="{Binding OpenAboutCommand}" />
+
+        <ToolbarItem Text="Logout"
+                 Order="Secondary"
+                 Priority="2"
+                 Command="{Binding LogoutCommand}" />
+    </Shell.ToolbarItems>
+
+    <Shell.TitleView>
+        <HorizontalStackLayout Spacing="8" VerticalOptions="Center" HorizontalOptions="Center">
+            <Image Source="logo2.png" HeightRequest="28" WidthRequest="28" />
+            <Label Text="ScanMate"
+                   FontAttributes="Bold"
+                   FontSize="20"
+                   VerticalOptions="Center"
+                   TextColor="White" />
+        </HorizontalStackLayout>
+    </Shell.TitleView>
+
+    <FlyoutItem Title="Home" Icon="home.svg">
+        <ShellContent Route="Home" ContentTemplate="{DataTemplate views:HomePage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Loots Scanning" Icon="qrcode_viewfinder.svg">
+        <ShellContent Route="LootsScanning" ContentTemplate="{DataTemplate views:LootsScanningPage}" />
+    </FlyoutItem>
+
+    <TabBar>
+        <Tab Title="Scanning" Icon="qrcode_viewfinder.svg">
+            <ShellContent Route="LootsScanning" ContentTemplate="{DataTemplate views:LootsScanningPage}" />
+        </Tab>
+    </TabBar>
+
+</Shell>

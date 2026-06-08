@@ -1,0 +1,118 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             x:DataType="viewmodels:HomeViewModel"
+             x:Class="ZebraSCannerTest1.UI.Views.HomePage"
+             Title="Dashboard"
+             BackgroundColor="#F5F5F7">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <Frame Padding="20" CornerRadius="8" BackgroundColor="White"
+                BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToTasksCommand}" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="MY TASKS"
+               FontSize="22"
+               FontAttributes="Bold"
+               TextColor="#00A8CC"
+               HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory"
+               FontSize="16"
+               TextColor="#555555"
+               HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- INVENTORIZATION -->
+            <Frame IsVisible="{Binding InventorizationVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
+                   BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="INVENTORIZATION"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="#00A8CC"
+                           HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory"
+                           FontSize="16"
+                           TextColor="#555555"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- TRANSFER -->
+            <Frame     IsVisible="{Binding TransferVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
+                   BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="TRANSFER"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="#6D28D9"
+                           HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory"
+                           FontSize="16"
+                           TextColor="#555555"
+                           HorizontalOptions="Center" />
+                    <Label Text="Coming soon"
+                           FontSize="14"
+                           TextColor="#888888"
+                           HorizontalOptions="End"
+                           FontAttributes="Italic" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- RECEIVE -->
+            <Frame IsVisible="{Binding ReceiveVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
+                   BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToInventoryCommand}" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="RECEIVE"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="#6D28D9"
+                           HorizontalOptions="Center" />
+                    <Label Text="Scan and manage inventory"
+                           FontSize="16"
+                           TextColor="#555555"
+                           HorizontalOptions="Center" />
+                    <Label Text="Coming soon"
+                           FontSize="14"
+                           TextColor="#888888"
+                           HorizontalOptions="End"
+                           FontAttributes="Italic" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- SALES -->
+            <Frame  IsVisible="{Binding SalesVisible}" Padding="20" CornerRadius="8" BackgroundColor="White"
+                   BorderColor="#D0D0D8" HasShadow="True">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NavigateToSalesCommand}" />
+                </Frame.GestureRecognizers>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="SALES"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="#00A8CC"
+                           HorizontalOptions="Center" />
+                    <Label Text="Scan and check sales"
+                           FontSize="16"
+                           TextColor="#555555"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

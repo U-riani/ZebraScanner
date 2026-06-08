@@ -1,0 +1,335 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             xmlns:models="clr-namespace:ZebraSCannerTest1.Core.Models"
+             xmlns:converters="clr-namespace:ZebraSCannerTest1.UI.Converters"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="ZebraSCannerTest1.UI.Views.DetailsPage"
+             x:DataType="viewmodel:DetailsViewModel"
+             x:Name="DetailsRoot"
+             Title="Details"
+             BackgroundColor="#F5F5F7">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:ManualToColorConverter x:Key="ManualToColor" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:EnumEqualsConverter x:Key="EnumEqualsConverter" />
+            <converters:DifferenceToColorConverter x:Key="DifferenceToColorConverter" />
+            <converters:TruncateTextConverter x:Key="TruncateTextConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="14" Spacing="12">
+
+            <ActivityIndicator
+                IsRunning="{Binding IsLoading}"
+                IsVisible="{Binding IsLoading}"
+                Color="#00A8CC"
+                HorizontalOptions="Center" />
+
+            <!-- Barcode Card -->
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
+                    <Label Text="Barcode"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="#111111" />
+                    <Label Text="{Binding ProductBarcode}"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="#00A8CC"
+                           VerticalOptions="Center">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                                 CommandParameter="{Binding ProductBarcode}" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </HorizontalStackLayout>
+            </Frame>
+
+            <!-- Current Box (Loots only) -->
+            <Frame IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                   CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <HorizontalStackLayout Spacing="12">
+                    <Label Text="Current Box"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="#111111" />
+                    <Label Text="{Binding BoxId}"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="#6D28D9" >
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                         CommandParameter="{Binding BoxId}" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </HorizontalStackLayout>
+            </Frame>
+
+            <!-- In Boxes (Loots only) -->
+            <Frame IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                   CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="#F0F0F4">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="In Boxes"
+                           FontSize="17"
+                           FontAttributes="Bold"
+                           TextColor="#111111" />
+                    <Label Text="{Binding AllBoxesInfo}"
+                           FontSize="15"
+                           TextColor="#555555"
+                           LineBreakMode="WordWrap" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Product Details Card -->
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <VerticalStackLayout Spacing="10">
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Artic Code" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductArticCode}" FontSize="17" FontAttributes="Bold" TextColor="#111111">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                                     CommandParameter="{Binding ProductArticCode}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Name" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductName}" FontSize="17" FontAttributes="Bold" TextColor="#111111" >
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                    CommandParameter="{Binding ProductName}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Color" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductColor}" FontSize="17" FontAttributes="Bold" TextColor="#111111" >
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                    CommandParameter="{Binding ProductColor}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Size" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductSize}" FontSize="17" FontAttributes="Bold" TextColor="#111111" >
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                    CommandParameter="{Binding ProductSize}" />
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Price" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ProductPrice, StringFormat='{}{0} ₾'}"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="#00A8CC" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Totals & Quantities Card -->
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="#F0F0F4">
+                <VerticalStackLayout Spacing="10">
+
+                    <!-- Loots mode totals -->
+                    <VerticalStackLayout IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}" Spacing="8">
+                        <HorizontalStackLayout Spacing="10">
+                            <Label Text="Total Initial (all boxes)" FontSize="16" TextColor="#555555" />
+                            <Label Text="{Binding TotalInitialQuantity}" FontSize="18" FontAttributes="Bold" TextColor="#111111" />
+                        </HorizontalStackLayout>
+                        <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                            <Label Text="Total Scanned (all boxes)" FontSize="16" TextColor="#555555" VerticalOptions="Center" />
+                            <Frame CornerRadius="6" Padding="12,6" HasShadow="False" BorderColor="Transparent"
+                                   BackgroundColor="{Binding ScannedVsInitialDifference, Converter={StaticResource DifferenceToColorConverter}}">
+                                <Label Text="{Binding TotalScannedQuantity}" FontSize="18" FontAttributes="Bold" TextColor="#111111" />
+                            </Frame>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Initial Quantity" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding InitialQuantity}" FontSize="18" FontAttributes="Bold" TextColor="#111111" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Scanned Quantity" FontSize="16" TextColor="#555555" />
+                        <Label Text="{Binding ScannedQuantity}" FontSize="18" FontAttributes="Bold" TextColor="#111111" />
+                    </HorizontalStackLayout>
+
+                    <!-- Difference -->
+                    <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                        <Label Text="Difference" FontSize="16" TextColor="#555555" VerticalOptions="Center" />
+                        <Frame CornerRadius="6" Padding="12,6" HasShadow="False" BorderColor="Transparent"
+                               BackgroundColor="{Binding Difference, Converter={StaticResource DifferenceToColorConverter}}">
+                            <Label Text="{Binding Difference}" FontSize="19" FontAttributes="Bold" TextColor="#111111" />
+                        </Frame>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Action Buttons -->
+            <!-- old version when actions button was hide in stats page -->
+            <!-- <Frame IsVisible="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}" -->
+            <Frame 
+                   CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
+                    <Button Text="✎"
+                            Command="{Binding ManualEditCommand}"
+                            WidthRequest="64" HeightRequest="64"
+                            FontSize="26" CornerRadius="8"
+                            BackgroundColor="#6D28D9" TextColor="White" />
+                    <Button Text="−"
+                            Command="{Binding DecrementCommand}"
+                            WidthRequest="64" HeightRequest="64"
+                            FontSize="32" FontAttributes="Bold"
+                            CornerRadius="8"
+                            BackgroundColor="#DC2626" TextColor="White" />
+                    <Button Text="+"
+                            Command="{Binding IncrementCommand}"
+                            WidthRequest="64" HeightRequest="64"
+                            FontSize="32" FontAttributes="Bold"
+                            CornerRadius="8"
+                            BackgroundColor="#16A34A" TextColor="White" />
+                </HorizontalStackLayout>
+            </Frame>
+
+            <Button Text="Save Changes"
+                    Command="{Binding SaveCommand}"
+                    Margin="0,4,0,12"
+                    CornerRadius="8"
+                    HeightRequest="54"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    
+                    BackgroundColor="#00A8CC"
+                    TextColor="White" />
+
+            <!-- Logs Header -->
+            <Label Text="Scan / Edit History"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="#111111"
+                   Margin="4,8,4,4" />
+
+            <Frame CornerRadius="8" Padding="0" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White">
+                <VerticalStackLayout Spacing="0">
+
+                    <!-- Table Header -->
+                    <Grid ColumnDefinitions="3*, 40, 35, 40, 80, 60"
+                          Padding="12,10"
+                          BackgroundColor="#EAEAF0">
+                        <Label Text="Barcode" FontSize="14" FontAttributes="Bold" TextColor="#111111" />
+                        <Label Text="Was"   Grid.Column="1" FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
+                        <Label Text="IncBy" Grid.Column="2" FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
+                        <Label Text="Now"   Grid.Column="3" FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
+                        <Label Text="Sctn"
+                               Grid.Column="4"
+                               IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
+                               FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
+                        <Label Text="Box"
+                               Grid.Column="4"
+                               IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                               FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="Center" />
+                        <Label Text="Time" Grid.Column="5" FontSize="14" FontAttributes="Bold" TextColor="#555555" HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding Logs}"
+                                    HeightRequest="260"
+                                    VerticalScrollBarVisibility="Always">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ScanLog">
+                                <Border StrokeShape="RoundRectangle 0"
+                                        Stroke="Transparent"
+                                        StrokeThickness="0"
+                                        BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}"
+                                        Padding="12,8">
+                                    <Grid ColumnDefinitions="3*,40,30,40,80,60">
+                                        <Label Grid.Column="0" Text="{Binding Barcode}" FontSize="14" TextColor="#111111" >
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding CopyBarcodeCommand}"
+                                                    CommandParameter="{Binding Barcode}" />
+                                            </Label.GestureRecognizers>
+                                        </Label>
+                                        <Label Grid.Column="1" Text="{Binding Was}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#555555" />
+                                        <Label Grid.Column="2" Text="{Binding IncrementBy}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#00A8CC" FontAttributes="Bold" />
+                                        <Label Grid.Column="3" Text="{Binding IsValue}" HorizontalTextAlignment="Center" FontSize="14" TextColor="#111111" />
+                                        <Label x:Name="SectionValueLabel"
+                                               Grid.Column="4"
+                                               Text="{Binding Section, Converter={StaticResource TruncateTextConverter}, ConverterParameter=7}"
+                                               IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Standard}"
+                                               HorizontalTextAlignment="Center"
+                                               FontSize="14"
+                                               TextColor="#6D28D9"
+                                               LineBreakMode="NoWrap"
+                                               MaxLines="1">
+
+                                            <!-- Single tap = copy full Section value -->
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                    Command="{Binding BindingContext.CopyBarcodeCommand, Source={x:Reference DetailsRoot}}"
+                                                    CommandParameter="{Binding Section}" />
+                                            </Label.GestureRecognizers>
+
+                                            <!-- Long press = show full Section value -->
+                                            <Label.Behaviors>
+                                                <toolkit:TouchBehavior
+                                                    BindingContext="{Binding Source={x:Reference SectionValueLabel}, Path=BindingContext}"
+                                                    LongPressDuration="500"
+                                                    LongPressCommand="{Binding BindingContext.ShowFullValueCommand, Source={x:Reference DetailsRoot}}"
+                                                    LongPressCommandParameter="{Binding Section}" />
+                                            </Label.Behaviors>
+                                        </Label>
+                                        <Label x:Name="BoxValueLabel"
+                                               Grid.Column="4"
+                                               Text="{Binding Box_Id, Converter={StaticResource TruncateTextConverter}, ConverterParameter=7}"
+                                               IsVisible="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:DetailsViewModel}}, Path=CurrentMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Loots}"
+                                               HorizontalTextAlignment="Center"
+                                               FontSize="14"
+                                               TextColor="#6D28D9"
+                                               LineBreakMode="NoWrap"
+                                               MaxLines="1">
+
+                                            <!-- Single tap = copy full Box_Id value -->
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer
+                                                        Command="{Binding BindingContext.CopyBarcodeCommand, Source={x:Reference DetailsRoot}}"
+                                                        CommandParameter="{Binding Box_Id}" />
+                                            </Label.GestureRecognizers>
+
+                                            <!-- Long press = show full Box_Id value -->
+                                            <Label.Behaviors>
+                                                <toolkit:TouchBehavior
+                                                        BindingContext="{Binding Source={x:Reference BoxValueLabel}, Path=BindingContext}"
+                                                        LongPressDuration="500"
+                                                        LongPressCommand="{Binding BindingContext.ShowFullValueCommand, Source={x:Reference DetailsRoot}}"
+                                                        LongPressCommandParameter="{Binding Box_Id}" />
+                                            </Label.Behaviors>
+                                        </Label>
+                                        <Label Grid.Column="5"
+                                               Text="{Binding UpdatedAt, StringFormat='{0:dd/MM HH:mm:ss}'}"
+                                               FontSize="13"
+                                               TextColor="#888888"
+                                               HorizontalTextAlignment="End" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

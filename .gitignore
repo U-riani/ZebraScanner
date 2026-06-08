@@ -1,0 +1,25 @@
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+
+
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Android signing / secrets
+*.keystore
+*.jks
+*.p12
+
+# Environment / secrets
+.env

@@ -1,0 +1,46 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ZebraSCannerTest1.UI.Views.InventoryMenuPage"
+             Title="Inventory Menu"
+             BackgroundColor="#F5F5F7">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12" VerticalOptions="Center">
+
+            <Label Text="Inventory"
+                   FontSize="26"
+                   FontAttributes="Bold"
+                   TextColor="#111111"
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,12" />
+
+            <Button Text="LOOTS"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    BackgroundColor="#00A8CC"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="60"
+                    Clicked="OnLootsClicked"/>
+
+            <Button Text="BARCODES"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    BackgroundColor="#6D28D9"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="60"
+                    Clicked="OnBarcodesClicked"/>
+
+            <Button Text="COMBOS"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    BackgroundColor="#6D28D9"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="60"
+                    Clicked="OnCombosClicked"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- ═══════════════════════════════════════════
+         HIGH CONTRAST LIGHT — Warehouse / Zebra TC21
+    ═══════════════════════════════════════════ -->
+
+    <!-- Backgrounds -->
+    <Color x:Key="PageBg">#F5F5F7</Color>
+    <Color x:Key="CardBg">White</Color>
+    <Color x:Key="SurfaceAlt">#EAEAF0</Color>
+    <Color x:Key="DividerColor">#D0D0D8</Color>
+
+    <!-- Accents -->
+    <Color x:Key="PrimaryAccent">#00A8CC</Color>
+    <Color x:Key="PrimaryDark">#007FA0</Color>
+    <Color x:Key="SecondaryAccent">#6D28D9</Color>
+    <Color x:Key="SecondaryDark">#4C1D95</Color>
+
+    <!-- Text -->
+    <Color x:Key="TextPrimary">#111111</Color>
+    <Color x:Key="TextSecondary">#555555</Color>
+    <Color x:Key="TextMuted">#888888</Color>
+    <Color x:Key="TextOnAccent">White</Color>
+
+    <!-- Status -->
+    <Color x:Key="SuccessColor">#16A34A</Color>
+    <Color x:Key="SuccessBg">#DCFCE7</Color>
+    <Color x:Key="ErrorColor">#DC2626</Color>
+    <Color x:Key="ErrorBg">#FEE2E2</Color>
+    <Color x:Key="WarningColor">#D97706</Color>
+    <Color x:Key="WarningBg">#FEF3C7</Color>
+
+    <!-- Legacy keys (kept for compatibility) -->
+    <Color x:Key="Primary">#00A8CC</Color>
+    <Color x:Key="PrimaryDarkColor">#007FA0</Color>
+    <Color x:Key="PrimaryDarkText">#111111</Color>
+    <Color x:Key="Secondary">#6D28D9</Color>
+    <Color x:Key="SecondaryDarkText">White</Color>
+    <Color x:Key="Tertiary">#4C1D95</Color>
+    <Color x:Key="White">White</Color>
+    <Color x:Key="Black">#111111</Color>
+    <Color x:Key="Magenta">#9333EA</Color>
+    <Color x:Key="MidnightBlue">#1E1B4B</Color>
+    <Color x:Key="OffBlack">#1F1F1F</Color>
+
+    <Color x:Key="Gray100">#F0F0F4</Color>
+    <Color x:Key="Gray200">#E0E0E8</Color>
+    <Color x:Key="Gray300">#C8C8D4</Color>
+    <Color x:Key="Gray400">#A0A0B0</Color>
+    <Color x:Key="Gray500">#707080</Color>
+    <Color x:Key="Gray600">#505060</Color>
+    <Color x:Key="Gray900">#222230</Color>
+    <Color x:Key="Gray950">#111118</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryAccent}"/>
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryAccent}"/>
+    <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
+    <SolidColorBrush x:Key="WhiteBrush" Color="White"/>
+    <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
+    <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>
+    <SolidColorBrush x:Key="Gray300Brush" Color="{StaticResource Gray300}"/>
+    <SolidColorBrush x:Key="Gray400Brush" Color="{StaticResource Gray400}"/>
+    <SolidColorBrush x:Key="Gray500Brush" Color="{StaticResource Gray500}"/>
+    <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
+    <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
+    <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
+
+</ResourceDictionary>

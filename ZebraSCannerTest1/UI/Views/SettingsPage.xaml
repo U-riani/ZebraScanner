@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             x:Class="ZebraSCannerTest1.UI.Views.SettingsPage"
+             x:DataType="viewmodels:SettingsViewModel"
+             Title="Settings"
+             BackgroundColor="#F5F5F7">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <Label Text="Settings"
+                   FontSize="26"
+                   FontAttributes="Bold"
+                   TextColor="#111111"
+                   HorizontalOptions="Center"
+                   Margin="0,16,0,4" />
+
+            <Label Text="App version: 1.0.0"
+                   FontSize="16"
+                   TextColor="#888888"
+                   HorizontalOptions="Center" />
+
+            <!-- Loots tools card -->
+            <Frame CornerRadius="8" Padding="16" HasShadow="True"
+                   BorderColor="#D0D0D8" BackgroundColor="White"
+                   IsVisible="{Binding IsLootsMode}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Tools"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="#555555"
+                           HorizontalOptions="Center" />
+                    <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                        <Button Text="📊 Stats"
+                                Command="{Binding GoToScannedProductsCommand}"
+                                CornerRadius="8"
+                                HeightRequest="52"
+                                FontSize="16"
+                                BackgroundColor="#00A8CC"
+                                TextColor="White" />
+                        <Button Text="📋 Logs"
+                                Command="{Binding GoToLogsCommand}"
+                                CornerRadius="8"
+                                HeightRequest="52"
+                                FontSize="16"
+                                BackgroundColor="#555555"
+                                TextColor="White" />
+                        <Button Text="📈 Results"
+                                Command="{Binding ShowResultsCommand}"
+                                CornerRadius="8"
+                                HeightRequest="52"
+                                FontSize="16"
+                                BackgroundColor="#6D28D9"
+                                TextColor="White" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Button Text="Back"
+                    Command="{Binding BackCommand}"
+                    CornerRadius="8"
+                    HeightRequest="54"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    BackgroundColor="#DC2626"
+                    TextColor="White"
+                    HorizontalOptions="Center"
+                    Margin="0,12,0,0" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

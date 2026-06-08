@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ZebraSCannerTest1.UI.Views.InventorizationByLootsMenuPage"
+             Title="Loots Menu"
+             BackgroundColor="#F5F5F7">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12" VerticalOptions="Center">
+
+            <Label Text="Loots Inventorization"
+                   FontSize="26"
+                   FontAttributes="Bold"
+                   TextColor="#111111"
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,12" />
+
+            <Button Text="CONTINUE"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#16A34A" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding NavigateToContinueCommand}"/>
+
+            <Button Text="RESULT"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#00A8CC" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding NavigateToResultCommand}"/>
+
+            <Button Text="EXPORT"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#6D28D9" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding ExportLootsCommand}"/>
+
+            <Button Text="IMPORT"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#D97706" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding ImportLootsCommand}"/>
+
+            <Button Text="CLEAR"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#DC2626" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding ClearResultCommand}"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

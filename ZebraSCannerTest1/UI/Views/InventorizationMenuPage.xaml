@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ZebraSCannerTest1.UI.Views.InventorizationMenuPage"
+             xmlns:viewmodels="clr-namespace:ZebraSCannerTest1.UI.ViewModels"
+             Title="Inventorization"
+             BackgroundColor="#F5F5F7">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12" VerticalOptions="Center">
+
+            <Label Text="Inventorization"
+                   FontSize="26"
+                   FontAttributes="Bold"
+                   TextColor="#111111"
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,12" />
+
+            <Button Text="START"
+                FontSize="20" FontAttributes="Bold"
+                BackgroundColor="#F4C430" TextColor="White"
+                CornerRadius="8" HeightRequest="60"
+                Command="{Binding LoadDataFromServerCommand}"
+                IsVisible="{Binding ShowLoadDataButton}"/>
+            
+            <Button Text="CONTINUE"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#009E60" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding NavigateToContinueCommand}"
+                    IsVisible="{Binding ShowContinueButton}"/>
+
+           
+
+            <Button Text="EXPORT"
+                    FontSize="20" FontAttributes="Bold"
+                    BackgroundColor="#4169E1" TextColor="White"
+                    CornerRadius="8" HeightRequest="60"
+                    Command="{Binding ExportCommand}"
+                    IsVisible="{Binding ShowContinueButton}"/>
+
+            <Button Text="FINISH SCANNING"
+                FontSize="20"
+                FontAttributes="Bold"
+                BackgroundColor="#E34234"
+                TextColor="White"
+                CornerRadius="8"
+                HeightRequest="60"
+                Command="{Binding FinishScanningCommand}"
+                IsVisible="{Binding ShowFinishScanningButton}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
