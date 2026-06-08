@@ -14,99 +14,72 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <Grid Padding="12" RowSpacing="10" RowDefinitions="Auto,Auto,Auto,Auto,*">
+    <Grid Padding="10" RowSpacing="5" RowDefinitions="Auto,Auto,Auto,Auto,*">
         <!-- Toolbar -->
         <HorizontalStackLayout Grid.Row="0"
-                        Spacing="8"
-                        Padding="4"
-                        HorizontalOptions="CenterAndExpand">
+                               Spacing="8"
+                               Padding="1"
+                               HorizontalOptions="CenterAndExpand">
             <Button Text="Stats"
-             Command="{Binding GoToScannedProductsCommand}"
-             BackgroundColor="#00A8CC"
-             TextColor="White"
-             CornerRadius="8"
-             HeightRequest="48"
-             FontSize="16"
-             FontAttributes="Bold" />
+                    Command="{Binding GoToScannedProductsCommand}"
+                    BackgroundColor="#00A8CC"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="48"
+                    FontSize="16"
+                    FontAttributes="Bold" />
 
             <Button Text="Logs"
-             Command="{Binding GoToLogsCommand}"
-             BackgroundColor="#555555"
-             TextColor="White"
-             CornerRadius="8"
-             HeightRequest="48"
-             FontSize="16"
-             FontAttributes="Bold" />
+                    Command="{Binding GoToLogsCommand}"
+                    BackgroundColor="#555555"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="48"
+                    FontSize="16"
+                    FontAttributes="Bold" />
 
             <Button Text="Results"
-             Command="{Binding ShowResultsCommand}"
-             BackgroundColor="#6D28D9"
-             TextColor="White"
-             CornerRadius="8"
-             HeightRequest="48"
-             FontSize="16"
-             FontAttributes="Bold" />
+                    Command="{Binding ShowResultsCommand}"
+                    BackgroundColor="#6D28D9"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="48"
+                    FontSize="16"
+                    FontAttributes="Bold" />
 
-            <Button Grid.Column="1"
-        Text="Set Box"
-        Command="{Binding SetBoxCommand}"
-        BackgroundColor="#00A8CC"
-        TextColor="White"
-        CornerRadius="8"
-        HeightRequest="44"
-        FontSize="14"
-        FontAttributes="Bold" />
+            <Button Text="Set Box"
+                    Clicked="OnSetBoxClicked"
+                    BackgroundColor="OrangeRed"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="44"
+                    FontSize="14"
+                    FontAttributes="Bold" />
         </HorizontalStackLayout>
-        
+
         <!-- Current Box -->
         <Frame Grid.Row="1"
                CornerRadius="8"
-               Padding="14"
+               Padding="5"
                HasShadow="False"
                BorderColor="#D0D0D8"
                BackgroundColor="White"
-               Margin="0,8,0,4">
-            <VerticalStackLayout Spacing="8">
-                <HorizontalStackLayout Spacing="10" VerticalOptions="Center" HorizontalOptions="Center">
-                    <Label Text="📦" FontSize="22" VerticalOptions="Center" />
-                    <Label Text="{Binding CurrentBoxDisplay}"
-                           FontSize="22"
-                           FontAttributes="Bold"
-                           TextColor="#6D28D9"
-                           VerticalOptions="Center" />
-                </HorizontalStackLayout>
-
-                <Label Text="{Binding BoxScanHint}"
-                       FontSize="13"
-                       TextColor="#555555"
-                       HorizontalTextAlignment="Center" />
-
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                    <Button Text="Scan Box"
-                            Command="{Binding ScanBoxCommand}"
-                            BackgroundColor="#6D28D9"
-                            TextColor="White"
-                            CornerRadius="8"
-                            HeightRequest="44"
-                            FontSize="14"
-                            FontAttributes="Bold" />
-
-                    
-
-                    <Button Grid.Column="2"
-                            Text="Clear"
-                            Command="{Binding ClearBoxCommand}"
-                            BackgroundColor="#555555"
-                            TextColor="White"
-                            CornerRadius="8"
-                            HeightRequest="44"
-                            FontSize="14"
-                            FontAttributes="Bold" />
-                </Grid>
-            </VerticalStackLayout>
+               Margin="0,2,0,4">
+            <HorizontalStackLayout Spacing="10"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center">
+                <Label Text="📦"
+                       FontSize="22"
+                       VerticalOptions="Center"
+                       VerticalTextAlignment="Center" />
+                <Label Text="{Binding CurrentBoxDisplay}"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       TextColor="#6D28D9"
+                       VerticalOptions="Center"
+                       VerticalTextAlignment="Center" />
+            </HorizontalStackLayout>
         </Frame>
-
-       
 
         <!-- Barcode Scanner Input -->
         <Frame Grid.Row="2"
@@ -122,57 +95,107 @@
                    FontSize="18"
                    HeightRequest="52"
                    ReturnType="Done"
-                   ClearButtonVisibility="WhileEditing"
+                   ClearButtonVisibility="Never"
                    Text="{Binding CurrentBarcode}"
                    Completed="OnBarcodeCompleted" />
         </Frame>
 
         <!-- Table Header -->
         <Grid Grid.Row="3"
-              ColumnDefinitions="3*, 1.2*, 1.2*, 1.2*"
-              Padding="10,8"
+              ColumnDefinitions="3*,1.3*,1.3*,1*"
+              Padding="5,8"
               BackgroundColor="#EAEAF0">
-            <Label Text="Barcode" FontSize="14" FontAttributes="Bold" TextColor="#111111" />
-            <Label Text="Box / Total" Grid.Column="1" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#555555" />
-            <Label Text="Expected"  Grid.Column="2" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center" TextColor="#555555" />
-            <Label Text="Remain"     Grid.Column="3" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="End" TextColor="#555555" />
+            <Label Text="Barcode"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   TextColor="#111111"
+                   VerticalTextAlignment="Center" />
+            <Label Text="Box/Total"
+                   Grid.Column="1"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center"
+                   TextColor="#555555" />
+            <Label Text="Expected"
+                   Grid.Column="2"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center"
+                   TextColor="#555555" />
+            <Label Text="Remain"
+                   Grid.Column="3"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="End"
+                   VerticalTextAlignment="Center"
+                   TextColor="#555555" />
         </Grid>
 
         <!-- Dynamic Slots -->
         <CollectionView Grid.Row="4"
                         ItemsSource="{Binding Slots}"
                         VerticalScrollBarVisibility="Always"
+                        SelectionMode="None"
                         ItemSizingStrategy="MeasureFirstItem">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Frame CornerRadius="6"
-                           Padding="10"
+                           Padding="8,6"
                            Margin="0,3"
                            HasShadow="False"
                            BorderColor="#D0D0D8"
                            BackgroundColor="{Binding Difference, Converter={StaticResource DiffToColor}}">
-
-                        <Grid ColumnDefinitions="3*, 1.2*, 1.2*, 1.2*">
-                            <Label Grid.Column="0" Text="{Binding Barcode}"
-                                   FontSize="15" TextColor="#111111" VerticalOptions="Center" />
-                            <Label Grid.Column="1" Text="{Binding ScannedDisplay}"
-                                   FontSize="17" FontAttributes="Bold"
-                                   HorizontalTextAlignment="Center"
-                                   TextColor="#00A8CC" VerticalOptions="Center" />
-                            <Label Grid.Column="2" Text="{Binding InitialDisplay}"
-                                   FontSize="15" HorizontalTextAlignment="Center"
-                                   TextColor="#555555" VerticalOptions="Center" />
-                            <Label Grid.Column="3" Text="{Binding DifferenceDisplay}"
-                                   FontSize="15" FontAttributes="Bold"
-                                   HorizontalTextAlignment="End"
-                                   TextColor="#111111" VerticalOptions="Center" />
-                        </Grid>
 
                         <Frame.GestureRecognizers>
                             <TapGestureRecognizer
                                 Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:LootsScanningViewModel}}, Path=GoToDetailsCommand}"
                                 CommandParameter="{Binding .}" />
                         </Frame.GestureRecognizers>
+
+                        <Grid ColumnDefinitions="3*,1.2*,1.2*,1.2*"
+                              HeightRequest="34"
+                              VerticalOptions="Center"
+                              InputTransparent="True">
+                            <Label Grid.Column="0"
+                                   Text="{Binding Barcode}"
+                                   FontSize="15"
+                                   TextColor="#111111"
+                                   VerticalOptions="Center"
+                                   VerticalTextAlignment="Center"
+                                   LineBreakMode="TailTruncation"
+                                   MaxLines="1" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding ScannedDisplay}"
+                                   FontSize="17"
+                                   FontAttributes="Bold"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="#00A8CC"
+                                   VerticalOptions="Center"
+                                   LineBreakMode="TailTruncation"
+                                   MaxLines="1" />
+                            <Label Grid.Column="2"
+                                   Text="{Binding InitialDisplay}"
+                                   FontSize="15"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="#555555"
+                                   VerticalOptions="Center"
+                                   LineBreakMode="TailTruncation"
+                                   MaxLines="1" />
+                            <Label Grid.Column="3"
+                                   Text="{Binding DifferenceDisplay}"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   HorizontalTextAlignment="End"
+                                   VerticalTextAlignment="Center"
+                                   TextColor="#111111"
+                                   VerticalOptions="Center"
+                                   LineBreakMode="TailTruncation"
+                                   MaxLines="1" />
+                        </Grid>
                     </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>

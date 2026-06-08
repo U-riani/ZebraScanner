@@ -113,7 +113,8 @@ public partial class InventorizationByLootsViewModel : ObservableObject
         await Shell.Current.GoToAsync(nameof(LootsScanningPage), false,
             new Dictionary<string, object>
             {
-                ["BoxId"] = string.Empty
+                ["BoxId"] = string.Empty,
+                ["OpenSetBox"] = true
             });
     }
 

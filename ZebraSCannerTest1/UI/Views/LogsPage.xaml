@@ -15,20 +15,20 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <VerticalStackLayout Padding="4" Spacing="0">
+    <VerticalStackLayout Padding="2" Spacing="0">
 
         <!-- Filter Toolbar -->
-        <HorizontalStackLayout HorizontalOptions="Center" Padding="6" Spacing="8"
+        <HorizontalStackLayout HorizontalOptions="Center" Padding="2, 0,2,3" Spacing="8"
                                BackgroundColor="#F5F5F7">
             <Button Text="Barcode"     Command="{Binding FilterByBarcodeCommand}"
                     BackgroundColor="#00A8CC" TextColor="White"
-                    CornerRadius="8" HeightRequest="48" FontSize="15" FontAttributes="Bold"/>
+                    CornerRadius="8" HeightRequest="40" FontSize="15" FontAttributes="Bold"/>
             <Button Text="Filter Time" Command="{Binding FilterTimeCommand}"
                     BackgroundColor="#6D28D9" TextColor="White"
-                    CornerRadius="8" HeightRequest="48" FontSize="15" FontAttributes="Bold"/>
+                    CornerRadius="8" HeightRequest="40" FontSize="15" FontAttributes="Bold"/>
             <Button Text="Clear"       Command="{Binding ClearFilterCommand}"
                     BackgroundColor="#DC2626" TextColor="White"
-                    CornerRadius="8" HeightRequest="48" FontSize="15" FontAttributes="Bold"/>
+                    CornerRadius="8" HeightRequest="40" FontSize="15" FontAttributes="Bold"/>
         </HorizontalStackLayout>
 
         <!-- Column Titles -->
@@ -59,7 +59,7 @@
             <CollectionView ItemsSource="{Binding Slots}" SelectionMode="None">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="8,7"
+                        <Grid ColumnDefinitions="3*,*,*,*,*,2*" Padding="8,2"
                               BackgroundColor="{Binding IsManual, Converter={StaticResource ManualToColor}}">
                             <Label Grid.Column="0"
                                    Text="{Binding Barcode}"

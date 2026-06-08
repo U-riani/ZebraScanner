@@ -14,6 +14,8 @@ using ZebraSCannerTest1.UI.Views;
 namespace ZebraSCannerTest1.UI.ViewModels;
 
 [QueryProperty(nameof(CurrentBoxId), "BoxId")]
+[QueryProperty(nameof(OpenSetBoxOnAppear), "OpenSetBox")]
+
 public partial class LootsScanningViewModel : ObservableObject, IDisposable
 {
     private readonly IProductService _productService;
@@ -32,6 +34,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string boxScanHint = "Scan a box ID first. Product scans start after a box is selected.";
     [ObservableProperty] private bool isWaitingForBoxScan = true;
     [ObservableProperty] private bool isBusy;
+    [ObservableProperty] private bool openSetBoxOnAppear;
     private bool _initialized = false;
     private int _recentLoadVersion = 0;
     private string _lastLoadedBoxId = string.Empty;
@@ -45,9 +48,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand GoToLogsCommand { get; }
     public IAsyncRelayCommand GoToScannedProductsCommand { get; }
     public IAsyncRelayCommand<ProductSlot> GoToDetailsCommand { get; }
-    public IRelayCommand ScanBoxCommand { get; }
     public IAsyncRelayCommand SetBoxCommand { get; }
-    public IRelayCommand ClearBoxCommand { get; }
 
     public LootsScanningViewModel(
         IProductService productService,
@@ -114,9 +115,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
                 });
         });
 
-        ScanBoxCommand = new RelayCommand(EnableBoxScanMode);
         SetBoxCommand = new AsyncRelayCommand(SetBoxManuallyAsync);
-        ClearBoxCommand = new RelayCommand(ClearCurrentBox);
     }
 
 
@@ -124,7 +123,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     {
         RegisterProductUpdatedHandler();
 
-        if (string.IsNullOrWhiteSpace(CurrentBoxId))
+        if (string.IsNullOrWhiteSpace(CurrentBoxId) && !OpenSetBoxOnAppear)
             CurrentBoxId = Preferences.Get(GetCurrentBoxPreferenceKey(), string.Empty);
 
         var normalizedBoxId = CurrentBoxId?.Trim() ?? string.Empty;
@@ -348,13 +347,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         RefreshBoxHint();
     }
 
-    private void EnableBoxScanMode()
-    {
-        IsWaitingForBoxScan = true;
-        CurrentBarcode = string.Empty;
-        BoxScanHint = "Next scan will be used as the Box ID.";
-    }
-
+   
     private async Task SetBoxManuallyAsync()
     {
         var boxId = await Shell.Current.DisplayPromptAsync(
@@ -362,23 +355,18 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
             "Enter or scan Box ID:",
             "Set",
             "Cancel",
-            initialValue: CurrentBoxId);
+            initialValue: string.Empty);
 
         if (string.IsNullOrWhiteSpace(boxId))
             return;
 
         SetCurrentBox(boxId);
         IsWaitingForBoxScan = false;
+        CurrentBarcode = string.Empty;
         await LoadRecentAsync();
     }
 
-    private void ClearCurrentBox()
-    {
-        SetCurrentBox(string.Empty);
-        IsWaitingForBoxScan = true;
-        ClearSlots();
-    }
-
+  
     private void ClearSlots()
     {
         foreach (var slot in Slots)
