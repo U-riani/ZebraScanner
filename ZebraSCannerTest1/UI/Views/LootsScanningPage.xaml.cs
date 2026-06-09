@@ -12,6 +12,7 @@ public partial class LootsScanningPage : ContentPage
     private CancellationTokenSource? _focusCts;
     private bool _isActive;
     private bool _isSettingBox;
+    private bool _openSetBoxPromptConsumed;
 
     public LootsScanningPage(LootsScanningViewModel vm)
     {
@@ -58,19 +59,26 @@ public partial class LootsScanningPage : ContentPage
 
     private async void OnBarcodeCompleted(object sender, EventArgs e)
     {
-        var text = lootBarcodeEntry.Text?.Trim();
-        if (string.IsNullOrEmpty(text))
+        var barcode = lootBarcodeEntry.Text?.Trim();
+
+        // Clear immediately, before any await. During fast hardware scanning, delayed
+        // clearing can leave part of the previous barcode in the Entry or erase the
+        // first characters of the next scan.
+        ClearBarcodeInput();
+
+        if (string.IsNullOrWhiteSpace(barcode))
         {
-            ClearBarcodeInput();
-            QueueScannerFocus(attempts: 2, firstDelayMs: 60);
+            QueueScannerFocus(attempts: 2, firstDelayMs: 40);
             return;
         }
 
-        await _vm.AddProductAsync(text);
-        ClearBarcodeInput();
+        // Let the UI apply the empty Text value before the scanner can type again.
+        await Task.Yield();
+
+        await _vm.AddProductAsync(barcode);
 
         // Quick focus for fast scanners. ProductUpdatedMessage will do the final focus after row redraw.
-        QueueScannerFocus(attempts: 2, firstDelayMs: 40);
+        QueueScannerFocus(attempts: 2, firstDelayMs: 30);
     }
 
     private async void OnSetBoxClicked(object sender, EventArgs e)
@@ -95,20 +103,28 @@ public partial class LootsScanningPage : ContentPage
     {
         await vm.InitializeAsync();
 
-        if (vm.OpenSetBoxOnAppear)
+        var shouldOpenSetBox = vm.OpenSetBoxOnAppear
+                               && !_openSetBoxPromptConsumed
+                               && string.IsNullOrWhiteSpace(vm.CurrentBoxId);
+
+        // Query flags must behave like one-shot actions. Otherwise returning from Logs,
+        // Stats, or Details can reopen the Set Box prompt.
+        vm.OpenSetBoxOnAppear = false;
+
+        if (shouldOpenSetBox)
         {
-            vm.OpenSetBoxOnAppear = false;
+            _openSetBoxPromptConsumed = true;
 
             // Let Shell finish rendering the page before opening the prompt.
             await Task.Delay(180);
 
             await vm.SetBoxCommand.ExecuteAsync(null);
             ClearBarcodeInput();
-            QueueScannerFocus(attempts: 4, firstDelayMs: 180);
+            QueueScannerFocus(attempts: 4, firstDelayMs: 120);
             return;
         }
 
-        QueueScannerFocus(attempts: 3, firstDelayMs: 120);
+        QueueScannerFocus(attempts: 3, firstDelayMs: 80);
     }
 
     private void ClearBarcodeInput()
@@ -144,9 +160,9 @@ public partial class LootsScanningPage : ContentPage
                 if (token.IsCancellationRequested || !_isActive || lootBarcodeEntry == null)
                     return;
 
-                ClearBarcodeInput();
-
-                // Do not Unfocus/disable first. That causes the visible double blink.
+                // Never clear text inside delayed focus retries. A retry can run while
+                // the next barcode is being typed by the scanner and would leave only a
+                // tail like "456". Clear only in OnBarcodeCompleted / Set Box paths.
                 if (!lootBarcodeEntry.IsFocused)
                     lootBarcodeEntry.Focus();
 
@@ -161,7 +177,6 @@ public partial class LootsScanningPage : ContentPage
         _focusCts?.Cancel();
 
         WeakReferenceMessenger.Default.Unregister<ProductUpdatedMessage>(this);
-        WeakReferenceMessenger.Default.UnregisterAll(_vm);
 
         base.OnDisappearing();
     }

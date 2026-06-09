@@ -89,15 +89,16 @@
                BorderColor="#00A8CC"
                BackgroundColor="White">
             <Entry x:Name="lootBarcodeEntry"
-                   Placeholder="Scan box first, then product barcode..."
+                   Placeholder="Scan product barcode..."
                    PlaceholderColor="#888888"
                    TextColor="#111111"
                    FontSize="18"
                    HeightRequest="52"
                    ReturnType="Done"
                    ClearButtonVisibility="Never"
-                   Text="{Binding CurrentBarcode}"
-                   Completed="OnBarcodeCompleted" />
+                   Text="{Binding CurrentBarcode, Mode=TwoWay}"
+                   Completed="OnBarcodeCompleted"
+                   IsTextPredictionEnabled="False" />
         </Frame>
 
         <!-- Table Header -->

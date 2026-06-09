@@ -159,7 +159,62 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
                 return;
 
             ApplyProductUpdateToSlots(msg.Product);
+
+            // The ProductUpdatedMessage contains only the row that was scanned in the current box.
+            // For transfer-loot documents imported as Barcode + total Quantity without Box_Id,
+            // the expected total is stored in the no-box template row. Refresh this barcode's
+            // aggregated progress after the scan so the visible slot shows Box / Total again.
+            _ = RefreshScannedBarcodeProgressAsync(msg.Product.Barcode);
         });
+    }
+
+    private async Task RefreshScannedBarcodeProgressAsync(string? barcode)
+    {
+        if (string.IsNullOrWhiteSpace(barcode) || string.IsNullOrWhiteSpace(CurrentBoxId))
+            return;
+
+        var targetBarcode = barcode.Trim();
+        var targetBoxId = CurrentBoxId.Trim();
+
+        try
+        {
+            var progressRows = await _productService.GetLootBarcodeProgressByBoxAsync(targetBoxId, Slots.Count);
+            var progress = progressRows.FirstOrDefault(row =>
+                string.Equals(row.Barcode, targetBarcode, StringComparison.OrdinalIgnoreCase));
+
+            if (progress is null)
+                return;
+
+            if (!string.Equals(targetBoxId, CurrentBoxId?.Trim(), StringComparison.OrdinalIgnoreCase))
+                return;
+
+            MainThread.BeginInvokeOnMainThread(() => ApplyProgressToExistingSlot(progress));
+        }
+        catch (Exception ex)
+        {
+            _logger.Warn($"Failed to refresh loot barcode total progress for {targetBarcode}: {ex.Message}");
+        }
+    }
+
+    private void ApplyProgressToExistingSlot(LootBarcodeProgress progress)
+    {
+        var slot = Slots.FirstOrDefault(row =>
+            string.Equals(row.Barcode, progress.Barcode, StringComparison.OrdinalIgnoreCase));
+
+        if (slot is null)
+            return;
+
+        if (progress.CurrentBoxScannedQuantity < slot.CurrentBoxScannedQuantity)
+            return;
+
+        slot.SetProgress(
+            barcode: progress.Barcode,
+            currentBoxScanned: progress.CurrentBoxScannedQuantity,
+            currentBoxExpected: progress.CurrentBoxExpectedQuantity,
+            barcodeTotalScanned: progress.BarcodeTotalScannedQuantity,
+            barcodeTotalExpected: progress.BarcodeTotalExpectedQuantity,
+            usesBarcodeTotalFallback: progress.UsesBarcodeTotalFallback,
+            hasKnownExpectedQuantity: progress.HasBarcodeTotalExpectedQuantity || progress.CurrentBoxExpectedQuantity > 0);
     }
 
     private void ApplyProductUpdateToSlots(Product product)
@@ -270,7 +325,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
                             barcodeTotalScanned: p.BarcodeTotalScannedQuantity,
                             barcodeTotalExpected: p.BarcodeTotalExpectedQuantity,
                             usesBarcodeTotalFallback: p.UsesBarcodeTotalFallback,
-                            hasKnownExpectedQuantity: p.UsesBarcodeTotalFallback || p.CurrentBoxExpectedQuantity > 0);
+                            hasKnownExpectedQuantity: p.HasBarcodeTotalExpectedQuantity || p.CurrentBoxExpectedQuantity > 0);
                     }
                     else
                     {
@@ -295,24 +350,22 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
         try
         {
-            if (IsWaitingForBoxScan || string.IsNullOrWhiteSpace(CurrentBoxId))
+            // Loots barcode Entry is for product barcodes only.
+            // Box creation/selection must happen through Set Box / Scan New Box.
+            if (string.IsNullOrWhiteSpace(CurrentBoxId))
             {
-                SetCurrentBox(value);
-                IsWaitingForBoxScan = false;
                 CurrentBarcode = string.Empty;
-                LastScannedBarcode = $"Box: {value}";
+                LastScannedBarcode = string.Empty;
+                IsWaitingForBoxScan = true;
                 RefreshBoxHint();
-                await LoadRecentAsync();
                 return;
             }
 
+            IsWaitingForBoxScan = false;
             _scanningService.SetMode(InventoryMode.Loots, CurrentBoxId);
             _scanningService.Enqueue(value);
 
             // Do not keep the scanned barcode in the Entry-bound property.
-            // Hardware scanners usually submit with Enter; if this value remains set,
-            // MAUI binding can write it back to the Entry and the cursor/focus may move
-            // away from the scanner input after the CollectionView refreshes.
             CurrentBarcode = string.Empty;
             LastScannedBarcode = value;
         }
@@ -320,6 +373,8 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         {
             Console.WriteLine($"[ERROR] Loot scan failed: {ex}");
         }
+
+        await Task.CompletedTask;
     }
 
 
@@ -347,7 +402,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         RefreshBoxHint();
     }
 
-   
+
     private async Task SetBoxManuallyAsync()
     {
         var boxId = await Shell.Current.DisplayPromptAsync(
@@ -362,11 +417,12 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
         SetCurrentBox(boxId);
         IsWaitingForBoxScan = false;
+        OpenSetBoxOnAppear = false;
         CurrentBarcode = string.Empty;
         await LoadRecentAsync();
     }
 
-  
+
     private void ClearSlots()
     {
         foreach (var slot in Slots)
@@ -376,8 +432,8 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     private void RefreshBoxHint()
     {
         BoxScanHint = string.IsNullOrWhiteSpace(CurrentBoxId) || IsWaitingForBoxScan
-            ? "Scan a box ID first. Product scans start after a box is selected."
-            : "Product scans will be saved under this box. Tap Scan Box before the next box.";
+            ? "Tap Set Box first. The scanner Entry is only for product barcodes."
+            : "Product scans will be saved under this box. Use Set Box to change the box.";
     }
 
 
