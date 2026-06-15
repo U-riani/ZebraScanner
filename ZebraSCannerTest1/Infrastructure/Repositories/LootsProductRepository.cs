@@ -301,6 +301,107 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             return products;
         }
 
+        public async Task<LootBarcodeProgress?> GetBarcodeProgressAsync(string barcode, string boxId)
+        {
+            var normalizedBoxId = NormalizeBoxId(boxId);
+            var normalizedBarcode = string.IsNullOrWhiteSpace(barcode) ? string.Empty : barcode.Trim();
+
+            if (normalizedBoxId is null || string.IsNullOrWhiteSpace(normalizedBarcode))
+                return null;
+
+            using var conn = await Conn();
+
+            LootBarcodeProgress? progress = null;
+
+            // Single-barcode fast path used after each scan. This avoids refreshing
+            // the whole visible box list while the scanner is already sending the next barcode.
+            using (var currentBoxCmd = conn.CreateCommand())
+            {
+                currentBoxCmd.CommandText = @"
+                    SELECT
+                        Barcode,
+                        COALESCE(SUM(ScannedQuantity), 0) AS CurrentBoxScanned,
+                        COALESCE(SUM(InitialQuantity), 0) AS CurrentBoxExpected,
+                        MAX(Name) AS Name,
+                        MAX(Color) AS Color,
+                        MAX(Size) AS Size,
+                        MAX(Price) AS Price,
+                        MAX(ArticCode) AS ArticCode
+                    FROM LootsProducts
+                    WHERE Barcode = $b
+                      AND Box_Id = $box
+                    GROUP BY Barcode
+                    LIMIT 1;";
+                currentBoxCmd.Parameters.AddWithValue("$b", normalizedBarcode);
+                currentBoxCmd.Parameters.AddWithValue("$box", normalizedBoxId);
+
+                using var reader = await currentBoxCmd.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    var currentBoxScanned = reader.IsDBNull(1) ? 0 : Convert.ToInt32(reader.GetValue(1));
+                    var currentBoxExpected = reader.IsDBNull(2) ? 0 : Convert.ToInt32(reader.GetValue(2));
+
+                    progress = new LootBarcodeProgress
+                    {
+                        Barcode = reader.IsDBNull(0) ? normalizedBarcode : reader.GetString(0),
+                        BoxId = normalizedBoxId,
+                        CurrentBoxScannedQuantity = currentBoxScanned,
+                        CurrentBoxExpectedQuantity = currentBoxExpected,
+                        BarcodeTotalExpectedQuantity = currentBoxExpected,
+                        BarcodeTotalScannedQuantity = currentBoxScanned,
+                        HasBarcodeTotalExpectedQuantity = currentBoxExpected > 0,
+                        Name = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        Color = reader.IsDBNull(4) ? null : reader.GetString(4),
+                        Size = reader.IsDBNull(5) ? null : reader.GetString(5),
+                        Price = reader.IsDBNull(6) ? null : reader.GetString(6),
+                        ArticCode = reader.IsDBNull(7) ? null : reader.GetString(7)
+                    };
+                }
+            }
+
+            if (progress is null)
+                return null;
+
+            using (var templateCmd = conn.CreateCommand())
+            {
+                templateCmd.CommandText = @"
+                    SELECT COALESCE(SUM(InitialQuantity), 0) AS BarcodeExpected
+                    FROM LootsProducts
+                    WHERE Barcode = $b
+                      AND (Box_Id IS NULL OR TRIM(Box_Id) = '');";
+                templateCmd.Parameters.AddWithValue("$b", normalizedBarcode);
+
+                var templateExpected = await templateCmd.ExecuteScalarAsync();
+                var barcodeExpected = templateExpected is null || templateExpected == DBNull.Value
+                    ? 0
+                    : Convert.ToInt32(templateExpected);
+
+                if (barcodeExpected > 0 && progress.CurrentBoxExpectedQuantity <= 0)
+                {
+                    progress.BarcodeTotalExpectedQuantity = barcodeExpected;
+                    progress.HasBarcodeTotalExpectedQuantity = true;
+                }
+            }
+
+            using (var scannedCmd = conn.CreateCommand())
+            {
+                scannedCmd.CommandText = @"
+                    SELECT COALESCE(SUM(ScannedQuantity), 0) AS BarcodeScanned
+                    FROM LootsProducts
+                    WHERE Barcode = $b
+                      AND Box_Id IS NOT NULL
+                      AND TRIM(Box_Id) <> '';";
+                scannedCmd.Parameters.AddWithValue("$b", normalizedBarcode);
+
+                var scannedTotal = await scannedCmd.ExecuteScalarAsync();
+                progress.BarcodeTotalScannedQuantity = scannedTotal is null || scannedTotal == DBNull.Value
+                    ? progress.CurrentBoxScannedQuantity
+                    : Convert.ToInt32(scannedTotal);
+            }
+
+            return progress;
+        }
+
         public async Task<IEnumerable<LootBarcodeProgress>> GetBarcodeProgressByBoxAsync(string boxId, int limit = 8)
         {
             var progressByBarcode = new Dictionary<string, LootBarcodeProgress>(StringComparer.OrdinalIgnoreCase);

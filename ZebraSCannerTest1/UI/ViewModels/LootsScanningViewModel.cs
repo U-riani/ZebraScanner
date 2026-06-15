@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Maui.ApplicationModel;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using ZebraSCannerTest1.Core.Enums;
 using ZebraSCannerTest1.Core.Interfaces;
@@ -38,6 +39,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     private bool _initialized = false;
     private int _recentLoadVersion = 0;
     private string _lastLoadedBoxId = string.Empty;
+    private readonly ConcurrentDictionary<string, byte> _barcodeProgressLoaded = new(StringComparer.OrdinalIgnoreCase);
 
     public ObservableCollection<ProductSlot> Slots { get; } =
         new(Enumerable.Range(0, 8).Select(_ => new ProductSlot()));
@@ -160,12 +162,22 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
             ApplyProductUpdateToSlots(msg.Product);
 
-            // The ProductUpdatedMessage contains only the row that was scanned in the current box.
-            // For transfer-loot documents imported as Barcode + total Quantity without Box_Id,
-            // the expected total is stored in the no-box template row. Refresh this barcode's
-            // aggregated progress after the scan so the visible slot shows Box / Total again.
-            _ = RefreshScannedBarcodeProgressAsync(msg.Product.Barcode);
+            // Only load the aggregate total once per barcode. Reloading the whole visible box
+            // list after every scan made loot mode slow during fast scanner input.
+            if (ShouldRefreshScannedBarcodeProgress(msg.Product))
+                _ = RefreshScannedBarcodeProgressAsync(msg.Product.Barcode);
         });
+    }
+
+    private bool ShouldRefreshScannedBarcodeProgress(Product product)
+    {
+        if (string.IsNullOrWhiteSpace(product.Barcode) || string.IsNullOrWhiteSpace(CurrentBoxId))
+            return false;
+
+        if (product.InitialQuantity > 0)
+            return false;
+
+        return !_barcodeProgressLoaded.ContainsKey(product.Barcode.Trim());
     }
 
     private async Task RefreshScannedBarcodeProgressAsync(string? barcode)
@@ -178,14 +190,14 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
         try
         {
-            var progressRows = await _productService.GetLootBarcodeProgressByBoxAsync(targetBoxId, Slots.Count);
-            var progress = progressRows.FirstOrDefault(row =>
-                string.Equals(row.Barcode, targetBarcode, StringComparison.OrdinalIgnoreCase));
-
-            if (progress is null)
-                return;
+            var progress = await _productService.GetLootBarcodeProgressAsync(targetBarcode, targetBoxId);
 
             if (!string.Equals(targetBoxId, CurrentBoxId?.Trim(), StringComparison.OrdinalIgnoreCase))
+                return;
+
+            _barcodeProgressLoaded.TryAdd(targetBarcode, 0);
+
+            if (progress is null)
                 return;
 
             MainThread.BeginInvokeOnMainThread(() => ApplyProgressToExistingSlot(progress));
@@ -203,6 +215,8 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
         if (slot is null)
             return;
+
+        _barcodeProgressLoaded.TryAdd(progress.Barcode, 0);
 
         if (progress.CurrentBoxScannedQuantity < slot.CurrentBoxScannedQuantity)
             return;
@@ -318,6 +332,7 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
                     if (i < products.Count)
                     {
                         var p = products[i];
+                        _barcodeProgressLoaded.TryAdd(p.Barcode, 0);
                         Slots[i].SetProgress(
                             barcode: p.Barcode,
                             currentBoxScanned: p.CurrentBoxScannedQuantity,
@@ -390,8 +405,12 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     private void SetCurrentBox(string? boxId)
     {
         var normalized = string.IsNullOrWhiteSpace(boxId) ? string.Empty : boxId.Trim();
+        var boxChanged = !string.Equals(CurrentBoxId, normalized, StringComparison.OrdinalIgnoreCase);
         CurrentBoxId = normalized;
         CurrentBoxDisplay = string.IsNullOrWhiteSpace(normalized) ? "No box selected" : normalized;
+
+        if (boxChanged)
+            _barcodeProgressLoaded.Clear();
 
         if (string.IsNullOrWhiteSpace(normalized))
             Preferences.Remove(GetCurrentBoxPreferenceKey());
@@ -425,6 +444,8 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
     private void ClearSlots()
     {
+        _barcodeProgressLoaded.Clear();
+
         foreach (var slot in Slots)
             slot.Set(string.Empty, 0, 0);
     }

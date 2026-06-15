@@ -136,6 +136,19 @@ namespace ZebraSCannerTest1.Core.Services
             }
         }
 
+        public async Task<LootBarcodeProgress?> GetLootBarcodeProgressAsync(string barcode, string boxId)
+        {
+            try
+            {
+                return await _lootsRepo.GetBarcodeProgressAsync(barcode, boxId);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Failed to load loot barcode progress", ex);
+                return null;
+            }
+        }
+
         public async Task<IEnumerable<Product>> GetProductsForUploadAsync(InventoryMode mode = InventoryMode.Standard)
         {
             try

@@ -19,6 +19,7 @@ namespace ZebraSCannerTest1.Core.Interfaces
         Task UpdateAsync(Product product);
         Task<IEnumerable<Product>> GetByBoxAsync(string boxId);
         Task<IEnumerable<LootBarcodeProgress>> GetBarcodeProgressByBoxAsync(string boxId, int limit = 8);
+        Task<LootBarcodeProgress?> GetBarcodeProgressAsync(string barcode, string boxId);
         Task<IEnumerable<Product>> GetProductsForUploadAsync();
     }
 }

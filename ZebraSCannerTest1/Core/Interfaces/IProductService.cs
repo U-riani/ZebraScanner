@@ -13,6 +13,7 @@ namespace ZebraSCannerTest1.Core.Interfaces
         Task AddOrUpdateAsync(Product product, InventoryMode mode = InventoryMode.Standard);
         Task<IEnumerable<Product>> GetProductsByBoxAsync(string boxId, InventoryMode mode = InventoryMode.Standard);
         Task<IEnumerable<LootBarcodeProgress>> GetLootBarcodeProgressByBoxAsync(string boxId, int limit = 8);
+        Task<LootBarcodeProgress?> GetLootBarcodeProgressAsync(string barcode, string boxId);
         Task<IEnumerable<Product>> GetProductsForUploadAsync(InventoryMode mode = InventoryMode.Standard);
     }
 }
