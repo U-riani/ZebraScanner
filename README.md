@@ -80,33 +80,189 @@ The application is designed for **offline-first usage**, where operations can be
 
 # Project Architecture
 
-The project follows a modular architecture separating core logic, services, UI, and database access.
+The project follows a modular, layered architecture separating core logic, data access, infrastructure, cross-cutting messaging, and the MVVM presentation layer. The structure below expands every application folder. Default .NET MAUI scaffolding folders (`Platforms`, `Properties`, `Resources`, `bin`, `obj`) are omitted for clarity.
 
+```
+ZebraSCannerTest1/                       # Solution
+│
+├── ZebraSCannerTest1.sln                # Visual Studio solution file
+│
+└── ZebraSCannerTest1/                   # Main .NET MAUI project
+    │
+    ├── App.xaml / App.xaml.cs           # Application entry point & global resources
+    ├── AppShell.xaml / AppShell.xaml.cs # Shell navigation & route registration
+    ├── MauiProgram.cs                   # DI container setup & app bootstrap
+    ├── ZebraSCannerTest1.csproj         # Project file (target frameworks, packages)
+    │
+    ├── Core/                            # Domain layer — no UI or platform dependencies
+    │   ├── Dtos/                        # Data transfer objects for API / import-export
+    │   │   ├── DocumentStatusChangeResponseDto.cs
+    │   │   ├── ExcelProductDto.cs
+    │   │   ├── ExcelSalesDto.cs
+    │   │   ├── JsonDto.cs
+    │   │   ├── PocketDocumentDto.cs
+    │   │   ├── PocketDocumentLinesDto.cs
+    │   │   ├── SendDocumentCurentStatusDto.cs
+    │   │   ├── SubmitDocumentLineRowDto.cs
+    │   │   ├── SubmitDocumentLinesRequestDto.cs
+    │   │   └── SubmitDocumentLinesResponseDto.cs
+    │   │
+    │   ├── Enums/                       # Domain enumerations
+    │   │   └── InventoryMode.cs         # Inventory operating modes
+    │   │
+    │   ├── Interfaces/                  # Service & repository contracts (abstractions)
+    │   │   ├── IApiService.cs
+    │   │   ├── IDataImportService.cs
+    │   │   ├── IDbFactory.cs
+    │   │   ├── IDialogService.cs
+    │   │   ├── IExcelExportLogsService.cs
+    │   │   ├── IExcelExportService.cs
+    │   │   ├── IJsonExportLogsService.cs
+    │   │   ├── IJsonExportService.cs
+    │   │   ├── ILoggerService.cs
+    │   │   ├── ILootsProductRepository.cs
+    │   │   ├── INavigationService.cs
+    │   │   ├── IProductRepository.cs
+    │   │   ├── IProductService.cs
+    │   │   ├── IScanLogRepository.cs
+    │   │   ├── IScanningService.cs
+    │   │   └── IServerImportService.cs
+    │   │
+    │   ├── Models/                      # Domain / business models
+    │   │   ├── CacheSnapshot.cs
+    │   │   ├── InitialProducts.cs
+    │   │   ├── LogSlot.cs
+    │   │   ├── LootBarcodeProgress.cs
+    │   │   ├── LootBoxSummary.cs
+    │   │   ├── LootProduct.cs
+    │   │   ├── Product.cs
+    │   │   ├── ProductSlot.cs
+    │   │   ├── SalesModel.cs
+    │   │   ├── ScanLog.cs
+    │   │   ├── ScannedProducts.cs
+    │   │   └── StatsProduct.cs
+    │   │
+    │   └── Services/                    # Business logic & integration services
+    │       ├── ApiInventoryService.cs   # Inventory API operations
+    │       ├── ApiService.cs            # Generic HTTP/API client
+    │       ├── AuthService.cs           # Authentication / login
+    │       ├── ClipboardService.cs      # Clipboard access
+    │       ├── DataImportService.cs     # Data import orchestration
+    │       ├── ExcelExportLogsService.cs
+    │       ├── ExcelExportService.cs    # Excel export (MiniExcel)
+    │       ├── ExcelImportService.cs
+    │       ├── JsonExportLogsService.cs
+    │       ├── JsonExportService.cs
+    │       ├── LogBufferService.cs      # In-memory log buffering
+    │       ├── ProductService.cs        # Product lookup & management
+    │       ├── SalesExcelImportService.cs
+    │       ├── ScanningService.cs       # Barcode scanning logic
+    │       └── ServerImportService.cs   # Server-side data import
+    │
+    ├── Data/                            # Persistence layer (SQLite)
+    │   ├── AppDbContext.cs              # Main database context
+    │   ├── DatabaseInitializer.cs       # Product DB schema init
+    │   ├── DbFactory.cs                 # Database connection factory
+    │   └── SalesDatabaseInitializer.cs  # Sales DB schema init
+    │
+    ├── Infrastructure/                  # Concrete data-access implementations
+    │   └── Repositories/
+    │       ├── LootsProductRepository.cs
+    │       ├── ProductRepository.cs
+    │       ├── SalesRepository.cs
+    │       └── ScanLogRepository.cs
+    │
+    ├── Helpers/                         # Cross-cutting utilities & extensions
+    │   ├── FileTypes.cs
+    │   ├── SessionHelper.cs
+    │   ├── ShowingLongPopup.cs
+    │   └── SqliteReaderExtensions.cs
+    │
+    ├── Messages/                        # MVVM messenger event payloads
+    │   ├── BarcodeScannedMessage.cs
+    │   ├── NewScanLogMessage.cs
+    │   ├── ProductUpdatedMessage.cs
+    │   ├── ScrollToTopMessage.cs
+    │   ├── SelectedProductMessage.cs
+    │   └── TotalScannedQuantityMessage.cs
+    │
+    └── UI/                              # Presentation layer (MVVM)
+        ├── Converters/                 # XAML value converters
+        │   ├── BoolToTextConverter.cs
+        │   ├── DifferenceToColorConverter.cs
+        │   ├── EnumEqualsConverter.cs
+        │   ├── HideWhenLoadingConverter.cs
+        │   ├── InventoryModeToHeaderConventer.cs
+        │   ├── InverseBoolConverter.cs
+        │   ├── ManualToColorConverter.cs
+        │   ├── QuantityComparisonToColorConverter.cs
+        │   ├── SaleConverter.cs
+        │   ├── ShowStartScaningConverter.cs
+        │   └── TruncateTextConverter.cs
+        │
+        ├── Helpers/
+        │   └── ViewExtensions.cs        # UI/view helper extensions
+        │
+        ├── Services/                    # UI-facing services
+        │   ├── LoggerService.cs
+        │   ├── MauiDialogService.cs     # Alerts / dialogs
+        │   ├── MenuService.cs           # Flyout / menu handling
+        │   ├── PopopService.cs          # Popup presentation
+        │   └── ShellNavigationService.cs# Shell-based navigation
+        │
+        ├── ViewModels/                  # MVVM view models (one per page)
+        │   ├── BaseViewModel.cs         # Shared base for all view models
+        │   ├── DetailsViewModel.cs
+        │   ├── HomeViewModel.cs
+        │   ├── InventorizationByLootsMenuViewModel.cs
+        │   ├── InventorizationByLootsViewModel.cs
+        │   ├── InventorizationMenuViewModel.cs
+        │   ├── InventorizationViewModel.cs
+        │   ├── LoginViewModel.cs
+        │   ├── LogsViewModel.cs
+        │   ├── LootsScanningViewModel.cs
+        │   ├── SalesMenuViewModel.cs
+        │   ├── SalesViewModel.cs
+        │   ├── ScannedProductsViewModel.cs
+        │   ├── SettingsViewModel.cs
+        │   ├── ShellViewModel.cs
+        │   └── TasksViewModel.cs
+        │
+        └── Views/                       # XAML pages & UI (.xaml + code-behind)
+            ├── Controls/                # Reusable UI controls
+            │   └── HeaderBar.xaml(.cs)  # Shared page header bar
+            ├── Popups/                  # Modal popups
+            │   ├── ExportProgressPopup.xaml(.cs)
+            │   ├── ManualFilterPopup.xaml(.cs)
+            │   ├── ProgressPopup.xaml(.cs)
+            │   └── SectionPopup.xaml(.cs)
+            ├── DetailsPage.xaml(.cs)
+            ├── HomePage.xaml(.cs)
+            ├── InventorizationByLootsMenuPage.xaml(.cs)
+            ├── InventorizationByLootsPage.xaml(.cs)
+            ├── InventorizationMenuPage.xaml(.cs)
+            ├── InventorizationPage.xaml(.cs)
+            ├── InventoryMenuPage.xaml(.cs)
+            ├── LoginPage.xaml(.cs)
+            ├── LogsPage.xaml(.cs)
+            ├── LootsScanningPage.xaml(.cs)
+            ├── SalesMenuPage.xaml(.cs)
+            ├── SalesPage.xaml(.cs)
+            ├── ScannedProductsPage.xaml(.cs)
+            ├── SettingsPage.xaml(.cs)
+            └── TasksPage.xaml(.cs)
+```
 
-ZebraSCannerTest1
-│
-├── Core
-│ ├── Enums
-│ ├── Interfaces
-│ └── Services
-│
-├── Database
-│ ├── DbFactory
-│ ├── Repositories
-│ └── Entities
-│
-├── Features
-│ ├── Inventory
-│ ├── Scanning
-│ └── ImportExport
-│
-├── UI
-│ ├── Views
-│ ├── ViewModels
-│ └── Controls
-│
-└── Resources
+### Layer responsibilities
 
+| Folder | Responsibility |
+|--------|----------------|
+| `Core/` | Domain models, DTOs, enums, interfaces, and business/service logic — framework-agnostic. |
+| `Data/` | SQLite database context, connection factory, and schema initialization. |
+| `Infrastructure/` | Concrete repository implementations backing the `Core` interfaces. |
+| `Helpers/` | Cross-cutting utilities, extension methods, and session helpers. |
+| `Messages/` | Strongly-typed messages passed through the MVVM messenger (decoupled events). |
+| `UI/` | MVVM presentation: Views (XAML), ViewModels, value converters, and UI services. |
 
 ---
 
