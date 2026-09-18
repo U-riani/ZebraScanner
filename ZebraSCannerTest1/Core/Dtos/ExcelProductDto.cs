@@ -11,4 +11,9 @@ public class ExcelProductDto
     public string? ArticCode { get; set; }
     public string? Box_Id { get; set; }
 
+    // Optional V18_1 location fields.
+    // Null means the imported file did not provide the new Hall/BaseDspa data.
+    public bool? Hall { get; set; }
+    public string? BaseDspa { get; set; }
+
 }

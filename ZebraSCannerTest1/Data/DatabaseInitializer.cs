@@ -51,7 +51,9 @@ CREATE TABLE IF NOT EXISTS Products (
     Color TEXT,
     Size TEXT,
     Price TEXT,
-    ArticCode TEXT
+    ArticCode TEXT,
+    Hall INTEGER NULL,
+    BaseDspa TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS LootsProducts (
@@ -66,7 +68,9 @@ CREATE TABLE IF NOT EXISTS LootsProducts (
     Color TEXT,
     Size TEXT,
     Price TEXT,
-    ArticCode TEXT
+    ArticCode TEXT,
+    Hall INTEGER NULL,
+    BaseDspa TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ScanLogs (
@@ -93,6 +97,43 @@ CREATE TABLE IF NOT EXISTS LootsScanLogs (
 );
 ";
             cmd.ExecuteNonQuery();
+
+            // Existing V18 databases already have the tables, so CREATE TABLE IF NOT EXISTS
+            // alone would not add the new columns. Migrate in place without deleting data.
+            EnsureColumn(conn, "Products", "Hall", "INTEGER NULL");
+            EnsureColumn(conn, "Products", "BaseDspa", "TEXT NULL");
+            EnsureColumn(conn, "LootsProducts", "Hall", "INTEGER NULL");
+            EnsureColumn(conn, "LootsProducts", "BaseDspa", "TEXT NULL");
+        }
+
+        private static void EnsureColumn(
+            SqliteConnection conn,
+            string tableName,
+            string columnName,
+            string columnDefinition)
+        {
+            bool exists = false;
+
+            using (var check = conn.CreateCommand())
+            {
+                check.CommandText = $"PRAGMA table_info({tableName});";
+                using var reader = check.ExecuteReader();
+                while (reader.Read())
+                {
+                    if (reader.GetString(1).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+            }
+
+            if (exists) return;
+
+            using var alter = conn.CreateCommand();
+            alter.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnDefinition};";
+            alter.ExecuteNonQuery();
+            Console.WriteLine($"[DB MIGRATION] Added {tableName}.{columnName}");
         }
     }
 }

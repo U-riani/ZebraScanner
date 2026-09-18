@@ -15,4 +15,6 @@ public class LootProduct
     public string? Size { get; set; }
     public string? Price { get; set; }
     public string? ArticCode { get; set; }
+    public bool? Hall { get; set; }
+    public string? BaseDspa { get; set; }
 }

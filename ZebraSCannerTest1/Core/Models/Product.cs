@@ -16,6 +16,8 @@ namespace ZebraSCannerTest1.Core.Models
         private string? _price;
         private string? _articCode;
         private string? _boxId;
+        private bool? _hall;
+        private string? _baseDspa;
 
 
         public string? Barcode { get; set; }
@@ -80,6 +82,21 @@ namespace ZebraSCannerTest1.Core.Models
         {
             get => _boxId;
             set { _boxId = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// true = Hall, false = WRH, null = legacy data without location classification.
+        /// </summary>
+        public bool? Hall
+        {
+            get => _hall;
+            set { _hall = value; OnPropertyChanged(); }
+        }
+
+        public string? BaseDspa
+        {
+            get => _baseDspa;
+            set { _baseDspa = value; OnPropertyChanged(); }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
