@@ -160,8 +160,8 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
             : $"{location} - {baseDspa}";
 
         ScanLocationColor = product.Hall.Value
-            ? Color.FromArgb("#2563EB")
-            : Color.FromArgb("#4F46E5");
+            ? Color.FromArgb("#0D9488") // Hall: blue-green / teal
+            : Color.FromArgb("#7C3AED"); // WRH: violet
 
         HasScanLocation = true;
     }

@@ -28,6 +28,11 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string lastScannedBarcode = string.Empty;
     [ObservableProperty] private bool isBusy;
 
+    // V18_1 Hall/WRH scan feedback for Loots mode.
+    [ObservableProperty] private bool hasScanLocation;
+    [ObservableProperty] private string scanLocationText = string.Empty;
+    [ObservableProperty] private Color scanLocationColor = Colors.Transparent;
+
     public ObservableCollection<ProductSlot> Slots { get; } =
         new(Enumerable.Range(0, 8).Select(_ => new ProductSlot()));
 
@@ -105,6 +110,9 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
 
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadRecentAsync());
+
+        WeakReferenceMessenger.Default.Register<ScanFeedbackMessage>(
+            this, (_, msg) => ApplyScanLocation(msg.Product));
     }
 
 
@@ -113,6 +121,10 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         WeakReferenceMessenger.Default.Unregister<ProductUpdatedMessage>(this);
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadRecentAsync());
+
+        WeakReferenceMessenger.Default.Unregister<ScanFeedbackMessage>(this);
+        WeakReferenceMessenger.Default.Register<ScanFeedbackMessage>(
+            this, (_, msg) => ApplyScanLocation(msg.Product));
 
 
         if (string.IsNullOrWhiteSpace(CurrentBoxId))
@@ -125,6 +137,32 @@ public partial class LootsScanningViewModel : ObservableObject, IDisposable
         _scanningService.StartAsync();
 
         await LoadRecentAsync();
+    }
+
+
+    private void ApplyScanLocation(Product product)
+    {
+        // Legacy Excel/DB: keep the old Loots UI when Hall is not available.
+        if (!product.Hall.HasValue)
+        {
+            HasScanLocation = false;
+            ScanLocationText = string.Empty;
+            ScanLocationColor = Colors.Transparent;
+            return;
+        }
+
+        var location = product.Hall.Value ? "HALL" : "WRH";
+        var baseDspa = product.BaseDspa?.Trim();
+
+        ScanLocationText = string.IsNullOrWhiteSpace(baseDspa)
+            ? location
+            : $"{location} - {baseDspa}";
+
+        ScanLocationColor = product.Hall.Value
+            ? Color.FromArgb("#0D9488") // Hall: blue-green / teal
+            : Color.FromArgb("#7C3AED"); // WRH: violet
+
+        HasScanLocation = true;
     }
 
 

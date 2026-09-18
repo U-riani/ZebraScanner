@@ -30,6 +30,19 @@
                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
                    HorizontalTextAlignment="Center" />
 
+        <!-- V18_1: Hall/WRH location feedback for Loots scanning. -->
+        <Grid IsVisible="{Binding HasScanLocation}"
+              BackgroundColor="{Binding ScanLocationColor}"
+              Padding="12,10"
+              Margin="3,0">
+            <Label Text="{Binding ScanLocationText}"
+                   TextColor="White"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center" />
+        </Grid>
+
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto" Padding="10,0">
             <Entry x:Name="lootBarcodeEntry"
                    Grid.Column="0"
