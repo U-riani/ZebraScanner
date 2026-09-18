@@ -40,9 +40,9 @@ namespace ZebraSCannerTest1.Core.Services
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = mode == InventoryMode.Loots
-                ? @"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, Name, Color, Size, Price, ArticCode, UpdatedAt
+                ? @"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, Name, Color, Size, Price, ArticCode, Hall, BaseDspa, UpdatedAt
                     FROM LootsProducts ORDER BY UpdatedAt DESC;"
-                : @"SELECT Barcode, InitialQuantity, ScannedQuantity, Name, Color, Size, Price, ArticCode, UpdatedAt
+                : @"SELECT Barcode, InitialQuantity, ScannedQuantity, Name, Color, Size, Price, ArticCode, Hall, BaseDspa, UpdatedAt
                     FROM Products ORDER BY UpdatedAt DESC;";
 
             using var reader = cmd.ExecuteReader();
@@ -61,7 +61,9 @@ namespace ZebraSCannerTest1.Core.Services
                         Size = reader.SafeGetString(6),
                         Price = reader.SafeGetString(7),
                         ArticCode = reader.SafeGetString(8),
-                        UpdatedAt = reader.SafeGetDate(9).ToString("yyyy-MM-dd HH:mm:ss")
+                        Hall = reader.IsDBNull(9) ? (bool?)null : Convert.ToInt32(reader.GetValue(9)) != 0,
+                        BaseDspa = reader.SafeGetString(10),
+                        UpdatedAt = reader.SafeGetDate(11).ToString("yyyy-MM-dd HH:mm:ss")
                     });
                 }
                 else
@@ -76,7 +78,9 @@ namespace ZebraSCannerTest1.Core.Services
                         Size = reader.SafeGetString(5),
                         Price = reader.SafeGetString(6),
                         ArticCode = reader.SafeGetString(7),
-                        UpdatedAt = reader.SafeGetDate(8).ToString("yyyy-MM-dd HH:mm:ss")
+                        Hall = reader.IsDBNull(8) ? (bool?)null : Convert.ToInt32(reader.GetValue(8)) != 0,
+                        BaseDspa = reader.SafeGetString(9),
+                        UpdatedAt = reader.SafeGetDate(10).ToString("yyyy-MM-dd HH:mm:ss")
                     });
                 }
 

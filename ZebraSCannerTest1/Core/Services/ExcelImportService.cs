@@ -149,14 +149,14 @@ namespace ZebraSCannerTest1.Core.Services
                 upsert.CommandText = isLoots
                     ? $@"
                         INSERT INTO {table} 
-                            (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+                            (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode, Hall, BaseDspa)
                         VALUES 
-                            ($barcode, $box, $initial, 0, $created, $updated, $name, $color, $size, $price, $artic);"
+                            ($barcode, $box, $initial, 0, $created, $updated, $name, $color, $size, $price, $artic, $hall, $baseDspa);"
                     : $@"
                         INSERT INTO {table} 
-                            (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
+                            (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode, Hall, BaseDspa)
                         VALUES 
-                            ($barcode, $initial, 0, $created, $updated, $name, $color, $size, $price, $artic)
+                            ($barcode, $initial, 0, $created, $updated, $name, $color, $size, $price, $artic, $hall, $baseDspa)
                         ON CONFLICT(Barcode) DO UPDATE SET
                             InitialQuantity = $initial,
                             ScannedQuantity = 0,
@@ -165,7 +165,9 @@ namespace ZebraSCannerTest1.Core.Services
                             Color = $color,
                             Size = $size,
                             Price = $price,
-                            ArticCode = $artic;";
+                            ArticCode = $artic,
+                            Hall = $hall,
+                            BaseDspa = $baseDspa;";
 
                 // 🔹 Step 3: Bind parameters
                 upsert.Parameters.Add("$barcode", SqliteType.Text);
@@ -178,6 +180,8 @@ namespace ZebraSCannerTest1.Core.Services
                 upsert.Parameters.Add("$size", SqliteType.Text);
                 upsert.Parameters.Add("$price", SqliteType.Text);
                 upsert.Parameters.Add("$artic", SqliteType.Text);
+                upsert.Parameters.Add("$hall", SqliteType.Integer);
+                upsert.Parameters.Add("$baseDspa", SqliteType.Text);
 
                 // 🔹 Step 4: Read Excel rows
                 foreach (var r in stream.Query<ExcelProductDto>())
@@ -198,6 +202,12 @@ namespace ZebraSCannerTest1.Core.Services
                     upsert.Parameters["$size"].Value = r.Size?.Trim() ?? "";
                     upsert.Parameters["$price"].Value = r.Price?.Trim() ?? "";
                     upsert.Parameters["$artic"].Value = r.ArticCode?.Trim() ?? "";
+                    upsert.Parameters["$hall"].Value = r.Hall.HasValue
+                        ? (object)(r.Hall.Value ? 1 : 0)
+                        : DBNull.Value;
+                    upsert.Parameters["$baseDspa"].Value = string.IsNullOrWhiteSpace(r.BaseDspa)
+                        ? DBNull.Value
+                        : r.BaseDspa.Trim();
 
                     if (isLoots)
                         upsert.Parameters["$box"].Value = r.Box_Id?.Trim() ?? "Unknown_Box";

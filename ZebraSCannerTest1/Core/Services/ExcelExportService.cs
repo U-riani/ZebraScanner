@@ -51,7 +51,9 @@ namespace ZebraSCannerTest1.Core.Services
                         Color, 
                         Size, 
                         Price, 
-                        ArticCode, 
+                        ArticCode,
+                        Hall,
+                        BaseDspa,
                         UpdatedAt
                     FROM {table} 
                     ORDER BY UpdatedAt DESC;"
@@ -64,7 +66,9 @@ namespace ZebraSCannerTest1.Core.Services
                         Color, 
                         Size, 
                         Price, 
-                        ArticCode, 
+                        ArticCode,
+                        Hall,
+                        BaseDspa,
                         UpdatedAt 
                     FROM {table} 
                     ORDER BY UpdatedAt DESC;";
@@ -89,7 +93,9 @@ namespace ZebraSCannerTest1.Core.Services
                             Size = reader.IsDBNull(6) ? "" : reader.GetString(6),
                             Price = reader.IsDBNull(7) ? "" : reader.GetString(7),
                             ArticCode = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                            UpdatedAt = SafeToDate(reader.GetValue(9))
+                            Hall = reader.IsDBNull(9) ? (bool?)null : Convert.ToInt32(reader.GetValue(9)) != 0,
+                            BaseDspa = reader.IsDBNull(10) ? "" : reader.GetString(10),
+                            UpdatedAt = SafeToDate(reader.GetValue(11))
                         });
                     }
                     else
@@ -104,7 +110,9 @@ namespace ZebraSCannerTest1.Core.Services
                             Size = reader.IsDBNull(5) ? "" : reader.GetString(5),
                             Price = reader.IsDBNull(6) ? "" : reader.GetString(6),
                             ArticCode = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                            UpdatedAt = SafeToDate(reader.GetValue(8))
+                            Hall = reader.IsDBNull(8) ? (bool?)null : Convert.ToInt32(reader.GetValue(8)) != 0,
+                            BaseDspa = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                            UpdatedAt = SafeToDate(reader.GetValue(10))
                         });
                     }
 

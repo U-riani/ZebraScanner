@@ -108,12 +108,12 @@ namespace ZebraSCannerTest1.Core.Services
             insert.CommandText = isLoots
                 ? $@"
                     INSERT OR REPLACE INTO {table}
-                    (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
-                    VALUES ($barcode, $box, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);"
+                    (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode, Hall, BaseDspa)
+                    VALUES ($barcode, $box, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic, $hall, $baseDspa);"
                 : $@"
                     INSERT OR REPLACE INTO {table}
-                    (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode)
-                    VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic);";
+                    (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode, Hall, BaseDspa)
+                    VALUES ($barcode, $initial, $scanned, $created, $updated, $name, $color, $size, $price, $artic, $hall, $baseDspa);";
 
             // Add parameters
             insert.Parameters.Add("$barcode", SqliteType.Text);
@@ -127,6 +127,8 @@ namespace ZebraSCannerTest1.Core.Services
             insert.Parameters.Add("$size", SqliteType.Text);
             insert.Parameters.Add("$price", SqliteType.Text);
             insert.Parameters.Add("$artic", SqliteType.Text);
+            insert.Parameters.Add("$hall", SqliteType.Integer);
+            insert.Parameters.Add("$baseDspa", SqliteType.Text);
 
             int processed = 0;
             var now = DateTime.UtcNow.ToString("o");
@@ -148,6 +150,12 @@ namespace ZebraSCannerTest1.Core.Services
                     insert.Parameters["$size"].Value = p.Size ?? "";
                     insert.Parameters["$price"].Value = p.Price ?? "";
                     insert.Parameters["$artic"].Value = p.ArticCode ?? "";
+                    insert.Parameters["$hall"].Value = p.Hall.HasValue
+                        ? (object)(p.Hall.Value ? 1 : 0)
+                        : DBNull.Value;
+                    insert.Parameters["$baseDspa"].Value = string.IsNullOrWhiteSpace(p.BaseDspa)
+                        ? DBNull.Value
+                        : p.BaseDspa.Trim();
 
                     if (isLoots)
                     {
