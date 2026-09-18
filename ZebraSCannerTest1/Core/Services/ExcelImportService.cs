@@ -183,34 +183,45 @@ namespace ZebraSCannerTest1.Core.Services
                 upsert.Parameters.Add("$hall", SqliteType.Integer);
                 upsert.Parameters.Add("$baseDspa", SqliteType.Text);
 
-                // 🔹 Step 4: Read Excel rows
-                foreach (var r in stream.Query<ExcelProductDto>())
+                // 🔹 Step 4: Read Excel rows by header name.
+                // Dynamic mapping is deliberate here: Hall and BaseDspa are optional,
+                // so legacy V18 Excel files without those headers continue to import.
+                foreach (IDictionary<string, object> row in stream.Query(useHeaderRow: true))
                 {
-                    if (r == null || string.IsNullOrWhiteSpace(r.Barcode))
+                    var barcode = GetText(row, "Barcode");
+                    if (string.IsNullOrWhiteSpace(barcode))
                         continue;
 
+                    var quantity = GetInt(row, "Quantity");
+                    var hall = GetNullableBool(row, "Hall");
+                    var baseDspa = GetText(row, "BaseDspa");
+
 #if DEBUG
-                    Console.WriteLine($"[ROW] {r.Id} | {r.Barcode} | {r.Quantity} | {r.Name}");
+                    Console.WriteLine($"[ROW] {GetInt(row, "Id")} | {barcode} | {quantity} | {GetText(row, "Name")}");
 #endif
 
-                    upsert.Parameters["$barcode"].Value = r.Barcode.Trim();
-                    upsert.Parameters["$initial"].Value = r.Quantity;
+                    upsert.Parameters["$barcode"].Value = barcode.Trim();
+                    upsert.Parameters["$initial"].Value = quantity;
                     upsert.Parameters["$created"].Value = now;
                     upsert.Parameters["$updated"].Value = now;
-                    upsert.Parameters["$name"].Value = r.Name?.Trim() ?? "";
-                    upsert.Parameters["$color"].Value = r.Color?.Trim() ?? "";
-                    upsert.Parameters["$size"].Value = r.Size?.Trim() ?? "";
-                    upsert.Parameters["$price"].Value = r.Price?.Trim() ?? "";
-                    upsert.Parameters["$artic"].Value = r.ArticCode?.Trim() ?? "";
-                    upsert.Parameters["$hall"].Value = r.Hall.HasValue
-                        ? (object)(r.Hall.Value ? 1 : 0)
+                    upsert.Parameters["$name"].Value = GetText(row, "Name")?.Trim() ?? "";
+                    upsert.Parameters["$color"].Value = GetText(row, "Color")?.Trim() ?? "";
+                    upsert.Parameters["$size"].Value = GetText(row, "Size")?.Trim() ?? "";
+                    upsert.Parameters["$price"].Value = GetText(row, "Price")?.Trim() ?? "";
+                    upsert.Parameters["$artic"].Value = GetText(row, "ArticCode")?.Trim() ?? "";
+                    upsert.Parameters["$hall"].Value = hall.HasValue
+                        ? (object)(hall.Value ? 1 : 0)
                         : DBNull.Value;
-                    upsert.Parameters["$baseDspa"].Value = string.IsNullOrWhiteSpace(r.BaseDspa)
+                    upsert.Parameters["$baseDspa"].Value = string.IsNullOrWhiteSpace(baseDspa)
                         ? DBNull.Value
-                        : r.BaseDspa.Trim();
+                        : baseDspa.Trim();
 
                     if (isLoots)
-                        upsert.Parameters["$box"].Value = r.Box_Id?.Trim() ?? "Unknown_Box";
+                    {
+                        var boxId = GetText(row, "Box_Id");
+                        upsert.Parameters["$box"].Value =
+                            string.IsNullOrWhiteSpace(boxId) ? "Unknown_Box" : boxId.Trim();
+                    }
 
                     upsert.ExecuteNonQuery();
                     processed++;
@@ -224,6 +235,77 @@ namespace ZebraSCannerTest1.Core.Services
                 Console.WriteLine($"❌ Excel import failed: {ex.Message}");
                 throw new InvalidOperationException($"Failed during Excel import ({mode}).", ex);
             }
+        }
+
+        private static object? GetValue(IDictionary<string, object> row, string columnName)
+        {
+            foreach (var item in row)
+            {
+                if (string.Equals(item.Key?.Trim(), columnName, StringComparison.OrdinalIgnoreCase))
+                    return item.Value;
+            }
+
+            return null;
+        }
+
+        private static string? GetText(IDictionary<string, object> row, string columnName)
+        {
+            var value = GetValue(row, columnName);
+            if (value == null || value == DBNull.Value)
+                return null;
+
+            return Convert.ToString(value)?.Trim();
+        }
+
+        private static int GetInt(IDictionary<string, object> row, string columnName)
+        {
+            var value = GetValue(row, columnName);
+            if (value == null || value == DBNull.Value)
+                return 0;
+
+            if (value is int i) return i;
+            if (value is long l) return checked((int)l);
+            if (value is double d) return Convert.ToInt32(d);
+            if (value is decimal m) return Convert.ToInt32(m);
+
+            return int.TryParse(Convert.ToString(value), out var parsed) ? parsed : 0;
+        }
+
+        private static bool? GetNullableBool(IDictionary<string, object> row, string columnName)
+        {
+            var value = GetValue(row, columnName);
+            if (value == null || value == DBNull.Value)
+                return null;
+
+            if (value is bool b)
+                return b;
+
+            if (value is byte by)
+                return by != 0;
+
+            if (value is short sh)
+                return sh != 0;
+
+            if (value is int i)
+                return i != 0;
+
+            if (value is long l)
+                return l != 0;
+
+            if (value is double d)
+                return Math.Abs(d) > double.Epsilon;
+
+            var text = Convert.ToString(value)?.Trim();
+            if (string.IsNullOrEmpty(text))
+                return null;
+
+            if (bool.TryParse(text, out var parsedBool))
+                return parsedBool;
+
+            if (double.TryParse(text, out var parsedNumber))
+                return Math.Abs(parsedNumber) > double.Epsilon;
+
+            return null;
         }
     }
 }
