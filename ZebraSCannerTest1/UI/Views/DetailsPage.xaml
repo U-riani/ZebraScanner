@@ -104,6 +104,18 @@ IsVisible="{Binding CurrentMode, Converter={StaticResource EnumEqualsConverter},
                 <Label Text="{Binding ProductPrice, StringFormat='{}{0:C}'}" 
                       FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
             </HorizontalStackLayout>
+
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="HALL" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding HallDisplay}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout VerticalOptions="Center">
+                <Label Text="BASE DSPA" TextColor="{AppThemeBinding Dark=white, Light=black}" FontSize="20" VerticalTextAlignment="Center"/>
+                <Label Text="----" Padding="10,0,10,0" TextColor="{AppThemeBinding Dark=white, Light=black}" VerticalTextAlignment="Center"/>
+                <Label Text="{Binding ProductBaseDspa}" FontSize="18" TextColor="{AppThemeBinding Dark=white, Light=black}"/>
+            </HorizontalStackLayout>
             
             <!-- Show total quantity across all boxes -->
             <HorizontalStackLayout VerticalOptions="Center"

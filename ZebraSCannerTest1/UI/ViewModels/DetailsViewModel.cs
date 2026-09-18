@@ -55,6 +55,8 @@ public partial class DetailsViewModel : ObservableObject
     [ObservableProperty] private decimal productPrice;
 
     [ObservableProperty] private string productArticCode;
+    [ObservableProperty] private bool? productHall;
+    [ObservableProperty] private string productBaseDspa = string.Empty;
     [ObservableProperty] private InventoryMode currentMode = InventoryMode.Standard;
     [ObservableProperty] private string boxId = string.Empty;
     [ObservableProperty] private int totalScannedQuantity;
@@ -62,6 +64,18 @@ public partial class DetailsViewModel : ObservableObject
 
     [ObservableProperty] private string allBoxesInfo = string.Empty;
 
+
+    public string HallDisplay => ProductHall switch
+    {
+        true => "TRUE",
+        false => "FALSE",
+        _ => "—"
+    };
+
+    partial void OnProductHallChanged(bool? value)
+    {
+        OnPropertyChanged(nameof(HallDisplay));
+    }
 
     public IAsyncRelayCommand SaveCommand { get; }
     public IAsyncRelayCommand LoadLogsCommand { get; }
@@ -167,7 +181,9 @@ SET ScannedQuantity = $scanned,
     Color = $color,
     Size = $size,
     Price = $price,
-    ArticCode = $artic
+    ArticCode = $artic,
+    Hall = $hall,
+    BaseDspa = $baseDspa
 WHERE Barcode = $barcode AND Box_Id = $box;";
                 }
                 else
@@ -176,10 +192,10 @@ WHERE Barcode = $barcode AND Box_Id = $box;";
                     cmd.CommandText = @"
 INSERT INTO LootsProducts
     (Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, 
-     Name, Color, Size, Price, ArticCode)
+     Name, Color, Size, Price, ArticCode, Hall, BaseDspa)
 VALUES
     ($barcode, $box, $initial, $scanned, $created, $updated,
-     $name, $color, $size, $price, $artic);";
+     $name, $color, $size, $price, $artic, $hall, $baseDspa);";
                     cmd.Parameters.AddWithValue("$created", now);
                 }
 
@@ -193,6 +209,10 @@ VALUES
                 cmd.Parameters.AddWithValue("$size", ProductSize ?? "");
                 cmd.Parameters.AddWithValue("$price", ProductPrice);
                 cmd.Parameters.AddWithValue("$artic", ProductArticCode ?? "");
+                cmd.Parameters.AddWithValue("$hall",
+                    ProductHall.HasValue ? (object)(ProductHall.Value ? 1 : 0) : DBNull.Value);
+                cmd.Parameters.AddWithValue("$baseDspa",
+                    string.IsNullOrWhiteSpace(ProductBaseDspa) ? DBNull.Value : ProductBaseDspa);
                 cmd.ExecuteNonQuery();
             }
             else
@@ -200,9 +220,9 @@ VALUES
                 cmd.CommandText = @"
 INSERT INTO Products 
     (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, 
-     Name, Color, Size, Price, ArticCode)
+     Name, Color, Size, Price, ArticCode, Hall, BaseDspa)
 VALUES 
-    ($barcode,$initial,$scanned,$created,$updated,$name,$color,$size,$price,$artic)
+    ($barcode,$initial,$scanned,$created,$updated,$name,$color,$size,$price,$artic,$hall,$baseDspa)
 ON CONFLICT(Barcode) DO UPDATE SET
     ScannedQuantity=$scanned,
     InitialQuantity=$initial,
@@ -211,7 +231,9 @@ ON CONFLICT(Barcode) DO UPDATE SET
     Color=$color,
     Size=$size,
     Price=$price,
-    ArticCode=$artic;";
+    ArticCode=$artic,
+    Hall=$hall,
+    BaseDspa=$baseDspa;";
                 cmd.Parameters.AddWithValue("$barcode", ProductBarcode?.Trim());
                 cmd.Parameters.AddWithValue("$initial", InitialQuantity);
                 cmd.Parameters.AddWithValue("$scanned", ScannedQuantity);
@@ -222,6 +244,10 @@ ON CONFLICT(Barcode) DO UPDATE SET
                 cmd.Parameters.AddWithValue("$size", ProductSize ?? "");
                 cmd.Parameters.AddWithValue("$price", ProductPrice);
                 cmd.Parameters.AddWithValue("$artic", ProductArticCode ?? "");
+                cmd.Parameters.AddWithValue("$hall",
+                    ProductHall.HasValue ? (object)(ProductHall.Value ? 1 : 0) : DBNull.Value);
+                cmd.Parameters.AddWithValue("$baseDspa",
+                    string.IsNullOrWhiteSpace(ProductBaseDspa) ? DBNull.Value : ProductBaseDspa);
                 cmd.ExecuteNonQuery();
             }
 
@@ -432,7 +458,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
         {
             // 1️⃣ Load product info for current box
             cmd.CommandText = @"
-            SELECT Name, Color, Size, Price, ArticCode, InitialQuantity, ScannedQuantity, Box_Id
+            SELECT Name, Color, Size, Price, ArticCode, Hall, BaseDspa, InitialQuantity, ScannedQuantity, Box_Id
             FROM LootsProducts
             WHERE Barcode = $b AND Box_Id = $box";
             cmd.Parameters.AddWithValue("$b", ProductBarcode);
@@ -441,7 +467,7 @@ ON CONFLICT(Barcode) DO UPDATE SET
         else
         {
             cmd.CommandText = @"
-            SELECT Name, Color, Size, Price, ArticCode, InitialQuantity, ScannedQuantity
+            SELECT Name, Color, Size, Price, ArticCode, Hall, BaseDspa, InitialQuantity, ScannedQuantity
             FROM Products
             WHERE Barcode = $b";
             cmd.Parameters.AddWithValue("$b", ProductBarcode);
@@ -474,11 +500,13 @@ ON CONFLICT(Barcode) DO UPDATE SET
             Convert.ToDecimal(r.GetValue(3));
 
         ProductArticCode = r.IsDBNull(4) ? "" : r.GetString(4);
-        InitialQuantity = r.IsDBNull(5) ? 0 : r.GetInt32(5);
-        ScannedQuantity = r.IsDBNull(6) ? 0 : r.GetInt32(6);
+        ProductHall = r.IsDBNull(5) ? null : Convert.ToInt32(r.GetValue(5)) != 0;
+        ProductBaseDspa = r.IsDBNull(6) ? "" : r.GetString(6);
+        InitialQuantity = r.IsDBNull(7) ? 0 : r.GetInt32(7);
+        ScannedQuantity = r.IsDBNull(8) ? 0 : r.GetInt32(8);
 
-        if (CurrentMode == InventoryMode.Loots && !r.IsDBNull(7))
-            BoxId = r.GetString(7);
+        if (CurrentMode == InventoryMode.Loots && !r.IsDBNull(9))
+            BoxId = r.GetString(9);
 
         r.Close();
 
