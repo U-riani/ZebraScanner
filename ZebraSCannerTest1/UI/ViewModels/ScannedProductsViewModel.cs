@@ -89,14 +89,14 @@ public partial class ScannedProductsViewModel : ObservableObject
                 cmd.CommandText = CurrentMode == InventoryMode.Loots
                     ? $@"
                         SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
-                               Name, Color, Size, Price, ArticCode
+                               Name, Color, Size, Price, ArticCode, Hall, BaseDspa
                         FROM {table}
                         {where}
                         ORDER BY {_currentSortField} {dir}
                         LIMIT {PageSize} OFFSET {_offset};"
                     : $@"
                         SELECT Barcode, NULL as Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt,
-                               Name, Color, Size, Price, ArticCode
+                               Name, Color, Size, Price, ArticCode, Hall, BaseDspa
                         FROM {table}
                         {where}
                         ORDER BY {_currentSortField} {dir}
@@ -121,7 +121,9 @@ public partial class ScannedProductsViewModel : ObservableObject
                         Color = r.IsDBNull(7) ? "" : r.GetString(7),
                         Size = r.IsDBNull(8) ? "" : r.GetString(8),
                         Price = r.IsDBNull(9) ? "" : r.GetString(9),
-                        ArticCode = r.IsDBNull(10) ? "" : r.GetString(10)
+                        ArticCode = r.IsDBNull(10) ? "" : r.GetString(10),
+                        Hall = r.IsDBNull(11) ? null : Convert.ToInt32(r.GetValue(11)) != 0,
+                        BaseDspa = r.IsDBNull(12) ? "" : r.GetString(12)
                     });
 
 
@@ -190,9 +192,9 @@ public partial class ScannedProductsViewModel : ObservableObject
         // 🧠 Add Box_Id when in Loots mode
         var fields = CurrentMode == InventoryMode.Loots
             ? new[] { "Box_Id", "Barcode", "ScannedQuantity", "InitialQuantity", "Difference",
-                  "UpdatedAt", "ArticCode", "Name", "Color", "Size", "Price", "CreatedAt" }
+                  "UpdatedAt", "ArticCode", "Name", "Color", "Size", "Price", "Hall", "BaseDspa", "CreatedAt" }
             : new[] { "Barcode", "ScannedQuantity", "InitialQuantity", "Difference",
-                  "UpdatedAt", "ArticCode", "Name", "Color", "Size", "Price", "CreatedAt" };
+                  "UpdatedAt", "ArticCode", "Name", "Color", "Size", "Price", "Hall", "BaseDspa", "CreatedAt" };
 
         string fieldChoice = await Shell.Current.DisplayActionSheet("Sort by:", "Cancel", null, fields);
         if (string.IsNullOrEmpty(fieldChoice) || fieldChoice == "Cancel") return;
@@ -412,6 +414,8 @@ public partial class ScannedProductsViewModel : ObservableObject
             ["Size"] = product.Size ?? "",
             ["Price"] = decimal.TryParse(product.Price, out var p) ? p : 0,
             ["ArticCode"] = product.ArticCode ?? "",
+            ["Hall"] = product.Hall,
+            ["BaseDspa"] = product.BaseDspa ?? "",
             ["IsReadOnly"] = true
         };
 

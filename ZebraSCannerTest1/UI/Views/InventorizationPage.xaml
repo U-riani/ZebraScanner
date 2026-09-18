@@ -26,6 +26,19 @@
 
         </HorizontalStackLayout>
 
+        <!-- V18_1: hidden when the imported data has no Hall classification. -->
+        <Grid IsVisible="{Binding HasScanLocation}"
+              BackgroundColor="{Binding ScanLocationColor}"
+              Padding="12,10"
+              Margin="3,0">
+            <Label Text="{Binding ScanLocationText}"
+                   TextColor="White"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center" />
+        </Grid>
+
         <!-- Current scanned barcode big and obvious -->
         <HorizontalStackLayout HorizontalOptions="Center">
 

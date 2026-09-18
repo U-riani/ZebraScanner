@@ -21,6 +21,8 @@ namespace ZebraSCannerTest1.Core.Models
         private string? _size;
         private string? _price;
         private string? _articCode;
+        private bool? _hall;
+        private string? _baseDspa;
         public string? _boxId;
         public string? Barcode
         {
@@ -62,6 +64,31 @@ namespace ZebraSCannerTest1.Core.Models
         {
             get => _boxId;
             set { if (_boxId == value) return; _boxId = value; OnPropertyChanged(); }
+        }
+
+        public bool? Hall
+        {
+            get => _hall;
+            set
+            {
+                if (_hall == value) return;
+                _hall = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HallDisplay));
+            }
+        }
+
+        public string HallDisplay => Hall switch
+        {
+            true => "TRUE",
+            false => "FALSE",
+            _ => ""
+        };
+
+        public string? BaseDspa
+        {
+            get => _baseDspa;
+            set { if (_baseDspa == value) return; _baseDspa = value; OnPropertyChanged(); }
         }
 
         public int InitialQuantity
@@ -122,6 +149,8 @@ namespace ZebraSCannerTest1.Core.Models
             Size = other.Size;
             Price = other.Price;
             ArticCode = other.ArticCode;
+            Hall = other.Hall;
+            BaseDspa = other.BaseDspa;
             InitialQuantity = other.InitialQuantity;
             ScannedQuantity = other.ScannedQuantity;
             CreatedAt = other.CreatedAt;

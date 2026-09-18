@@ -47,6 +47,11 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool isNavigating;
     [ObservableProperty] private string lastScannedBarcode = string.Empty;
 
+    // V18_1 scan location feedback. Hidden for legacy Excel files.
+    [ObservableProperty] private bool hasScanLocation;
+    [ObservableProperty] private string scanLocationText = string.Empty;
+    [ObservableProperty] private Color scanLocationColor = Colors.Transparent;
+
 
     public ObservableCollection<ProductSlot> Slots { get; } =
         new(Enumerable.Range(0, SlotCount).Select(_ => new ProductSlot()));
@@ -113,6 +118,11 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
         {
             await LoadRecentAsync();
         });
+
+        WeakReferenceMessenger.Default.Register<ScanFeedbackMessage>(this, (r, msg) =>
+        {
+            ApplyScanLocation(msg.Product);
+        });
     }
 
     public async Task InitializeAsync()
@@ -121,10 +131,39 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
         WeakReferenceMessenger.Default.Register<ProductUpdatedMessage>(
             this, async (_, _) => await LoadRecentAsync());
 
+        WeakReferenceMessenger.Default.Unregister<ScanFeedbackMessage>(this);
+        WeakReferenceMessenger.Default.Register<ScanFeedbackMessage>(
+            this, (_, msg) => ApplyScanLocation(msg.Product));
+
         _scanningService.SetMode(InventoryMode.Standard);
         _scanningService.StartAsync();
 
         await LoadRecentAsync();
+    }
+
+    private void ApplyScanLocation(Product product)
+    {
+        // Legacy Excel/DB: preserve the original V18 UI.
+        if (!product.Hall.HasValue)
+        {
+            HasScanLocation = false;
+            ScanLocationText = string.Empty;
+            ScanLocationColor = Colors.Transparent;
+            return;
+        }
+
+        var location = product.Hall.Value ? "HALL" : "WRH";
+        var baseDspa = product.BaseDspa?.Trim();
+
+        ScanLocationText = string.IsNullOrWhiteSpace(baseDspa)
+            ? location
+            : $"{location} - {baseDspa}";
+
+        ScanLocationColor = product.Hall.Value
+            ? Color.FromArgb("#2563EB")
+            : Color.FromArgb("#4F46E5");
+
+        HasScanLocation = true;
     }
 
     // === Loaders ===
@@ -232,6 +271,12 @@ public partial class InventorizationViewModel : ObservableObject, IDisposable
             });
 
             popupOpened = false;
+
+            // Do not leave the previous file's Hall/WRH banner visible after replacing data.
+            HasScanLocation = false;
+            ScanLocationText = string.Empty;
+            ScanLocationColor = Colors.Transparent;
+
             await _dialogs.ShowMessageAsync("✅ Import Complete", $"File {result.FileName} imported successfully.");
             await LoadRecentAsync();
         }
