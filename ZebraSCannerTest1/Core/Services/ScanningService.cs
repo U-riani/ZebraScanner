@@ -118,9 +118,26 @@ namespace ZebraSCannerTest1.Core.Services
                 else
                 {
 #if ANDROID
-                    MainThread.BeginInvokeOnMainThread(() => toneOk.StartTone(Tone.PropAck, 80));
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        // Keep the V18 success sound when Hall/BaseDspa are not supplied.
+                        var tone = product.Hall switch
+                        {
+                            true => Tone.PropPrompt,
+                            false => Tone.PropBeep,
+                            _ => Tone.PropAck
+                        };
+
+                        var duration = product.Hall.HasValue ? 150 : 80;
+                        toneOk.StartTone(tone, duration);
+                    });
 #endif
                     await UpdateProductAsync(product);
+
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        WeakReferenceMessenger.Default.Send(new ScanFeedbackMessage(product));
+                    });
                 }
             }
             catch (Exception ex)

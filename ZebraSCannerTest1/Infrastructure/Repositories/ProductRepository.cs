@@ -132,8 +132,8 @@ public class ProductRepository : IProductRepository
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = isLoots
-             ? $"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM {table} WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)"
-             : $"SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM {table} WHERE Barcode=$b";
+             ? $"SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Hall, BaseDspa FROM {table} WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)"
+             : $"SELECT Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Hall, BaseDspa FROM {table} WHERE Barcode=$b";
 
         cmd.Parameters.AddWithValue("$b", barcode);
 
@@ -149,7 +149,13 @@ public class ProductRepository : IProductRepository
                 InitialQuantity = Convert.ToInt32(reader.GetValue(isLoots ? 2 : 1)),
                 ScannedQuantity = Convert.ToInt32(reader.GetValue(isLoots ? 3 : 2)),
                 CreatedAt = DateTime.Parse(reader.GetString(isLoots ? 4 : 3)),
-                UpdatedAt = DateTime.Parse(reader.GetString(isLoots ? 5 : 4))
+                UpdatedAt = DateTime.Parse(reader.GetString(isLoots ? 5 : 4)),
+                Hall = reader.IsDBNull(isLoots ? 6 : 5)
+                    ? null
+                    : Convert.ToInt32(reader.GetValue(isLoots ? 6 : 5)) != 0,
+                BaseDspa = reader.IsDBNull(isLoots ? 7 : 6)
+                    ? null
+                    : reader.GetString(isLoots ? 7 : 6)
             };
 
 

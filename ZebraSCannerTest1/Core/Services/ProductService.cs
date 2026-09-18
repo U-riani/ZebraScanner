@@ -89,7 +89,9 @@ namespace ZebraSCannerTest1.Core.Services
                             Color = product.Color,
                             Size = product.Size,
                             Price = product.Price?.ToString(),
-                            ArticCode = product.ArticCode
+                            ArticCode = product.ArticCode,
+                            Hall = product.Hall,
+                            BaseDspa = product.BaseDspa
                         });
                     else
                         await _lootsRepo.UpdateAsync(product); // or implement UpdateAsync in LootsRepo later

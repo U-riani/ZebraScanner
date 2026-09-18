@@ -20,8 +20,8 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
                 INSERT INTO LootsProducts
-                (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode, Box_Id)
-                VALUES ($b, $i, $s, $c, $u, $n, $col, $sz, $p, $a, $box);";
+                (Barcode, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Name, Color, Size, Price, ArticCode, Box_Id, Hall, BaseDspa)
+                VALUES ($b, $i, $s, $c, $u, $n, $col, $sz, $p, $a, $box, $hall, $baseDspa);";
 
             cmd.Parameters.AddWithValue("$b", p.Barcode);
             cmd.Parameters.AddWithValue("$i", p.InitialQuantity);
@@ -34,6 +34,10 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("$p", p.Price ?? "");
             cmd.Parameters.AddWithValue("$a", p.ArticCode ?? "");
             cmd.Parameters.AddWithValue("$box", string.IsNullOrWhiteSpace(p.Box_Id) ? DBNull.Value : p.Box_Id);
+            cmd.Parameters.AddWithValue("$hall",
+                p.Hall.HasValue ? (object)(p.Hall.Value ? 1 : 0) : DBNull.Value);
+            cmd.Parameters.AddWithValue("$baseDspa",
+                string.IsNullOrWhiteSpace(p.BaseDspa) ? DBNull.Value : p.BaseDspa);
 
             await cmd.ExecuteNonQueryAsync();
         }
@@ -86,6 +90,8 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
                     int size = SafeGetOrdinal(r, "Size");
                     int price = SafeGetOrdinal(r, "Price");
                     int artic = SafeGetOrdinal(r, "ArticCode");
+                    int hall = SafeGetOrdinal(r, "Hall");
+                    int baseDspa = SafeGetOrdinal(r, "BaseDspa");
 
                     list.Add(new LootProduct
                     {
@@ -100,7 +106,11 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
                         Color = SafeReadString(r, color),
                         Size = SafeReadString(r, size),
                         Price = SafeReadString(r, price),
-                        ArticCode = SafeReadString(r, artic)
+                        ArticCode = SafeReadString(r, artic),
+                        Hall = hall >= 0 && !r.IsDBNull(hall)
+                            ? Convert.ToInt32(r.GetValue(hall)) != 0
+                            : null,
+                        BaseDspa = SafeReadString(r, baseDspa)
                     });
                 }
                 catch (Exception ex)
@@ -119,7 +129,7 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
             using var conn = DatabaseInitializer.GetConnection(InventoryMode.Loots);
 
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt FROM LootsProducts WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)";
+            cmd.CommandText = "SELECT Barcode, Box_Id, InitialQuantity, ScannedQuantity, CreatedAt, UpdatedAt, Hall, BaseDspa FROM LootsProducts WHERE Barcode=$b AND (Box_Id=$box OR $box IS NULL)";
 
             cmd.Parameters.AddWithValue("$b", barcode);
 
@@ -134,7 +144,9 @@ namespace ZebraSCannerTest1.Infrastructure.Repositories
                     InitialQuantity = Convert.ToInt32(reader.GetValue(2)),
                     ScannedQuantity = Convert.ToInt32(reader.GetValue(3)),
                     CreatedAt = DateTime.Parse(reader.GetString(4)),
-                    UpdatedAt = DateTime.Parse(reader.GetString(5))
+                    UpdatedAt = DateTime.Parse(reader.GetString(5)),
+                    Hall = reader.IsDBNull(6) ? null : Convert.ToInt32(reader.GetValue(6)) != 0,
+                    BaseDspa = reader.IsDBNull(7) ? null : reader.GetString(7)
                 };
                 product.Box_Id = reader.IsDBNull(1) ? null : reader.GetString(1);
 
